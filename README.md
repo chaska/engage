@@ -10,7 +10,7 @@ Engage es un sistema de comentarios para los artículos de Joomla. Este reposito
 
 Fase 1: la fuente está reorganizada en `src/` y hay un script que genera los ZIP instalables y el paquete.
 
-Fase 3 (versiones del fork 0.3.0 a 0.5.3): compatibilidad con Joomla 5 y 6 y PHP 8.1 a 8.4, correcciones de seguridad y HTMLPurifier 4.19.1, aplicando `docs/INFORME-FASE2-JOOMLA6.md`. Cada cambio consta en `CHANGELOG.md` con sus archivos y su impacto. Los archivos modificados deliberadamente respecto a la referencia 3.4.2 los lista `php build/verificar.php`. Las versiones internas de los manifiestos (3.4.2) no se han cambiado. Nada de esto se ha probado en un Joomla real: solo hay pruebas con stubs (`php tests/run.php`).
+Fase 3 (versiones del fork 0.3.0 a 0.5.3): compatibilidad con Joomla 5 y 6 y PHP 8.1 a 8.4, correcciones de seguridad y HTMLPurifier 4.19.1, aplicando `docs/INFORME-FASE2-JOOMLA6.md`. Cada cambio consta en `CHANGELOG.md` con sus archivos y su impacto. Los archivos modificados deliberadamente respecto a la referencia 3.4.2 los lista `php build/verificar.php`. La versión propia de los manifiestos es la 3.4.2.1 (desde la 0.6.0). Nada de esto se ha probado en un Joomla real: solo hay pruebas con stubs (`php tests/run.php`).
 
 ## Estructura
 
