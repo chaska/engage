@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--~
+  ~ @package   AkeebaEngage
+  ~ @copyright Copyright (c)2020-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+  ~ @license   GNU General Public License version 3, or later
+  -->
+
+<extension type="module" method="upgrade" client="site">
+	<name>MOD_ENGAGE_LATEST</name>
+	<author>Nicholas K. Dionysopoulos</author>
+	<creationDate>2025-02-12</creationDate>
+	<copyright>Copyright (c)2020-2025 Nicholas K. Dionysopoulos / Akeeba Ltd</copyright>
+	<license>GNU GPL v3 or later</license>
+	<authorEmail>nicholas@akeeba.com</authorEmail>
+	<authorUrl>www.akeeba.com</authorUrl>
+	<version>3.4.2</version>
+	<description>MOD_ENGAGE_LATEST_DESCRIPTION</description>
+	<namespace path="src">Joomla\Module\EngageLatest</namespace>
+
+	<files>
+		<folder>services</folder>
+		<folder module="mod_engage_latest">src</folder>
+		<folder>tmpl</folder>
+
+		<filename>.htaccess</filename>
+		<filename>web.config</filename>
+	</files>
+
+	<languages folder="language">
+		<language tag="en-GB">en-GB/mod_engage_latest.ini</language>
+		<language tag="en-GB">en-GB/mod_engage_latest.sys.ini</language>
+		<language tag="de-DE">de-DE/mod_engage_latest.ini</language>
+		<language tag="de-DE">de-DE/mod_engage_latest.sys.ini</language>
+		<language tag="fr-FR">fr-FR/mod_engage_latest.ini</language>
+		<language tag="fr-FR">fr-FR/mod_engage_latest.sys.ini</language>
+		<language tag="nl-NL">nl-NL/mod_engage_latest.ini</language>
+		<language tag="nl-NL">nl-NL/mod_engage_latest.sys.ini</language>
+	</languages>
+
+	<config>
+		<fields name="params">
+			<fieldset name="basic">
+				<field
+						name="mode"
+						type="list"
+						label="MOD_ENGAGE_LATEST_FIELD_MODE_LABEL"
+						description="MOD_ENGAGE_LATEST_FIELD_MODE_DESC"
+						default="comments"
+				>
+					<option value="comments">MOD_ENGAGE_LATEST_FIELD_MODE_COMMENTS</option>
+					<option value="articles">MOD_ENGAGE_LATEST_FIELD_MODE_ARTICLES</option>
+				</field>
+
+				<field
+						name="count"
+						type="number"
+						label="MOD_ENGAGE_LATEST_FIELD_COUNT_LABEL"
+						default="10"
+						filter="integer"
+						min="1"
+						validate="number"
+				/>
+
+				<field
+						name="show_title"
+						type="radio"
+						layout="joomla.form.field.radio.switcher"
+						label="MOD_ENGAGE_LATEST_FIELD_SHOW_TITLE_LABEL"
+						default="1"
+				>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+
+				<field
+						name="link_title"
+						type="radio"
+						layout="joomla.form.field.radio.switcher"
+						label="MOD_ENGAGE_LATEST_FIELD_LINK_TITLE_LABEL"
+						default="0"
+						showon="show_title:1"
+				>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+
+				<field
+						name="show_count"
+						type="radio"
+						layout="joomla.form.field.radio.switcher"
+						label="MOD_ENGAGE_LATEST_FIELD_SHOW_COUNT_LABEL"
+						default="1"
+						showon="show_title:1"
+				>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+
+				<field
+						name="excerpt"
+						type="radio"
+						layout="joomla.form.field.radio.switcher"
+						label="MOD_ENGAGE_LATEST_FIELD_EXCERPT_LABEL"
+						description="MOD_ENGAGE_LATEST_FIELD_EXCERPT_DESC"
+						default="1"
+				>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+
+				<field
+						name="excerpt_words"
+						type="number"
+						label="MOD_ENGAGE_LATEST_FIELD_EXCERPT_WORDS_LABEL"
+						default="50"
+						filter="integer"
+						showon="excerpt:1"
+				/>
+
+				<field
+						name="excerpt_characters"
+						type="number"
+						label="MOD_ENGAGE_LATEST_FIELD_EXCERPT_CHARACTERS_LABEL"
+						default="350"
+						filter="integer"
+						showon="excerpt:1"
+				/>
+
+				<field
+						name="cat_mode"
+						type="radio"
+						layout="joomla.form.field.radio.switcher"
+						label="MOD_ENGAGE_LATEST_FIELD_CAT_MODE_LABEL"
+						description="MOD_ENGAGE_LATEST_FIELD_CAT_MODE_DESC"
+						default="0"
+				>
+					<option value="0">MOD_ENGAGE_LATEST_FIELD_CAT_MODE_OPT_EXCLUDE</option>
+					<option value="1">MOD_ENGAGE_LATEST_FIELD_CAT_MODE_OPT_INCLUDE</option>
+				</field>
+
+				<field
+						name="categories"
+						type="category"
+						label="MOD_ENGAGE_LATEST_FIELD_CATEGORIES_LABEL"
+						description="MOD_ENGAGE_LATEST_FIELD_CATEGORIES_DESC"
+						extension="com_content"
+						multiple="true"
+						filter="intarray"
+						layout="joomla.form.field.list-fancy-select"
+						default=""
+				/>
+
+			</fieldset>
+			<fieldset name="advanced">
+				<field
+						name="layout"
+						type="modulelayout"
+						label="JFIELD_ALT_LAYOUT_LABEL"
+						class="form-select"
+						validate="moduleLayout"
+				/>
+
+				<field
+						name="moduleclass_sfx"
+						type="textarea"
+						label="COM_MODULES_FIELD_MODULECLASS_SFX_LABEL"
+						rows="3"
+						validate="CssIdentifier"
+				/>
+
+				<field
+						name="cache"
+						type="list"
+						label="COM_MODULES_FIELD_CACHING_LABEL"
+						default="1"
+						filter="integer"
+						validate="options"
+				>
+					<option value="1">JGLOBAL_USE_GLOBAL</option>
+					<option value="0">COM_MODULES_FIELD_VALUE_NOCACHING</option>
+				</field>
+
+				<field
+						name="cache_time"
+						type="number"
+						label="COM_MODULES_FIELD_CACHE_TIME_LABEL"
+						default="900"
+						filter="integer"
+				/>
+
+				<field
+						name="cachemode"
+						type="hidden"
+						default="static"
+				>
+					<option value="static"></option>
+				</field>
+			</fieldset>
+		</fields>
+	</config>
+</extension>
