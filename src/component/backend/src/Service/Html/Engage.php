@@ -147,7 +147,8 @@ final class Engage
 		// If the text looks like valid HTML then return it as-is
 		if (self::isLikelyHtml($text))
 		{
-			return $text;
+			// HTML is purified for display (modes htmlpurifier / strict); in mode "joomla" it is returned as-is.
+			return HtmlFilter::filterTextForDisplay($text);
 		}
 
 		$text = preg_replace('#<a href="(.*)">(.*)</a>#i', '[url=$1]$2[/url]', $text);
@@ -397,4 +398,4 @@ final class Engage
 
 		return false;
 	}
-}
+}

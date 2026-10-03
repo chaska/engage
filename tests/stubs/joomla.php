@@ -58,3 +58,41 @@ namespace {
 		public function escape($t, $extra = false) { return addslashes($t); }
 	}
 }
+
+namespace Joomla\CMS\Component {
+	/** getParams(): lee $GLOBALS['T_PARAMS'][nombre]; filterText(): simula un filtro de Joomla simple. */
+	class ComponentHelper
+	{
+		public static function getParams($name)
+		{
+			return new class($GLOBALS['T_PARAMS'][$name] ?? []) {
+				public function __construct(private array $d) {}
+				public function get($k, $def = null) { return $this->d[$k] ?? $def; }
+			};
+		}
+		public static function filterText($text) { return 'JOOMLA_FILTER[' . strip_tags((string) $text) . ']'; }
+	}
+}
+namespace Joomla\CMS {
+	class Factory
+	{
+		public static function getUser()
+		{
+			return new class { public function get($k) { return 42; } };
+		}
+	}
+}
+namespace Joomla\CMS\Access {
+	class Access { public static function getGroupsByUser($id) { return $GLOBALS['T_GROUPS'] ?? [1]; } }
+}
+namespace Joomla\CMS\Filter {
+	class InputFilter
+	{
+		public $tagBlacklist = ['applet', 'body', 'embed', 'frame', 'iframe', 'object', 'script', 'style'];
+		public $attrBlacklist = ['action', 'background', 'codebase', 'dynsrc', 'formaction', 'lowsrc'];
+		public static function getInstance($t = [], $a = [], $tm = 0, $am = 0, $xss = 1) { return new self(); }
+	}
+}
+namespace Joomla\Database {
+	trait DatabaseAwareTrait {}
+}
