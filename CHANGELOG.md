@@ -1,5 +1,11 @@
 # Registro de cambios del fork
 
+## 0.6.11 — 2026-10-03 (corrección hallada en Joomla 6.1.4 real: aviso de PHP en la plantilla de edición del frontend)
+- Qué era real: con `error_reporting` al máximo, abrir la vista de edición de comentarios del frontend sin `returnurl` (por ejemplo una tarea desconocida como `index.php?option=com_engage&task=comment.noexiste`, que Joomla resuelve a esa vista) imprimía `Deprecated: base64_encode(): Passing null to parameter #1 ($string)` en `frontend/tmpl/comment/edit.php:35`, con la ruta del servidor dentro del valor del campo oculto `returnurl`. Con la configuración habitual de producción el aviso no se muestra, pero el código es incompatible con PHP 8.1+ en modo estricto (CP-06 / PS-19).
+- Cambio: `base64_encode((string) $this->returnUrl)` y, de paso, el enlace "Cancelar" imprime `returnUrl` con `htmlspecialchars(..., ENT_QUOTES)` (el valor ya se valida como URL interna; el escapado es defensa en profundidad, no se halló una explotación).
+- Archivos: `src/component/frontend/tmpl/comment/edit.php`, `tests/18-vista-edicion.php` (nuevo).
+- Verificado en el sitio real: la misma petición ya no contiene `Deprecated`. Cambia el hash del ZIP y el `<sha256>` de `updates/pkgengage.xml` (confirmados en el mismo commit).
+
 ## 0.6.10 — 2026-10-03 (corrección hallada en Joomla 6.1.4 real: el comando `engage:cleanspam` no se registraba)
 - Qué era real: al montar un Joomla 6.1.4 de pruebas e instalar el paquete, `php cli/joomla.php list` no mostraba `engage:cleanspam`. Causa: `CleanSpam::configure()` llamaba `addArgument('max-time', InputOption::VALUE_OPTIONAL, ..., 10)`: una constante de OPCIÓN (4) como modo de ARGUMENTO, donde 4 es `IS_ARRAY`; Symfony Console lanza "A default value for an array argument must be an array" y el plugin `console/engage` captura la excepción en silencio, así que el comando desaparecía sin aviso. El defecto viene del código original (está igual en `upstream/3.4.2-instalado`); no se manifiesta en la ejecución desde el panel/cron web, solo por CLI.
 - Cambio: `InputArgument::OPTIONAL` en los dos argumentos y conversión a entero de `max-time` y `max-days` antes de usarlos (un texto ya no llega a `cleanSpam()`).

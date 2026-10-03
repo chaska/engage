@@ -32,7 +32,7 @@ HTMLHelper::_('behavior.formvalidator');
 		class="akengage-comment-edit-form form-validate"
 		aria-label="<?= Text::_('COM_ENGAGE_COMMENTS_EDIT_HEADER', true) ?>"
 >
-	<input type="hidden" name="returnurl" value="<?= base64_encode($this->returnUrl) ?>">
+	<input type="hidden" name="returnurl" value="<?= base64_encode((string) $this->returnUrl) ?>">
 	<input type="hidden" name="view" value="">
 	<input type="hidden" name="id" value="<?= $this->item->id ?>">
 	<?= HTMLHelper::_('form.token') ?>
@@ -57,7 +57,7 @@ HTMLHelper::_('behavior.formvalidator');
 				<?= Text::_('COM_ENGAGE_COMMENTS_FORM_EDIT_BTN_SUBMIT') ?>
 			</button>
 
-			<a href="<?= $this->returnUrl ?>"
+			<a href="<?= htmlspecialchars((string) $this->returnUrl, ENT_QUOTES, 'UTF-8') ?>"
 					class="btn btn-outline-danger">
 				<?= Text::_('COM_ENGAGE_COMMENTS_FORM_EDIT_BTN_CANCEL'); ?>
 			</a>
