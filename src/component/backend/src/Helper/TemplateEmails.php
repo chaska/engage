@@ -266,6 +266,32 @@ abstract class TemplateEmails
 	}
 
 	/**
+	 * Datos de sustitución para la parte de TEXTO PLANO del correo.
+	 *
+	 * Los enlaces firmados se generan con `Route::_(..., $xhtml = true)`, es decir con `&amp;` entre parámetros, lo que es
+	 * correcto dentro de un atributo href del correo HTML pero rompe el enlace en texto plano (el cliente de correo envía
+	 * `amp;returnurl=...` y el servidor no ve `email`, `expires` ni `token`; el enlace de baja no se ejecuta). Aquí solo se
+	 * deshace esa codificación en las claves *_URL; el resto de valores no se toca.
+	 *
+	 * @param   array  $data  Los datos de sustitución de la plantilla
+	 *
+	 * @return  array
+	 * @since   0.6.13
+	 */
+	public static function plainTextData(array $data): array
+	{
+		foreach ($data as $key => $value)
+		{
+			if (is_string($value) && substr((string) $key, -4) === '_URL')
+			{
+				$data[$key] = str_replace('&amp;', '&', $value);
+			}
+		}
+
+		return $data;
+	}
+
+	/**
 	 * Sends an email using a template.
 	 *
 	 * WARNING! THIS DOES NOT CHECK IF THE TEMPLATE EXISTS. USE TemplateEmails::updateTemplate($key) FIRST.
@@ -338,6 +364,9 @@ abstract class TemplateEmails
 			}
 
 			$templateMailer->addTemplateData($data);
+
+			// Joomla usa estos datos en lugar de $data al generar la parte de texto plano.
+			$templateMailer->addTemplateData(self::plainTextData($data), true);
 			$templateMailer->addRecipient(trim($user->email), $user->name);
 
 			return $templateMailer->send();
