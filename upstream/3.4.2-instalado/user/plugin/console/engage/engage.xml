@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--~
+  ~ @package   AkeebaEngage
+  ~ @copyright Copyright (c)2020-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+  ~ @license   GNU General Public License version 3, or later
+  -->
+
+<extension version="4.0.0" type="plugin" group="console" method="upgrade">
+	<name>PLG_CONSOLE_ENGAGE</name>
+	<version>3.4.2</version>
+	<creationDate>2025-02-12</creationDate>
+	<author>Nicholas K. Dionysopoulos</author>
+	<authorEmail>nicholas@dionysopoulos.me</authorEmail>
+	<authorUrl>https://www.akeeba.com</authorUrl>
+	<copyright>Copyright (c)2020-2025 Nicholas K. Dionysopoulos / Akeeba Ltd</copyright>
+	<license>GNU General Public License version 3, or later</license>
+	<description>PLG_CONSOLE_ENGAGE_XML_DESCRIPTION</description>
+	<namespace path="src">Akeeba\Plugin\Console\Engage</namespace>
+	<files>
+		<folder>services</folder>
+		<folder plugin="engage">src</folder>
+
+		<filename>.htaccess</filename>
+		<filename>web.config</filename>
+	</files>
+	<languages folder="language">
+		<language tag="en-GB">en-GB/plg_console_engage.ini</language>
+		<language tag="en-GB">en-GB/plg_console_engage.sys.ini</language>
+		<language tag="de-DE">de-DE/plg_console_engage.ini</language>
+		<language tag="de-DE">de-DE/plg_console_engage.sys.ini</language>
+		<language tag="fr-FR">fr-FR/plg_console_engage.ini</language>
+		<language tag="fr-FR">fr-FR/plg_console_engage.sys.ini</language>
+		<language tag="nl-NL">nl-NL/plg_console_engage.ini</language>
+		<language tag="nl-NL">nl-NL/plg_console_engage.sys.ini</language>
+	</languages>
+</extension>

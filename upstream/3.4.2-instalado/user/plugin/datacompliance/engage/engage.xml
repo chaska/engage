@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--~
+  ~ @package   AkeebaEngage
+  ~ @copyright Copyright (c)2020-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+  ~ @license   GNU General Public License version 3, or later
+  -->
+<extension version="3.9.0" type="plugin" group="datacompliance" method="upgrade">
+    <name>PLG_DATACOMPLIANCE_ENGAGE</name>
+    <description>PLG_DATACOMPLIANCE_ENGAGE_XML_DESC</description>
+    <version>3.4.2</version>
+    <creationDate>2025-02-12</creationDate>
+    <author>Akeeba Ltd</author>
+    <authorEmail>no-reply@akeeba.com</authorEmail>
+    <authorUrl>https://www.akeeba.com</authorUrl>
+    <copyright>Copyright (c)2020-2025 Nicholas K. Dionysopoulos / Akeeba Ltd</copyright>
+    <license>GNU/GPL v3 or any later version</license>
+    <namespace path="src">Akeeba\Plugin\Datacompliance\Engage</namespace>
+
+    <files>
+        <folder>services</folder>
+        <folder plugin="engage">src</folder>
+
+        <filename>.htaccess</filename>
+        <filename>web.config</filename>
+    </files>
+    <languages folder="language">
+        <language tag="de-DE">de-DE/plg_datacompliance_engage.ini</language>
+        <language tag="de-DE">de-DE/plg_datacompliance_engage.sys.ini</language>
+        <language tag="en-GB">en-GB/plg_datacompliance_engage.ini</language>
+        <language tag="en-GB">en-GB/plg_datacompliance_engage.sys.ini</language>
+        <language tag="el-GR">el-GR/plg_datacompliance_engage.ini</language>
+        <language tag="el-GR">el-GR/plg_datacompliance_engage.sys.ini</language>
+        <language tag="es-ES">es-ES/plg_datacompliance_engage.ini</language>
+        <language tag="es-ES">es-ES/plg_datacompliance_engage.sys.ini</language>
+        <language tag="fr-FR">fr-FR/plg_datacompliance_engage.ini</language>
+        <language tag="fr-FR">fr-FR/plg_datacompliance_engage.sys.ini</language>
+        <language tag="nl-NL">nl-NL/plg_datacompliance_engage.ini</language>
+        <language tag="nl-NL">nl-NL/plg_datacompliance_engage.sys.ini</language>
+    </languages>
+
+</extension>
