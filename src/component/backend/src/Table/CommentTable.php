@@ -186,7 +186,7 @@ class CommentTable extends AbstractTable
 		// If we have a guest user, make sure we don't have another user with the same email address
 		if (($this->created_by <= 0) && !empty(UserFetcher::getUserIdByEmail($this->email)))
 		{
-			throw new RuntimeException(Text::sprintf('COM_ENGAGE_COMMENTS_ERR_EMAIL_IN_USE', $this->email));
+			throw new RuntimeException(Text::sprintf('COM_ENGAGE_COMMENTS_ERR_EMAIL_IN_USE', htmlspecialchars((string) $this->email, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')));
 		}
 
 		// Make sure we have a non–empty comment

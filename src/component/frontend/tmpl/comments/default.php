@@ -31,7 +31,7 @@ $cParams = ComponentHelper::getParams('com_engage');
 		aria-label="<?= Text::_('COM_ENGAGE_COMMENTS_SECTION_HEADER') ?>">
 
 	<h3 class="akengage-title h4 border-bottom mb-2">
-		<?= Text::plural($this->headerKey, $this->pagination->total, $this->title) ?>
+		<?= Text::plural($this->headerKey, $this->pagination->total, htmlspecialchars((string) $this->title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) ?>
 	</h3>
 
 	<?= $this->loadPosition('engage-before-comments') ?>

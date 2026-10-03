@@ -218,7 +218,7 @@ class CommentsController extends AdminCommentsController
 
 			$this->app->triggerEvent('onEngageUnsubscribeEmail', [$comment, $unsubscribeEmail]);
 
-			$message = Text::sprintf('COM_ENGAGE_COMMENTS_LBL_UNSUBSCRIBED', $unsubscribeEmail);
+			$message = Text::sprintf('COM_ENGAGE_COMMENTS_LBL_UNSUBSCRIBED', htmlspecialchars((string) $unsubscribeEmail, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
 			$msgType = 'info';
 		}
 		catch (Exception $e)
