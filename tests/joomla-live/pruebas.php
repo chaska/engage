@@ -3,18 +3,18 @@
  * Pruebas funcionales y de seguridad de Engage contra un Joomla REAL (sin navegador, solo HTTP + SQL de verificacion).
  *
  * Requisitos: haber ejecutado 01-montar-joomla.sh y 02-instalar-engage.sh (o 03-actualizacion.sh).
- * Entorno: WORK (directorio de trabajo con joomla en $WORK/site y credenciales fuera del repo), BASE_URL (por defecto
- * http://127.0.0.1:8080). Salida: tabla en stdout y $WORK/resultados.json. Codigo de salida 1 si algo FALLA.
+ * Entorno: WORK (directorio de trabajo con el Joomla en $WORK/$SITE_DIR y credenciales fuera del repo), BASE_URL (por
+ * defecto http://127.0.0.1:8080), SITE_DIR, IDS_FILE, DB_NAME, DB_USER, ERROR_LOG. Salida: tabla en stdout y $WORK/resultados.json. Codigo de salida 1 si algo FALLA.
  */
 require __DIR__ . '/lib/Cliente.php';
 
 $WORK = rtrim(getenv('WORK') ?: die("Define WORK\n"), '/');
 $BASE = getenv('BASE_URL') ?: 'http://127.0.0.1:8080';
-$SITE = "$WORK/site";
-$ids  = json_decode(file_get_contents("$WORK/ids.json"), true);
+$SITE = "$WORK/" . (getenv('SITE_DIR') ?: 'site');
+$ids  = json_decode(file_get_contents("$WORK/" . (getenv('IDS_FILE') ?: 'ids.json')), true);
 $UP   = trim(file_get_contents("$WORK/userpass.txt"));
 $AP   = 'Aa1!' . trim(file_get_contents("$WORK/adminpass.txt"));
-$db   = new mysqli('127.0.0.1', 'joomla_test', trim(file_get_contents("$WORK/dbpass.txt")), 'joomla_test');
+$db   = new mysqli('127.0.0.1', getenv('DB_USER') ?: 'joomla_test', trim(file_get_contents("$WORK/dbpass.txt")), getenv('DB_NAME') ?: 'joomla_test');
 $db->set_charset('utf8mb4');
 $cfg  = file_get_contents("$SITE/configuration.php");
 preg_match("/public \\\$secret = '([^']+)'/", $cfg, $m);
@@ -104,9 +104,11 @@ $A = $ids['art_publico']; $CP = $ids['cat_publica']; $AS = $ids['art_publico_ass
 param(['default_publish' => '1', 'filter_mode' => null, 'min_length' => null, 'max_length' => null, 'default_limit' => null, 'comments_show' => null]);
 reglas(['core.create' => ['1' => 1], 'core.edit.own' => ['2' => 1], 'core.edit.state' => ['4' => 1], 'core.delete' => ['6' => 1]]);
 limpiar();
+q("UPDATE jos_extensions SET enabled=1 WHERE element='akismet' AND folder='engage'");   // Akismet activo SIN clave: el sitio debe seguir comentando y sin avisos de PHP
 q("UPDATE jos_extensions SET params='{\"mail_style\":\"both\",\"disable_htmllayout\":\"1\"}' WHERE element='com_mails'");
 foreach (glob("$WORK/mails/*.eml") ?: [] as $f) { unlink($f); }
-if (is_file("$WORK/php-errors.log")) { file_put_contents("$WORK/php-errors.log", ''); }
+$ERRLOG = getenv('ERROR_LOG') ?: "$WORK/php-errors.log";
+if (is_file($ERRLOG)) { file_put_contents($ERRLOG, ''); }
 $errLogAntes = 0;
 
 // ======================== FUNCIONALES (F-xx) ========================
@@ -483,7 +485,7 @@ r('PS-33', 'Comentar como invitado con el email de un usuario registrado no reve
 // ======================== PS-29/PS-42 etc no automatizables aqui ========================
 // ======================== CP-06: errores PHP durante todo el flujo ========================
 clearstatcache();
-$errLog = "$WORK/php-errors.log";
+$errLog = $ERRLOG;
 $tam = is_file($errLog) ? filesize($errLog) : 0;
 $nuevo = $tam > $errLogAntes ? substr(file_get_contents($errLog), $errLogAntes) : '';
 $lineas = array_filter(explode("\n", $nuevo));

@@ -64,7 +64,11 @@ class Akismet extends CMSPlugin implements SubscriberInterface
 		 * @var   CommentTable|null $comment The comment to check
 		 * @var   bool              $isNew   Is this a new comment?
 		 */
-		[$comment, $isNew] = array_values($event->getArguments());
+		// CommentModel solo pasa el comentario (sin $isNew): antes daba "Undefined array key 1" y $isNew quedaba nulo.
+		// $isNew solo se toma del evento si es un booleano; si no, se deduce del ID del comentario.
+		$args      = array_values($event->getArguments());
+		$comment   = $args[0] ?? null;
+		$isNew     = (isset($args[1]) && is_bool($args[1])) ? $args[1] : (is_object($comment) ? empty($comment->id) : true);
 		$result = $event->getArgument('result', []);
 
 		if (is_null($comment))
