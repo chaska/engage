@@ -10,6 +10,7 @@ namespace Akeeba\Component\Engage\Site\Controller;
 defined('_JEXEC') or die;
 
 use Akeeba\Component\Engage\Administrator\Controller\CommentsController as AdminCommentsController;
+use Akeeba\Component\Engage\Administrator\Helper\ListLimits;
 use Akeeba\Component\Engage\Administrator\Helper\ListOrdering;
 use Akeeba\Component\Engage\Administrator\Helper\UserFetcher;
 use Akeeba\Component\Engage\Administrator\Mixin\ControllerRedirectionTrait;
@@ -358,8 +359,8 @@ class CommentsController extends AdminCommentsController
 
 		// Apply the custom pagination to the model.
 		$defaultLimit = $this->getDefaultListLimit();
-		$start        = $this->app->getUserStateFromRequest('com_engage.comments.limitstart', 'akengage_limitstart', 0);
-		$limit        = $this->app->getUserStateFromRequest('com_engage.comments.limit', 'akengage_limit', $defaultLimit);
+		$start        = ListLimits::start($this->app->getUserStateFromRequest('com_engage.comments.limitstart', 'akengage_limitstart', 0, 'int'));
+		$limit        = ListLimits::limit($this->app->getUserStateFromRequest('com_engage.comments.limit', 'akengage_limit', $defaultLimit, 'int'), $defaultLimit);
 		$ordering     = ListOrdering::frontendColumn($this->input->get('akengage_order', 'c.created'));
 		$orderDir     = ListOrdering::direction($this->input->get('akengage_order_Dir', 'DESC'));
 
@@ -382,7 +383,7 @@ class CommentsController extends AdminCommentsController
 		{
 			$commentIDs = ArrayHelper::toInteger(array_keys($model->commentIDTreeSliceWithDepth(0, 0) ?: []));
 			$index      = array_search($cid, $commentIDs) ?: 0;
-			$start      = intdiv($index, $limit) * $limit;
+			$start      = ($limit > 0) ? min(intdiv($index, $limit) * $limit, ListLimits::MAX_START) : 0;
 
 			$model->setState('list.start', $start);
 			$this->app->setUserState('com_engage.comments.limitstart', $start);
