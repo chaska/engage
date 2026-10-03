@@ -250,7 +250,7 @@ $bsCommentStateClass =  ($comment->enabled == 1) ? 'secondary' : (($comment->ena
 			<?= HTMLHelper::_('engage.processCommentTextForDisplay', $comment->body) ?>
 			<?php if ($isModified): ?>
 			<div class="my-2 border-top border-1 border-muted text-muted small">
-				<?= Text::sprintf('COM_ENGAGE_LBL_COMMENT_MODIFIED', Factory::getDate($comment->modified)->setTimezone($this->userTimezone)->format(Text::_('DATE_FORMAT_LC2'), true), $modifiedBy) ?>
+				<?= Text::sprintf('COM_ENGAGE_LBL_COMMENT_MODIFIED', Factory::getDate($comment->modified)->setTimezone($this->userTimezone)->format(Text::_('DATE_FORMAT_LC2'), true), htmlspecialchars((string) $modifiedBy, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) ?>
 			</div>
 			<?php endif; ?>
 		</div>

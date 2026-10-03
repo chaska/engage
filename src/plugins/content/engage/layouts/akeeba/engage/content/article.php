@@ -44,7 +44,7 @@ $uri->setFragment('akengage-comments-section');
 <aside class="akenage-comments-counter--featured">
 	<a href="<?= $uri->toString() ?>">
 		<data itemprop="commentCount" value="<?= $numComments ?>">
-			<?= Text::plural($headerKey, $numComments, $row->title) ?>
+			<?= Text::plural($headerKey, $numComments, htmlspecialchars((string) $row->title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) ?>
 		</data>
 	</a>
 </aside>

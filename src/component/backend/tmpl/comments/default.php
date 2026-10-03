@@ -206,7 +206,7 @@ $i = 0;
 
 										<?php if (!is_null($parent) && !empty($parentAuthor)): ?>
 											<div class="engage-in-reply-to text-muted mb-1">
-												<?= Text::sprintf('COM_ENGAGE_COMMENTS_LBL_INREPLYTO', $public_uri->toString(), $parentAuthor) ?>
+												<?= Text::sprintf('COM_ENGAGE_COMMENTS_LBL_INREPLYTO', htmlspecialchars((string) $public_uri->toString(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), htmlspecialchars((string) $parentAuthor, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) ?>
 											</div>
 										<?php endif; ?>
 
