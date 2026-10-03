@@ -8,3 +8,5 @@ Archivos de https://github.com/joomla/joomla-cms **sin modificar** (GPL v2 o pos
 | `6.1-dev/Updater/Update.php` | 6.1-dev | 92d32fe6ea89af52a3c3535144aa1cf95152a782 |
 
 Para refrescarlas: clonar la rama y copiar esos archivos con la misma ruta relativa de `libraries/src/`.
+
+`mail-template/*-MailTemplate.php` (`libraries/src/Mail/MailTemplate.php` sin modificar, usados por `tests/14-mailtemplate-hotfix.php`): 5.2.1 (etiqueta 5.2.1), 5.2.2 (etiqueta 5.2.2), 5.4-dev (commit 45c6f2e68571ed439f8f154fbfe36ccfc43aa654) y 6.1-dev (commit 92d32fe6ea89af52a3c3535144aa1cf95152a782).
