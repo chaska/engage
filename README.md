@@ -37,7 +37,7 @@ La versión se lee de `src/package/pkg_engage.xml`; los nombres de los ZIP, de l
 ## Pendiente y limitaciones conocidas
 
 - **URL de actualizaciones**: `pkg_engage.xml` sigue apuntando a `https://cdn.akeeba.com/updates/pkgengage.xml`. Se cambiará en la Fase 4 (sin tocar de momento).
-- **Idiomas declarados que no existen**: los manifiestos (heredados de upstream) declaran archivos `de-DE`, `el-GR`, `fr-FR` y `nl-NL` (96 en las extensiones, más `de-DE/pkg_engage.sys.ini` en el paquete), y algunos `es-ES`, que la referencia instalada no incluye (solo trae en-GB y es-ES). Los ZIP se generan sin ellos y los manifiestos no se han tocado. No se ha probado cómo reacciona Joomla; hay que decidirlo en una fase posterior (retirar las referencias o aportar los archivos).
+- **Idiomas**: los manifiestos de upstream declaraban 97 archivos `de-DE`, `el-GR`, `fr-FR` y `nl-NL` que no existen. Desde la 0.5.2 ya no se declaran y el paquete declara también `es-ES/pkg_engage.sys.ini`. Idiomas incluidos: en-GB y es-ES.
 - No se ha instalado en Joomla: solo se verifica la estructura de los ZIP frente a los manifiestos.
 
 ## Extensiones del paquete (`pkg_engage`)
