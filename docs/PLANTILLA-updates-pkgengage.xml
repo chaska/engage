@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  PLANTILLA para la Fase 4 (servidor de actualizaciones propio). NO está publicada en ningún sitio, NO la usa el
+  paquete y las URL son marcadores. Muestra los campos que Joomla 5 y 6 comprueban en la actualización
+  (libraries/src/Updater/ConstraintChecker.php): targetplatform es obligatorio; php_minimum y supported_databases
+  son opcionales pero recomendados. El manifiesto de instalación (pkg_engage.xml) no admite estos campos.
+-->
+<updates>
+	<update>
+		<name>Engage</name>
+		<description>Engage, sistema de comentarios para Joomla (fork comunitario)</description>
+		<element>pkg_engage</element>
+		<type>package</type>
+		<version>X.Y.Z</version>
+		<infourl title="Engage">https://EJEMPLO.INVALID/engage</infourl>
+		<downloads>
+			<downloadurl type="full" format="zip">https://EJEMPLO.INVALID/descargas/pkg_engage-X.Y.Z.zip</downloadurl>
+		</downloads>
+		<tags>
+			<tag>stable</tag>
+		</tags>
+		<maintainer>PENDIENTE</maintainer>
+		<maintainerurl>https://EJEMPLO.INVALID</maintainerurl>
+		<targetplatform name="joomla" version="((5\.[0-9])|(6\.[0-9]))"/>
+		<php_minimum>8.1</php_minimum>
+		<supported_databases mysql="8.0.13" mariadb="10.4.0"/>
+	</update>
+</updates>
