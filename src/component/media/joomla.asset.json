@@ -66,6 +66,19 @@
 		},
 
 		{
+			"name": "com_engage.gravatar",
+			"description": "Gravatar consent (opt-in) JavaScript",
+			"type": "script",
+			"uri": "com_engage/gravatar.js",
+			"dependencies": [
+				"core"
+			],
+			"attributes": {
+				"defer": true
+			}
+		},
+
+		{
 			"name": "com_engage.backend",
 			"type": "preset",
 			"dependencies": [

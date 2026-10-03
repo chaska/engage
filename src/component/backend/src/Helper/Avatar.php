@@ -25,7 +25,7 @@ defined('_JEXEC') or die;
 class Avatar
 {
 	/**
-	 * Cache of avatars per user ID
+	 * Cache of avatars per user ID. Each item is an array with keys src, deferred and notice.
 	 *
 	 * @var   array
 	 * @since 3.0.0
@@ -46,6 +46,26 @@ class Avatar
 	 */
 	public static function getUserAvatar(?int $user_id, int $size = 128, $fallbackEmail = null): string
 	{
+		return self::getUserAvatarData($user_id, $size, $fallbackEmail)['src'];
+	}
+
+	/**
+	 * Get the user's avatar image plus, if the avatar provider asked for it, a third party URL which must NOT be loaded
+	 * until the visitor consents (see the Gravatar plugin, mode "ask").
+	 *
+	 * @param   int|null  $user_id        User ID to get the avatar for
+	 * @param   int       $size           Image width in pixels
+	 * @param   null      $fallbackEmail  Fallback email address is the user does not exist
+	 *
+	 * @return  array{src: string, deferred: string, notice: bool}  src is always safe to put in the img src; deferred is
+	 *                                                              empty or a URL for the data-engage-gravatar attribute
+	 * @throws  Exception
+	 * @since   0.6.17
+	 */
+	public static function getUserAvatarData(?int $user_id, int $size = 128, $fallbackEmail = null): array
+	{
+		$empty = ['src' => '', 'deferred' => '', 'notice' => true];
+
 		// Get the user and the normalised user ID.
 		$user    = (is_numeric($user_id) && ($user_id > 0)) ? UserFetcher::getUser($user_id) : null;
 		$user_id = is_object($user) ? $user->id : null;
@@ -55,22 +75,13 @@ class Avatar
 		{
 			if (empty($fallbackEmail))
 			{
-				return $fallbackEmail;
+				return $empty;
 			}
 
 			$fakeUser        = new User();
 			$fakeUser->email = $fallbackEmail;
 
-			$avatars = array_filter(self::getAvatarFromPluginEvents($fakeUser, $size), function ($x) {
-				return !empty($x);
-			});
-
-			if (empty($avatars))
-			{
-				return '';
-			}
-
-			return array_shift($avatars);
+			return self::pickAvatar(self::getAvatarFromPluginEvents($fakeUser, $size));
 		}
 
 		if (array_key_exists($user_id, self::$avatarImages))
@@ -79,23 +90,46 @@ class Avatar
 		}
 
 		// Support custom fields
-		self::$avatarImages[$user_id] = self::getAvatarFromCustomField($user_id);
+		$fromField = self::getAvatarFromCustomField($user_id);
 
-		if (!empty(self::$avatarImages[$user_id]))
+		if (!empty($fromField))
 		{
-			return self::$avatarImages[$user_id];
+			return self::$avatarImages[$user_id] = ['src' => $fromField, 'deferred' => '', 'notice' => true];
 		}
 
 		// TODO Support Joomla plugin events — if Joomla ever has such an event...
 
 		// Support our custom plugin events
-		$avatars = array_filter(self::getAvatarFromPluginEvents($user, $size), function ($x) {
-			return !empty($x);
+		return self::$avatarImages[$user_id] = self::pickAvatar(self::getAvatarFromPluginEvents($user, $size));
+	}
+
+	/**
+	 * Picks the first non-empty avatar from the plugin event results, with its deferred (consent-gated) URL if any.
+	 *
+	 * @param   array  $eventData  ['results' => string[], 'deferred' => array<string, array{url: string, notice: bool}>]
+	 *
+	 * @return  array{src: string, deferred: string, notice: bool}
+	 * @since   0.6.17
+	 */
+	private static function pickAvatar(array $eventData): array
+	{
+		$avatars = array_filter($eventData['results'] ?? [], function ($x) {
+			return is_string($x) && !empty($x);
 		});
 
-		self::$avatarImages[$user_id] = empty($avatars) ? '' : array_shift($avatars);
+		if (empty($avatars))
+		{
+			return ['src' => '', 'deferred' => '', 'notice' => true];
+		}
 
-		return self::$avatarImages[$user_id];
+		$src      = array_shift($avatars);
+		$deferred = $eventData['deferred'][$src] ?? null;
+
+		return [
+			'src'      => $src,
+			'deferred' => (is_array($deferred) && is_string($deferred['url'] ?? null)) ? $deferred['url'] : '',
+			'notice'   => !is_array($deferred) || !array_key_exists('notice', $deferred) || (bool) $deferred['notice'],
+		];
 	}
 
 	/**
@@ -201,7 +235,7 @@ class Avatar
 	 * @param   User  $user  The user to get the avatar for
 	 * @param   int   $size  The desired avatar maximum dimension in pixels.
 	 *
-	 * @return  array
+	 * @return  array  ['results' => string[], 'deferred' => array]
 	 * @since   3.0.0
 	 */
 	private static function getAvatarFromPluginEvents(User $user, int $size): array
@@ -215,11 +249,17 @@ class Avatar
 			$event      = new Event($eventName, [$user, $size]);
 			$result     = $dispatcher->dispatch($eventName, $event);
 
-			return !isset($result['result']) || \is_null($result['result']) ? [] : $result['result'];
+			$results  = !isset($result['result']) || \is_null($result['result']) ? [] : $result['result'];
+			$deferred = $result->getArgument('deferred', []);
+
+			return [
+				'results'  => \is_array($results) ? $results : [],
+				'deferred' => \is_array($deferred) ? $deferred : [],
+			];
 		}
 		catch (Exception $e)
 		{
-			return [];
+			return ['results' => [], 'deferred' => []];
 		}
 	}
 

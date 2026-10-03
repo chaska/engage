@@ -11,6 +11,7 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\Event\Event;
 use Joomla\Event\SubscriberInterface;
 
@@ -107,5 +108,14 @@ class Engagecache extends CMSPlugin implements SubscriberInterface
 
 		Text::script('COM_ENGAGE_COMMENTS_FORM_BTN_SUBMIT_PLEASE_WAIT');
 		Text::script('COM_ENGAGE_COMMENTS_DELETE_PROMPT');
+		// Texts of the Gravatar consent notice; only when that plugin is enabled (no change for other sites).
+		if (PluginHelper::isEnabled('engage', 'gravatar'))
+		{
+			Text::script('COM_ENGAGE_GRAVATAR_NOTICE_TEXT');
+			Text::script('COM_ENGAGE_GRAVATAR_BTN_ACCEPT');
+			Text::script('COM_ENGAGE_GRAVATAR_BTN_REVOKE');
+			Text::script('COM_ENGAGE_GRAVATAR_STATUS_ON');
+			Text::script('COM_ENGAGE_GRAVATAR_NOTICE_LABEL');
+		}
 	}
 }
