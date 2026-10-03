@@ -5,6 +5,10 @@
  * No contiene contrasenas: las recibe por entorno (TEST_USER_PASS).
  */
 define('_JEXEC', 1);
+// Algunas extensiones construyen una aplicacion web aunque estemos en CLI: que sepa el host.
+$_SERVER['HTTP_HOST'] = $_SERVER['HTTP_HOST'] ?? (parse_url(getenv('BASE_URL') ?: 'http://127.0.0.1:8080', PHP_URL_HOST) . ':' . (parse_url(getenv('BASE_URL') ?: 'http://127.0.0.1:8080', PHP_URL_PORT) ?: 80));
+$_SERVER['REQUEST_URI'] = $_SERVER['REQUEST_URI'] ?? '/';
+$_SERVER['SCRIPT_NAME'] = '/index.php';
 $site = getenv('JOOMLA_SITE') ?: die("Define JOOMLA_SITE\n");
 define('JPATH_BASE', $site);
 require JPATH_BASE . '/includes/defines.php';
@@ -42,6 +46,8 @@ function guardar($model, array $data, string $que)
 
 // Categorias: publica y restringida (nivel Registered = 2)
 foreach (['publica' => 1, 'restringida' => 2] as $nom => $acc) {
+	$ya = (int) $db->setQuery($db->getQuery(true)->select('id')->from('#__categories')->where('extension=' . $db->quote('com_content') . ' AND title=' . $db->quote('Cat ' . $nom)))->loadResult();
+	if ($ya) { $out['cat_' . $nom] = $ya; continue; }   // idempotente
 	$m = $cat->createModel('Category', 'Administrator', ['ignore_request' => true]);
 	$out['cat_' . $nom] = guardar($m, ['id' => 0, 'title' => 'Cat ' . $nom, 'extension' => 'com_content', 'published' => 1, 'access' => $acc, 'parent_id' => 1, 'language' => '*'], "categoria $nom");
 }
@@ -53,8 +59,14 @@ $arts = [
 	'art_otro'        => ['Otro articulo publico', 'cat_publica', 1, 1],
 ];
 foreach ($arts as $k => [$t, $c, $acc, $pub]) {
+	$ya = (int) $db->setQuery($db->getQuery(true)->select('id')->from('#__content')->where('alias=' . $db->quote('a-' . str_replace('_', '-', $k))))->loadResult();
+	if ($ya) {
+		$out[$k] = $ya;
+		$out[$k . '_asset'] = (int) $db->setQuery($db->getQuery(true)->select('asset_id')->from('#__content')->where('id=' . $ya))->loadResult();
+		continue;
+	}
 	$m = $mvc->createModel('Article', 'Administrator', ['ignore_request' => true]);
-	$out[$k] = guardar($m, ['id' => 0, 'title' => $t, 'alias' => 'a-' . $k, 'catid' => $out[$c], 'state' => $pub, 'access' => $acc, 'language' => '*', 'introtext' => '<p>Texto de prueba ' . $k . '</p>', 'fulltext' => '', 'featured' => 1], "articulo $k");
+	$out[$k] = guardar($m, ['id' => 0, 'title' => $t, 'alias' => 'a-' . str_replace('_', '-', $k), 'catid' => $out[$c], 'state' => $pub, 'access' => $acc, 'language' => '*', 'introtext' => '<p>Texto de prueba ' . $k . '</p>', 'fulltext' => '', 'featured' => 1], "articulo $k");
 	$out[$k . '_asset'] = (int) $db->setQuery($db->getQuery(true)->select('asset_id')->from('#__content')->where('id=' . $out[$k]))->loadResult();
 }
 
