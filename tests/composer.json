@@ -1,0 +1,8 @@
+{
+    "description": "Dependencias SOLO para las pruebas del fork (no se empaquetan). Instalar con: composer install --working-dir=tests",
+    "require": {
+        "php": ">=8.1",
+        "joomla/filesystem": "^4.2"
+    },
+    "config": {"sort-packages": true}
+}

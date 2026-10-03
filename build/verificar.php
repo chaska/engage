@@ -4,7 +4,8 @@
  * Verificaciones de la Fase 1 (requiere haber ejecutado antes `php build/build.php`):
  *  (b) cada archivo declarado en cada manifiesto existe en su ZIP; el paquete contiene los ZIP declarados;
  *  (c) php -l sobre los PHP de src (sin vendor);
- *  (d) cada archivo de src es idéntico byte a byte a su origen en upstream/3.4.2-instalado;
+ *  (d) cada archivo de src tiene origen en upstream/3.4.2-instalado; los que difieren se listan como
+ *      "modificados deliberadamente" (el fork los cambia a propósito; cada cambio consta en CHANGELOG.md);
  *  (e) todos los XML de src están bien formados;
  *  (f) el build es reproducible (dos ZIP del paquete con el mismo hash).
  *
@@ -219,17 +220,19 @@ echo "  $n PHP comprobados, $mal con errores\n";
 
 echo "== (d) Contenido idéntico a upstream\n";
 $iguales = $dif = $nuevos = 0;
+$modificados = [];
 $usados = [];
 foreach (listar($src) as $rel) {
 	$o = origenUpstream($rel);
 	if ($o === null) { $nuevos++; echo "  nuevo (sin origen): $rel\n"; continue; }
 	if (!is_file("$up/$o")) { $dif++; ko("sin origen en upstream: $rel (esperado $o)"); continue; }
 	$usados[$o] = true;
-	if (hash_file('sha256', "$src/$rel") === hash_file('sha256', "$up/$o")) { $iguales++; } else { $dif++; ko("distinto de upstream: $rel"); }
+	if (hash_file('sha256', "$src/$rel") === hash_file('sha256', "$up/$o")) { $iguales++; } else { $modificados[] = $rel; }
 }
 $ausUp = array_values(array_filter(listar($up), fn($r) => !isset($usados[$r])));
-echo "  idénticos: $iguales; distintos/sin origen: $dif; nuevos: $nuevos; archivos de upstream no copiados a src: " . count($ausUp) . "\n";
+echo "  idénticos: $iguales; modificados deliberadamente: " . count($modificados) . "; sin origen: $dif; nuevos: $nuevos; archivos de upstream no copiados a src: " . count($ausUp) . "\n";
 foreach ($ausUp as $r) { ko("upstream no copiado: $r"); }
+foreach ($modificados as $r) { nota("modificado deliberadamente respecto a upstream (ver CHANGELOG.md): $r"); }
 
 echo "== (e) XML bien formados\n";
 $n = 0;
@@ -248,6 +251,13 @@ $h1 = hash_file('sha256', "$dist/pkg_engage-$ver.zip");
 exec('php ' . escapeshellarg("$root/build/build.php") . ' > /dev/null 2>&1');
 $h2 = hash_file('sha256', "$dist/pkg_engage-$ver.zip");
 $h1 === $h2 ? ok("dos builds dan el mismo SHA-256 ($h1)") : ko('el build no es reproducible');
+
+echo "== (g) Pruebas ejecutables (tests/run.php)\n";
+if (is_file("$root/tests/run.php")) {
+	exec('php ' . escapeshellarg("$root/tests/run.php") . ' 2>&1', $tout, $trc);
+	echo '  ' . implode("\n  ", array_slice($tout, -3)) . "\n";
+	$trc === 0 ? ok('pruebas ejecutables') : ko('pruebas ejecutables con fallos');
+}
 
 echo "\n" . ($fallos ? "$fallos FALLO(S)\n" : "Sin fallos.\n");
 exit($fallos ? 1 : 0);

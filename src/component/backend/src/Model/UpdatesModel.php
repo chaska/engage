@@ -10,7 +10,7 @@ namespace Akeeba\Component\Engage\Administrator\Model;
 defined('_JEXEC') or die;
 
 use Exception;
-use Joomla\CMS\Filesystem\File;
+use Joomla\Filesystem\File;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\Table\Extension;
