@@ -11,6 +11,9 @@ fi
 cp "$PKG" "$WORK/pkg-actual.zip"
 cd "$WORK/$SITE_DIR"
 php cli/joomla.php extension:install --path="$WORK/pkg-actual.zip" 2>&1 | tail -3
+# Tras instalar hay que reiniciar el servidor `php -S` (opcache/cache de rutas del proceso) y borrar los mapas de clases.
+rm -f cache/autoload_psr4.php administrator/cache/autoload_psr4.php
+bash "$AQUI/lib/servidor.sh"
 M="mysql $DB_NAME -t -e"
 $M "SELECT extension_id, type, element, folder, enabled, JSON_VALUE(manifest_cache,'\$.version') AS version FROM jos_extensions WHERE element LIKE '%engage%' OR folder='engage' ORDER BY type, folder, element"
 $M "SHOW TABLES LIKE 'jos_engage%'"

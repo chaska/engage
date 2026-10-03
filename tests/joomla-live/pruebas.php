@@ -167,14 +167,16 @@ r('F-16', 'Los enlaces de los correos de texto plano no llevan "&amp;" (si lo ll
 $planos = '';
 foreach (glob("$mailDir/*.eml") ?: [] as $fm) {
 	$raw = file_get_contents($fm);
-	if (preg_match('/Content-Type: text\/plain.*?\r?\n\r?\n(.*?)(\r?\n--|\z)/s', $raw, $mp)) { $planos .= quoted_printable_decode($mp[1]) . "\n"; }
-	if ($planos === '') { $planos = $raw; }
+	if (preg_match('/(Content-Type: text\/plain.*?)\r?\n\r?\n(.*?)(\r?\n--|\z)/s', $raw, $mp)) {
+		// solo se decodifica si ESA parte declara quoted-printable (si no, "=ad" de "email=admin" se leeria como 0xAD)
+		$planos .= (stripos($mp[1], 'quoted-printable') !== false ? quoted_printable_decode($mp[2]) : $mp[2]) . "\n";
+	}
 }
 if (preg_match('#unsubscribe: (https?://\S+)#', $planos, $mu)) {
 	q('DELETE FROM jos_engage_unsubscribe');
-	$cu = new Cliente($BASE, $tmp, 'baja'); $cu->get(html_entity_decode($mu[1], ENT_NOQUOTES));
+	$cu = new Cliente($BASE, $tmp, 'baja'); $rb = $cu->get($mu[1]);
 	$cu2 = (int) one('SELECT COUNT(*) FROM jos_engage_unsubscribe');
-	r('F-17', 'El enlace de baja del correo de texto plano, abierto tal cual (sin sesion), registra la baja', $cu2 === 1 && strpos($mu[1], 'amp;') === false ? 'PASA' : 'FALLA', 'filas de baja=' . $cu2);
+	r('F-17', 'El enlace de baja del correo de texto plano, abierto tal cual (sin sesion), registra la baja', $cu2 === 1 && strpos($mu[1], 'amp;') === false ? 'PASA' : 'FALLA', 'filas de baja=' . $cu2 . ' HTTP ' . $rb['code'] . ' ' . $rb['err'] . ' ' . snip(preg_replace(['/token=\w+/', '/[^\x21-\x7e]/'], ['token=...', '?'], $mu[1]), 400));
 } else { r('F-17', 'Enlace de baja en el correo de texto plano', 'NO PROBADA', 'no se encontro enlace de baja en los correos'); }
 
 // ======================== PS-01 / PS-02 / PS-03: XSS ========================
@@ -481,6 +483,29 @@ $x2 = comentar($inv3, 'art_publico', ['email' => 'no-existe-xyz@example.test', '
 $s1 = [$x1['code'], preg_replace('/\W/', '', $x1['loc'])]; $s2 = [$x2['code'], preg_replace('/\W/', '', $x2['loc'])];
 $m1 = (string) preg_match('/alert-(message|error|warning)[^>]*>(.*?)<\/div>/s', $inv2->get(urlArt($A, $CP))['body'], $mm1);
 r('PS-33', 'Comentar como invitado con el email de un usuario registrado no revela si existe (misma respuesta que con un email inexistente)', $s1 === $s2 ? 'PASA' : 'FALLA', 'codigos ' . $x1['code'] . '/' . $x2['code']);
+
+// PS-41 / 0.6.10: el comando de consola se registra y se ejecuta (con 0.6.9 desaparecia de `list` por una excepcion de Symfony silenciada)
+$lista = (string) shell_exec('cd ' . escapeshellarg($SITE) . ' && php cli/joomla.php list 2>&1');
+$salida = (string) shell_exec('cd ' . escapeshellarg($SITE) . ' && php cli/joomla.php engage:cleanspam 2>&1');
+$salida2 = (string) shell_exec('cd ' . escapeshellarg($SITE) . ' && php cli/joomla.php engage:cleanspam abc xyz 2>&1');
+r('PS-41', 'CLI: engage:cleanspam aparece en `list`, se ejecuta y tolera argumentos no numericos', (strpos($lista, 'engage:cleanspam') !== false && strpos($salida, 'spam comments were permanently deleted') !== false && strpos($salida2, 'permanently deleted') !== false) ? 'PASA' : 'FALLA', strpos($lista, 'engage:cleanspam') === false ? 'no aparece en list' : snip(preg_replace('/\s+/', ' ', $salida2), 80));
+
+// PS-23 (parcial): borrar un usuario que comento. Observacion: el comentario se conserva con created_by apuntando a un ID que ya no existe
+// (no se anonimiza con el plugin de privacidad desactivado) y la pagina debe seguir mostrandose sin errores.
+$cli = 'cd ' . escapeshellarg($SITE) . ' && php cli/joomla.php';
+shell_exec("$cli user:delete --username=borrame -n 2>&1");
+shell_exec("$cli user:add --username=borrame --name=Borrame --email=borrame@example.test --password=" . escapeshellarg($UP) . " --usergroup=Registered 2>&1");
+$bor = new Cliente($BASE, $tmp, 'bor');
+if ($bor->login('borrame', $UP)) {
+	comentar($bor, 'art_publico', ['body' => 'comentario de usuario que se borrara']);
+	$uid = (int) one("SELECT id FROM jos_users WHERE username='borrame'");
+	$antes = (int) one("SELECT COUNT(*) FROM jos_engage_comments WHERE created_by=$uid");
+	shell_exec("$cli user:delete --username=borrame -n 2>&1");
+	$despues = (int) one("SELECT COUNT(*) FROM jos_engage_comments WHERE created_by=$uid");
+	$pg = $inv->get(urlArt($A, $CP) . '&akengage_limit=100');
+	r('PS-23', 'Borrar un usuario con comentarios: la pagina sigue respondiendo 200 sin errores (el comentario queda con created_by huerfano, sin anonimizar)', $pg['code'] === 200 && $antes === 1 ? 'PASA' : 'FALLA', "comentarios antes=$antes despues=$despues (huerfanos), HTTP {$pg['code']}");
+	q("DELETE FROM jos_engage_comments WHERE created_by=$uid");
+} else { r('PS-23', 'Borrar un usuario con comentarios', 'NO PROBADA', 'no se pudo crear/entrar con el usuario temporal'); }
 
 // ======================== PS-29/PS-42 etc no automatizables aqui ========================
 // ======================== CP-06: errores PHP durante todo el flujo ========================

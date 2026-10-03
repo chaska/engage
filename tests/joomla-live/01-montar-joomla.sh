@@ -34,10 +34,6 @@ done
 php cli/joomla.php user:addtogroup --username=editor1 --group=Editor >/dev/null
 php cli/joomla.php --version
 
-# Servidor web de pruebas (php -S con router) con todos los avisos de PHP a un registro propio
-PIDF="$WORK/php-server-${PORT}.pid"
-[ -f "$PIDF" ] && kill "$(cat "$PIDF")" 2>/dev/null || true
-(setsid nohup php -d error_reporting=-1 -d display_errors=0 -d log_errors=1 -d error_log="$WORK/php-errors-${SITE_DIR}.log" \
-	-S 127.0.0.1:${PORT} -t "$WORK/$SITE_DIR" "$AQUI/lib/router.php" >"$WORK/php-server-${PORT}.log" 2>&1 & echo $! > "$PIDF")
-sleep 2
+# Servidor web de pruebas (php -S con router)
+bash "$AQUI/lib/servidor.sh"
 for u in / /administrator/; do printf '%s -> HTTP %s\n' "$u" "$(curl -s -o /dev/null -w '%{http_code}' "${BASE_URL}${u}")"; done
