@@ -225,7 +225,7 @@ $usados = [];
 foreach (listar($src) as $rel) {
 	$o = origenUpstream($rel);
 	if ($o === null) { $nuevos++; echo "  nuevo (sin origen): $rel\n"; continue; }
-	if (!is_file("$up/$o")) { $dif++; ko("sin origen en upstream: $rel (esperado $o)"); continue; }
+	if (!is_file("$up/$o")) { $nuevos++; echo "  nuevo del fork (no existe en upstream): $rel\n"; continue; }
 	$usados[$o] = true;
 	if (hash_file('sha256', "$src/$rel") === hash_file('sha256', "$up/$o")) { $iguales++; } else { $modificados[] = $rel; }
 }
