@@ -8,6 +8,7 @@
 - Por qué: el enlace de un correo para un comentario valía 24 h para cualquier otro comentario del mismo artículo y sustituía al token CSRF en acciones que cambian estado por GET; además se enviaba a destinatarios que no son moderadores.
 - Archivos: `src/component/frontend/src/Helper/SignedURL.php`, `src/component/frontend/src/Mixin/ControllerFrontendCommentsTrait.php`, `src/plugins/engage/email/src/Extension/Email.php`.
 - Impacto colateral a revisar: los enlaces ya enviados por correo (válidos 24 h) dejan de funcionar tras actualizar; el moderador pasará por la pantalla de inicio de sesión/token. Los permisos se evalúan con `authorise(..., 'com_engage')` (el mismo nivel que usan los modelos). Plantillas de correo personalizadas que muestran un botón "Publicar/Eliminar/Spam" a destinatarios sin permiso verán ahora el enlace del comentario. No probado en Joomla real ni con un correo real.
+- Corrección de herramientas de prueba: el stub de `Uri` se movió a la prueba 05 (las demás pruebas no cargan joomla/uri).
 - Pruebas: `tests/05-enlaces-firmados.php` (clase `SignedURL` y trait reales con Uri/Crypt del framework o stubs): token del comentario 5 en el 6, `cid[]` y `id` adicionales, cid anidado o no numérico, token del formato antiguo, tarea/correo/asset/caducidad/clave alterados, y el caso legítimo.
 
 ## 0.4.2 — 2026-10-03 (Fase 3, paso 3b: mapeo de filtros de Joomla a HTML Purifier, S4, y mayúsculas del autoload, S7)

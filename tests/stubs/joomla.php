@@ -112,6 +112,3 @@ namespace Joomla\CMS\Router {
 		public static function _($url, $xhtml = true, $tls = 0, $absolute = false) { return 'https://example.com/' . $url; }
 	}
 }
-namespace Joomla\CMS\Uri {
-	class Uri extends \Joomla\Uri\Uri {}
-}

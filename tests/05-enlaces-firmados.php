@@ -9,6 +9,7 @@ namespace {
 	require __DIR__ . '/stubs/joomla.php';
 }
 
+namespace Joomla\CMS\Uri { class Uri extends \Joomla\Uri\Uri {} }
 namespace Joomla\CMS\Application { class CMSApplication {} }
 namespace Joomla\Utilities {
 	class ArrayHelper { public static function toInteger($a) { return array_map('intval', (array) $a); } }
