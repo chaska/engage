@@ -1,5 +1,16 @@
 # Registro de cambios del fork
 
+## 0.4.2 — 2026-10-03 (Fase 3, paso 3b: mapeo de filtros de Joomla a HTML Purifier, S4, y mayúsculas del autoload, S7)
+- Qué (todo en `HtmlFilter.php`):
+  1. S7: `HTMLPUrifier.auto.php` / `HTMLPUrifier.includes.php` -> `HTMLPurifier.auto.php` / `HTMLPurifier.includes.php`. Con las opciones de carga `auto` y `all` (Configuración > Avanzado) se producía un `require_once` fatal en sistemas de archivos que distinguen mayúsculas (Linux).
+  2. S4 (solo con "usar la configuración de filtros de texto de Joomla" activada): la lista blanca recibía un booleano (`$whiteList`) en vez de las etiquetas, lo que daba `TypeError` en PHP 8; los atributos permitidos se calculaban a partir de las etiquetas; los atributos prohibidos de la lista negra se pasaban como si fueran etiquetas; con "lista negra personalizada" los atributos se guardaban en la lista de etiquetas; y en la lista negra por defecto la lista de atributos pisaba la de etiquetas. Ahora cada lista va a su sitio.
+  3. Lista negra por defecto: la lista efectiva es la de Joomla por defecto + la configurada - lo explícitamente permitido (igual que `ComponentHelper::filterText`); antes las etiquetas configuradas se ignoraban salvo en el caso de la lista blanca. Es más restrictivo, no menos.
+  4. Las listas se pasan a HTML Purifier con `array_values` (`array_unique`/`array_diff` dejan huecos en los índices y HTML Purifier trata esos arrays como tabla de búsqueda, lo que provocaba un aviso/valor inválido).
+- Por qué / causa raíz: la ruta de configuración "Joomla" de HTML Purifier nunca se probó; los errores eran de nombres de variable copiados entre bloques. Revisados los demás sitios que construyen listas de este tipo (`getHTMLPurifier`, `getJoomlaFilterSettings`): no hay más. El panel (`HtmlView`) y el correo (`Email.php`) construyen su propio purificador con lista fija y no se ven afectados.
+- Archivo: `src/component/backend/src/Helper/HtmlFilter.php`.
+- Impacto colateral a revisar: si había una instalación con "usar los filtros de Joomla" activado, antes (con lista blanca de Joomla) fallaba con error; con lista negra las etiquetas/atributos configurados ahora también se eliminan. Por defecto la opción está desactivada y no cambia nada.
+- Pruebas: `tests/04-htmlfilter-mapeo.php` (HTML Purifier real; stubs de Joomla con la forma de joomla/filter 4.x): carga en modos composer/auto/all en procesos aparte, y mapeo CBL, BL+WL y WL (también con duplicados y sin atributos) comprobando listas y HTML resultante. Con el código anterior la prueba da 12 fallos/fatales; con el nuevo pasa.
+
 ## 0.4.1 — 2026-10-03 (Fase 3, paso 3a: purificación al mostrar, S2 y S3)
 - Qué:
   1. `HtmlFilter::purify()` ya no devuelve el texto crudo cuando el filtro de Joomla del espectador es "Sin filtrar" (`none`, el valor por defecto de Super Usuarios): HTML Purifier se ejecuta siempre en los modos `strict` y `htmlpurifier`. Con "usar la configuración de filtros de Joomla" activada, el caso `none` usa la lista blanca estricta en vez de dejar HTML Purifier sin restricciones.

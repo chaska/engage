@@ -88,8 +88,9 @@ namespace Joomla\CMS\Access {
 namespace Joomla\CMS\Filter {
 	class InputFilter
 	{
-		public $tagBlacklist = ['applet', 'body', 'embed', 'frame', 'iframe', 'object', 'script', 'style'];
-		public $attrBlacklist = ['action', 'background', 'codebase', 'dynsrc', 'formaction', 'lowsrc'];
+		// Como joomla/filter 4.x (Joomla 5 y 6): propiedades públicas blockedTags / blockedAttributes.
+		public $blockedTags = ['applet', 'body', 'embed', 'frame', 'iframe', 'object', 'script', 'style'];
+		public $blockedAttributes = ['action', 'background', 'codebase', 'dynsrc', 'formaction', 'lowsrc'];
 		public static function getInstance($t = [], $a = [], $tm = 0, $am = 0, $xss = 1) { return new self(); }
 	}
 }
