@@ -1,6 +1,6 @@
 # Cómo publicar una versión (release) del fork
 
-Copyright (c)2026 fork comunitario de Engage; GNU General Public License v3 o posterior.
+Copyright (c)2026 fork comunitario de Engage iniciado por ChasKa; GNU General Public License v3 o posterior.
 
 Estado actual: la versión **3.4.2.1** está preparada en el repositorio, pero **el ZIP y la release todavía no existen en GitHub**. Hasta que se publiquen (pasos de abajo), el servidor de actualizaciones (`updates/pkgengage.xml`) apunta a una descarga que da error 404. Joomla no instala nada en ese caso (falla la descarga y no toca el sitio), pero conviene publicar la release justo después de sincronizar `main`.
 

@@ -1,7 +1,7 @@
 <?php
 /**
  * 0.6.1: servidor de actualizaciones propio (updates/pkgengage.xml).
- * Copyright (c)2026 fork comunitario de Engage; GNU General Public License v3 o posterior.
+ * Copyright (c)2026 fork comunitario de Engage iniciado por ChasKa; GNU General Public License v3 o posterior.
  *
  * Interpreta el XML con las clases REALES de Joomla (Update.php de 5.4-dev y de 6.1-dev, InstallerHelper.php y los
  * rasgos de Object, copiados sin modificar en tests/joomla-real/; ver LEEME.md). Solo se simulan sus dependencias
