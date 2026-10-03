@@ -25,7 +25,7 @@ use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\DatabaseDriver;
 use Joomla\Database\DatabaseInterface;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class CleanSpam extends AbstractCommand implements DatabaseAwareInterface
@@ -60,8 +60,8 @@ class CleanSpam extends AbstractCommand implements DatabaseAwareInterface
 		$cParams        = ComponentHelper::getParams('com_engage');
 		$defaultMaxDays = (int) $cParams->get('max_spam_age', 15);
 
-		$this->addArgument('max-time', InputOption::VALUE_OPTIONAL, Text::_('COM_ENGAGE_CLI_CLEANSPAM_MAX_TIME'), 10);
-		$this->addArgument('max-days', InputOption::VALUE_OPTIONAL, Text::_('COM_ENGAGE_CLI_CLEANSPAM_MAX_DAYS'), $defaultMaxDays);
+		$this->addArgument('max-time', InputArgument::OPTIONAL, Text::_('COM_ENGAGE_CLI_CLEANSPAM_MAX_TIME'), 10);
+		$this->addArgument('max-days', InputArgument::OPTIONAL, Text::_('COM_ENGAGE_CLI_CLEANSPAM_MAX_DAYS'), $defaultMaxDays);
 	}
 
 	/**
@@ -111,8 +111,8 @@ class CleanSpam extends AbstractCommand implements DatabaseAwareInterface
 			sprintf('PHP %s (%s)', PHP_VERSION, PHP_SAPI),
 		]);
 
-		$maxTime = max($maxTime, 1);
-		$maxDays = max($maxDays, 0);
+		$maxTime = max((int) $maxTime, 1);
+		$maxDays = max((int) $maxDays, 0);
 
 		$this->ioStyle->info(Text::plural('COM_ENGAGE_CRON_SPAM_MSG_DELETINGOLDSPAM_N', $maxDays));
 		$this->ioStyle->comment(Text::plural('COM_ENGAGE_CRON_SPAM_MSG_RUNNINGFOR_N', $maxTime));
