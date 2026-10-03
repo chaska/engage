@@ -1,5 +1,14 @@
 # Registro de cambios del fork
 
+## 0.6.5 — 2026-10-03
+### Documentación
+- docs/PRUEBAS-SEGURIDAD-JOOMLA6.md: CVE del núcleo contrastados con developer.joomla.org/security-centre (nueva marca [OF]); la comprobación la hizo Chas en su navegador y se aplica aquí tal como la entregó.
+- Corregidas asignaciones erróneas: CVE-2026-21631 (XSS comparación com_associations en 6.0.4; antes 25901), 48900 = ACL com_scheduler, 48901 = clave de caché InputFilter, 48902 = degradación de transporte en reseteo (no XSS). Afecta a PS-01, PS-34 y línea de filterText.
+- Añadidos los CVE que faltaban de 6.0.4, 6.1.1, 6.1.2, 6.1.3 y 6.1.4 (21629, 21632, 23899, 25900, 30894, 30895, 35220, 35223, 40384, 48947-48958, 72531, 72532, 73371, 73372, 92226).
+- Fecha de 6.0.2 fijada en 2026-01-06; 6.1.1 tiene 20 avisos; CVSS de terceros sustituidos por la severidad oficial JSST.
+- Pendiente: la nota de corrección habla de "54 avisos en total desde 6.0.0", pero su desglose mensual (2+6+20+12+10+16) suma 66; se dejó el desglose y se anotó la discrepancia. La tabla de categorías de la sección 2 no se ha recontado.
+- Sin cambios de código ni del ZIP.
+
 ## 0.6.4 — 2026-10-03
 - Qué: nuevo `docs/PRUEBAS-SEGURIDAD-JOOMLA6.md` (solo documentación): cronología de incidentes de Joomla desde 6.0 (14-oct-2025), clases de vulnerabilidad vs. relevancia para Engage, 42 pruebas de seguridad, 15 de compatibilidad y lista de lo no verificado.
 - Límite: los avisos oficiales (developer.joomla.org, NVD) estaban bloqueados por el proxy; los CVE y rangos de versión marcados BQ proceden de resúmenes de buscador y NO están contrastados con la fuente primaria. Ninguna prueba de la lista se ha ejecutado aún.
