@@ -149,3 +149,29 @@ $final = "$distDir/pkg_engage-$version.zip";
 crearZip($final, $archivos, $mtime);
 
 printf("\nPaquete: %s (%d entradas, %d bytes)\n", $final, count($archivos), filesize($final));
+
+// Servidor de actualizaciones: escribe el SHA-256 real del ZIP en updates/pkgengage.xml (solo si existe).
+// Comprueba antes que la entrada del XML es la de esta versión y que apunta al ZIP con este nombre.
+$updXml = $root . '/updates/pkgengage.xml';
+if (is_file($updXml)) {
+	$contenido = file_get_contents($updXml);
+	$upd       = simplexml_load_string($contenido);
+	if ($upd === false) {
+		fallo('updates/pkgengage.xml no es XML bien formado');
+	}
+	if ((string) $upd->update->version !== $version) {
+		fallo("updates/pkgengage.xml declara la versión '" . (string) $upd->update->version . "' y el paquete es '$version'. Actualiza el XML.");
+	}
+	if (basename(trim((string) $upd->update->downloads->downloadurl)) !== basename($final)) {
+		fallo('La downloadurl de updates/pkgengage.xml no termina en ' . basename($final));
+	}
+	$sha   = hash_file('sha256', $final);
+	$nuevo = preg_replace('#<sha256>[^<]*</sha256>#', "<sha256>$sha</sha256>", $contenido, -1, $n);
+	if ($n !== 1) {
+		fallo('updates/pkgengage.xml debe tener exactamente un <sha256>');
+	}
+	if ($nuevo !== $contenido && file_put_contents($updXml, $nuevo) === false) {
+		fallo('No se puede escribir updates/pkgengage.xml');
+	}
+	printf("SHA-256 %s\n  escrito en updates/pkgengage.xml (%s)\n", $sha, $nuevo === $contenido ? 'sin cambios' : 'actualizado');
+}
