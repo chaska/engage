@@ -35,7 +35,7 @@ class UpdatesModel extends BaseDatabaseModel
 	/** @var string The currently installed version, as reported by the #__extensions table */
 	protected $version = 'dev';
 
-	public function __construct($config = [], MVCFactoryInterface $factory = null)
+	public function __construct($config = [], ?MVCFactoryInterface $factory = null)
 	{
 		parent::__construct($config, $factory);
 

@@ -30,7 +30,7 @@ class TosacceptRule extends FormRule
 	 *
 	 * @since   3.0.0
 	 */
-	public function test(\SimpleXMLElement $element, $value, $group = null, Registry $input = null, Form $form = null)
+	public function test(\SimpleXMLElement $element, $value, $group = null, ?Registry $input = null, ?Form $form = null)
 	{
 		return (bool)$value;
 	}

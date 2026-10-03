@@ -1,5 +1,13 @@
 # Registro de cambios del fork
 
+## 0.5.0 — 2026-10-03 (Fase 3, paso 4: avisos de PHP 8.4)
+- Qué: (1) 11 parámetros implícitamente nullable pasan a `?Tipo $x = null` (PHP 8.4 emite `Deprecated: Implicitly marking parameter as nullable`): `BlatantSpam::__construct` (`Throwable`), `TosacceptRule::test` (`Registry`, `Form`; el `?` además es necesario para seguir siendo compatible con `FormRule::test` de Joomla 6), constructores de `CommentsController`, `CommentsModel`, `UpdatesModel` (`MVCFactoryInterface`), `AbstractTable` y `CommentTable` (`DispatcherInterface`) y `TemplateEmails::sendMail` (`User`, `string`, `Mail`). (2) Se eliminan las 5 llamadas a `ReflectionProperty::setAccessible(true)` (`ComponentParameters.php` x2, `CliRouting.php` x3): no hacen nada desde PHP 8.1 y estarán obsoletas en PHP 8.5.
+- Por qué: ensuciaban los registros con PHP 8.4 y no tienen ningún efecto funcional. Revisado además todo `src/` (sin vendor) con búsquedas de `utf8_encode/decode`, `strftime`, `FILTER_SANITIZE_STRING`, interpolación `${}`, `E_STRICT`, `E_USER_ERROR`, `create_function`, etc.: ninguna aparece. El `vendor/` se trata en la versión de HTMLPurifier.
+- Numeración: el informe etiquetaba este bloque como 0.6.0; por pedido de Chas el orden de aplicación es otro (PHP 8.4 antes que idiomas y mínimos), así que las versiones se numeran en orden de aplicación: 0.5.0 PHP 8.4, 0.5.1 HTMLPurifier, 0.5.2 idiomas, 0.5.3 mínimos.
+- Archivos: `src/component/frontend/src/Exceptions/BlatantSpam.php`, `.../Form/Rule/TosacceptRule.php`, `src/component/backend/src/Controller/CommentsController.php`, `.../Model/CommentsModel.php`, `.../Model/UpdatesModel.php`, `.../Helper/TemplateEmails.php`, `.../Table/AbstractTable.php`, `.../Table/CommentTable.php`, `.../Service/ComponentParameters.php`, `.../CliCommand/Mixin/CliRouting.php`.
+- Impacto colateral a revisar: quitar `setAccessible` solo es neutro en PHP >= 8.1 (el mínimo que declara Joomla 5 y el que fija la versión 0.5.3); en PHP 7.4/8.0 esos accesos reflejados dejarían de funcionar. No se tocan `ComponentParameters` ni su robustez (informe 2.6, pendiente).
+- Pruebas: `tests/06-php84.php` analiza con el tokenizador los 354 PHP de `src/` (incluido `vendor/`): comprobado que da 11 + 2 fallos con el código anterior y 0 con el nuevo. NO se ha ejecutado bajo PHP 8.4 (solo hay PHP 8.3.6).
+
 ## 0.4.3 — 2026-10-03 (Fase 3, paso 3c: enlaces firmados atados al comentario, S5)
 - Qué:
   1. `SignedURL::getToken()` firma ahora también el ID del comentario y usa HMAC-SHA-256 (antes SHA-1 sin `cid`). `verifyToken()` recibe el `cid` (parámetro nuevo al final; si falta o es <= 0 el token no vale). Se corrige además que `verifyToken` pasaba `''` a un parámetro `int` cuando faltaba `expires` (TypeError).

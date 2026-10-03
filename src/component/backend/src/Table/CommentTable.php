@@ -64,7 +64,7 @@ class CommentTable extends AbstractTable
 	 *
 	 * @since   3.0.0
 	 */
-	public function __construct(DatabaseDriver $db, DispatcherInterface $dispatcher = null)
+	public function __construct(DatabaseDriver $db, ?DispatcherInterface $dispatcher = null)
 	{
 		parent::__construct('#__engage_comments', 'id', $db, $dispatcher);
 
