@@ -4,8 +4,10 @@ Este repositorio es un **fork comunitario no oficial** de **Akeeba Engage**.
 
 - Obra original: Akeeba Engage 3.4.2
 - Autor original: Nicholas K. Dionysopoulos / Akeeba Ltd — <https://www.akeeba.com>
+- Perfiles de GitHub del autor y de la organización: <https://github.com/nikosdion> y <https://github.com/akeeba>
+- Nota: el repositorio original y sus páginas de descarga ya no están disponibles. No se ha podido comprobar quién es el titular exacto del proyecto; se atribuye tal y como figura en las cabeceras del código 3.4.2.
 - Copyright original: Copyright (c) 2020-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
-- Licencia: GNU General Public License versión 3, o posterior (ver `LICENSE`)
+- Licencia: la que figura en el código 3.4.2 — GNU General Public License versión 3, o posterior (ver `LICENSE`). Las cabeceras y manifiestos del original se conservan tal cual.
 
 ## Sin afiliación
 
@@ -20,3 +22,5 @@ Este fork **no es un producto de Akeeba Ltd, no está respaldado por ella y no t
 ## Código de terceros
 
 - HTMLPurifier 4.17.0 (`admin/com_engage/vendor/`), con su propia licencia (LGPL 2.1 o posterior), sin modificar.
+
+- Fuente `Akeeba-Products.woff` (`media/com_engage/fonts/`): incluida en el original; su licencia concreta no consta en los archivos y está pendiente de revisar.
