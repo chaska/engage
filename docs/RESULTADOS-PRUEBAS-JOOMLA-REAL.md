@@ -169,12 +169,40 @@ Cada uno tiene su entrada en `CHANGELOG.md`, su commit y su prueba (`tests/10`, 
 ## 6. Qué NO se verificó (y por qué)
 
 - Un solo Joomla (6.1.4), un solo PHP (8.3.6) y un solo motor (MariaDB 10.11): no se probó J5.x, J6.0, PHP 8.1/8.4/8.5, MySQL 8 ni PostgreSQL.
-- Navegador: nada se ejecutó en un navegador. No hay pruebas de JavaScript (botón "Responder", TinyMCE, validación de formulario) ni de aspecto. XSS se evaluó por el DOM del HTML recibido, no ejecutando scripts.
+- Navegador: las 73 comprobaciones de la sección 3 no usan navegador; no hay pruebas de JavaScript del botón "Responder", TinyMCE ni validación de formulario, ni de aspecto. XSS se evaluó por el DOM del HTML recibido, no ejecutando scripts. Desde 0.6.17 solo el flujo de consentimiento de Gravatar se prueba en un Chromium real (sección 7).
 - Correo: se captura el SMTP local; no se probó un buzón real, ni el correo HTML renderizado, ni `mail_style=html` con la capa de diseño de Joomla.
-- Akismet con clave real, `iplookup`, `engagecache`, privacidad/RGPD, actionlog, módulo `mod_engage_latest` en una posición, multiidioma, HTTPS, desinstalación.
+- Akismet con clave real, `iplookup`, privacidad/RGPD (el plugin `privacy`; el consentimiento de Gravatar sí, sección 7), actionlog, módulo `mod_engage_latest` en una posición, multiidioma, HTTPS, desinstalación.
 - Las pruebas de seguridad las escribió el mismo autor que el fork: cubren lo que se pensó en probar; no sustituyen una auditoría externa.
 - Un sitio de producción real tiene caché de página, opcache y permisos de ficheros distintos; el sitio de pruebas corre como root con `php -S`.
 
-## 7. Estado del paquete
+## 7. Gravatar con consentimiento previo (0.6.17)
+
+Pruebas de `tests/joomla-live/05-gravatar.sh` (`lib/gravatar-http.php`: curl; `lib/gravatar-navegador.js`: Chromium headless con Playwright, peticiones a gravatar.com interceptadas y registradas, respondidas con un PNG de 1x1: no sale nada a Internet). Mismo Joomla 6.1.4 / PHP 8.3.6 / MariaDB 10.11.14, con el paquete 3.4.2.1 reconstruido con los cambios de 0.6.17.
+
+| Bloque | Resultado |
+|---|---|
+| `tests/22-gravatar-consentimiento.php` (stubs, plugin real) | 100 correctas / 0 fallidas |
+| HTTP en Joomla real, invitado y registrado (`gravatar-http.php`) | 27 PASA / 0 FALLA |
+| Navegador Chromium real (`gravatar-navegador.js`) | 22 PASA / 0 FALLA |
+| Navegador con caché de página de Joomla (plugin `cache` + `engagecache`, `caching=1`) | 4 PASA / 0 FALLA |
+| Batería anterior (`03-sembrar-y-probar.sh`) con Gravatar en `ask` | 73 PASA / 0 FALLA / 0 NO PROBADA; registro de errores de PHP (CP-06) vacío |
+| Actualización 3.4.2 -> 3.4.2.1 (`04-actualizacion.sh`) | humo 12/12; los ficheros nuevos de 0.6.17 (`gravatar.js`, `avatar-*.svg`) llegan; el sitio actualizado (plugin con los ajustes del 3.4.2 sin `mode`) sirve 5 avatares locales con `data-engage-gravatar` y 0 `src` de gravatar.com |
+
+Lo comprobado (cada línea es una comprobación con su evidencia en `$WORK/resultados-gravatar-*.json`):
+
+- Modo `ask`, también con `mode` ausente (ajustes antiguos), con ningún parámetro guardado y con un valor desconocido (`quizas`): en el HTML servido no hay `gravatar.com` en `src`, `srcset`, `href`, `<link>`, `<picture>` ni `<source>`; la URL `https://www.gravatar.com/avatar/<sha256>?...` aparece solo en `data-engage-gravatar` (invitado y usuario registrado); el avatar es el SVG local; el JS y los textos están registrados; no hay enlace de perfil.
+- Modo `off`: la palabra «gravatar» no aparece en el HTML y no hay JS de consentimiento. Modo `always`: `src` directo `https://www.gravatar.com/avatar/<sha256>?s=48&r=g&d=identicon`, con enlace de perfil, igual que antes. Plugin desactivado: ni avatar ni mención ni JS (sin cambios respecto a antes).
+- Navegador real, modo `ask`: **antes del clic, 0 peticiones a gravatar.com y 0 a cualquier otro tercero**; tras aceptar, 2 peticiones (los 2 avatares), todas `https://www.gravatar.com/avatar/<64 hex>`, sin cabecera Referer, las imágenes cargan (`naturalWidth>0`) y `localStorage.engage_gravatar_consent="1"` (sin cookies); recargando, las fotos se cargan solas (2 peticiones) y el aviso ofrece revocar; tras revocar la clave desaparece, vuelve el SVG local y recargando hay 0 peticiones; el evento `engage:gravatar-consent` con `granted:true/false` y `grant()`/`revoke()` funcionan; `detail` inválido se ignora; un `data-engage-gravatar` manipulado en el DOM (`https://www.gravatar.com.evil.example/...`) nunca llega a `src`; foco movido al botón nuevo tras aceptar; sin errores de JavaScript propios.
+- `localStorage` bloqueado (lanza excepción): 0 peticiones antes, las fotos se cargan en esa página tras aceptar, `gravatar.js` no añade errores.
+- `show_notice=0`: sin aviso, 0 peticiones antes, el API sigue cargando las fotos. `off` con `engage_gravatar_consent=1` ya guardado: 0 peticiones, sin aviso, sin API. Móvil 360 px: sin desbordamiento horizontal, botón de 294x52 px visible.
+- Caché de página: el HTML cacheado sigue sin URL de gravatar.com fuera del `data-`, el aviso sale con los textos traducidos (por `Text::script` y `engagecache`), aceptar funciona sobre la página cacheada y otro visitante no hereda el consentimiento.
+
+Hallazgos:
+- **Defecto preexistente, no corregido**: con `localStorage` bloqueado, `comments.min.js` (`akeeba.Engage.Comments.loadCommenterInfo`, código original) y TinyMCE lanzan una excepción no capturada; no afecta al flujo de comentarios por el resto de la página. Lo nuestro captura todos sus accesos.
+- Los 4 fallos que aparecieron al principio (`PS-01a`, `PS-02-*`) eran de la prueba, no del producto: el avatar local en `data:` se interpretaba como `data:` peligroso en `<img src>`. Se cambió el avatar local a un archivo SVG del propio sitio (así tampoco choca con una CSP restrictiva en `img-src`).
+
+NO PROBADO en esta sección: el texto en es-ES renderizado (el sitio de pruebas solo tiene en-GB; las cadenas es-ES existen y las comprueba `tests/22`), otros navegadores distintos de Chromium (Firefox, Safari), lectores de pantalla reales, Joomla 5.x, y Gravatar real (la red externa está bloqueada: se probó el intento de petición, no la imagen devuelta).
+
+## 8. Estado del paquete
 
 Hash del ZIP al cierre de esta tanda y coincidencia con `updates/pkgengage.xml`: ver `docs/PUBLICAR-RELEASE.md` y comprobar con `php build/build.php` (reproducible). No se ha publicado ninguna release: la URL de descarga de `updates/pkgengage.xml` no existirá hasta que el propietario suba **ese mismo ZIP** a la release `v3.4.2.1`.

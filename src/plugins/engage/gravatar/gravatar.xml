@@ -26,6 +26,8 @@
     <languages folder="language">
         <language tag="en-GB">en-GB/plg_engage_gravatar.ini</language>
         <language tag="en-GB">en-GB/plg_engage_gravatar.sys.ini</language>
+        <language tag="es-ES">es-ES/plg_engage_gravatar.ini</language>
+        <language tag="es-ES">es-ES/plg_engage_gravatar.sys.ini</language>
     </languages>
 
     <config addfieldpath="/administrator/components/com_engage/fields">
@@ -34,6 +36,29 @@
                       label="PLG_ENGAGE_GRAVATAR_FIELDSET_BASIC_LABEL"
                       description="PLG_ENGAGE_GRAVATAR_FIELDSET_BASIC_DESC"
             >
+
+                <field name="mode"
+                       type="list"
+                       label="PLG_ENGAGE_GRAVATAR_MODE_LABEL"
+                       description="PLG_ENGAGE_GRAVATAR_MODE_DESC"
+                       default="ask"
+                >
+                    <option value="ask">PLG_ENGAGE_GRAVATAR_MODE_ASK</option>
+                    <option value="off">PLG_ENGAGE_GRAVATAR_MODE_OFF</option>
+                    <option value="always">PLG_ENGAGE_GRAVATAR_MODE_ALWAYS</option>
+                </field>
+
+                <field name="show_notice"
+                       type="radio"
+                       layout="joomla.form.field.radio.switcher"
+                       label="PLG_ENGAGE_GRAVATAR_SHOW_NOTICE_LABEL"
+                       description="PLG_ENGAGE_GRAVATAR_SHOW_NOTICE_DESC"
+                       default="1"
+                       showon="mode:ask"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
 
                 <field name="profile_link"
                        type="radio"
@@ -95,4 +120,4 @@
             </fieldset>
         </fields>
     </config>
-</extension>
+</extension>

@@ -66,7 +66,25 @@ else: ?>
 
 <?php
 $previousLevel = $comment->depth;
-$avatar        = Avatar::getUserAvatar($comment->created_by, $maxAvatarWidth, $comment->email);
+$avatarData    = Avatar::getUserAvatarData($comment->created_by, $maxAvatarWidth, $comment->email);
+$avatar        = $avatarData['src'];
+// Gravatar URL to load only after the visitor consents (plugin mode "ask"); empty otherwise.
+$avatarDeferred = $avatarData['deferred'];
+$avatarAttrs    = ($avatarDeferred === '') ? '' : (' data-engage-gravatar="' . htmlspecialchars($avatarDeferred, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"'
+	. ($avatarData['notice'] ? '' : ' data-engage-gravatar-notice="0"'));
+
+if ($avatarDeferred !== '')
+{
+	// Registers the consent script and its texts (both are kept by Joomla's page cache). Nothing is loaded from Gravatar here.
+	$gravatarApp = Factory::getApplication();
+	$gravatarApp->getLanguage()->load('com_engage', JPATH_SITE);
+	Text::script('COM_ENGAGE_GRAVATAR_NOTICE_TEXT');
+	Text::script('COM_ENGAGE_GRAVATAR_BTN_ACCEPT');
+	Text::script('COM_ENGAGE_GRAVATAR_BTN_REVOKE');
+	Text::script('COM_ENGAGE_GRAVATAR_STATUS_ON');
+	Text::script('COM_ENGAGE_GRAVATAR_NOTICE_LABEL');
+	$gravatarApp->getDocument()->getWebAssetManager()->useScript('com_engage.gravatar');
+}
 $profile       = Avatar::getProfileURL($user);
 $commentDate   = Factory::getDate($comment->created)->setTimezone($this->userTimezone);
 $ipLookupURL   = $this->getIPLookupURL($comment->ip);
@@ -113,10 +131,10 @@ $bsCommentStateClass =  ($comment->enabled == 1) ? 'secondary' : (($comment->ena
 			<?php if (!empty($avatar)): ?>
 			<div class="akengage-commenter-avatar-container d-none d-sm-block flex-shrink-1" style="max-width: <?= (int) $maxAvatarWidth ?>px">
 				<?php if (empty($profile)): ?>
-				<img src="<?= $avatar ?>" alt="" class="akengage-commenter-avatar img-fluid rounded-3 shadow-sm" itemprop="image">
+				<img src="<?= htmlspecialchars($avatar, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"<?= $avatarAttrs ?> alt="" class="akengage-commenter-avatar img-fluid rounded-3 shadow-sm" itemprop="image">
 				<?php else: ?>
 				<a href="<?= $profile ?>" class="akengage-commenter-profile" itemprop="url" rel="noopener">
-					<img src="<?= $avatar ?>"
+					<img src="<?= htmlspecialchars($avatar, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"<?= $avatarAttrs ?>
 							alt=""
 							class="akengage-commenter-avatar img-fluid rounded-3 shadow-sm" itemprop="image">
 				</a>

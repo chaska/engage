@@ -52,6 +52,7 @@ La versión se lee de `src/package/pkg_engage.xml`; los nombres de los ZIP, de l
 - Componente: `com_engage`
 - Módulo de sitio: `mod_engage_latest`
 - Plugins: `content/engage`, `system/engagecache`, `user/engage`, `privacy/engage`, `actionlog/engage`, `datacompliance/engage`, `console/engage`, `engage/akismet`, `engage/email`, `engage/gravatar`
+- Gravatar: desde 0.6.17 el plugin pide consentimiento al visitante antes de contactar con gravatar.com (modo `ask` por defecto; `off` / `always`). Ver [`docs/GRAVATAR-CONSENTIMIENTO.md`](docs/GRAVATAR-CONSENTIMIENTO.md).
 
 ## Licencia
 
