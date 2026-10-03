@@ -1,5 +1,10 @@
 # Registro de cambios del fork
 
+## 0.6.3 — 2026-10-03
+- Qué: el titular del copyright de los archivos nuevos del fork pasa a ser "fork comunitario de Engage iniciado por ChasKa" (antes "fork comunitario de Engage").
+- Archivos: `updates/pkgengage.xml` (solo comentario), `tests/11-version.php`, `tests/12-update-server.php`, `docs/PUBLICAR-RELEASE.md`, `CHANGELOG.md`. Sin cambios de código ni del contenido del ZIP salvo si cambia el comentario del XML de updates (no va dentro del ZIP).
+- Las cabeceras de copyright del autor original no se tocan.
+
 ## 0.6.2 — 2026-10-03 (Fase 4, paso 3: update site heredado de cdn.akeeba.com, NO se implementa en el instalador)
 - Qué: ningún cambio de código. Se documenta la decisión y la instrucción manual en `docs/PUBLICAR-RELEASE.md` (apartado "Sitio de actualizaciones antiguo de Akeeba").
 - Por qué no desactivarlo en `postflight`: revisado el código de Joomla 5.4-dev (`plugins/extension/joomla/src/Extension/Joomla.php`, `onExtensionAfterUpdate` -> `processUpdateSites` -> `addUpdateSite`). Ese evento se lanza DESPUÉS de que termine la actualización (y por tanto después de `postflight`); si el manifiesto trae un único `<server>` y la nueva dirección no existe aún en `#__update_sites`, Joomla toma la fila ya vinculada a la extensión y le **reescribe `location`** con la dirección nueva (el nombre no cambia). Un `enabled = 0` aplicado en `postflight` a la fila de `cdn.akeeba.com/updates/pkgengage` quedaría pues sobre la fila que Joomla acaba apuntando al servidor del fork, que se quedaría **desactivado** y sin avisos de actualización. Con la actualización normal 3.4.2 -> 3.4.2.1 la fila antigua desaparece sola (queda reubicada). Solo podría sobrevivir si el administrador ya había añadido a mano la URL nueva (entonces hay dos filas). Esa situación y el orden de eventos no se han podido verificar en un Joomla real, así que, siguiendo la opción más segura, no se toca `#__update_sites`.

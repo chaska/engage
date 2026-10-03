@@ -2,7 +2,7 @@
 /**
  * 0.6.0: versión propia del paquete. Todos los manifiestos y joomla.asset.json declaran la misma versión,
  * mayor que 3.4.2 según version_compare (Joomla la trata como actualización en sitio) y distinta de la original.
- * Copyright del fork (c)2026 colaboradores del fork comunitario de Engage; GPL v3 o posterior.
+ * Copyright del fork (c)2026 fork comunitario de Engage iniciado por ChasKa; GPL v3 o posterior.
  */
 require __DIR__ . '/aserciones.php';
 $raiz = dirname(__DIR__);
