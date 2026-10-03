@@ -104,7 +104,10 @@ $A = $ids['art_publico']; $CP = $ids['cat_publica']; $AS = $ids['art_publico_ass
 param(['default_publish' => '1', 'filter_mode' => null, 'min_length' => null, 'max_length' => null, 'default_limit' => null, 'comments_show' => null]);
 reglas(['core.create' => ['1' => 1], 'core.edit.own' => ['2' => 1], 'core.edit.state' => ['4' => 1], 'core.delete' => ['6' => 1]]);
 limpiar();
-@unlink("$WORK/php-errors.log.mark"); $errLogAntes = is_file("$WORK/php-errors.log") ? filesize("$WORK/php-errors.log") : 0;
+q("UPDATE jos_extensions SET params='{\"mail_style\":\"both\",\"disable_htmllayout\":\"1\"}' WHERE element='com_mails'");
+foreach (glob("$WORK/mails/*.eml") ?: [] as $f) { unlink($f); }
+if (is_file("$WORK/php-errors.log")) { file_put_contents("$WORK/php-errors.log", ''); }
+$errLogAntes = 0;
 
 // ======================== FUNCIONALES (F-xx) ========================
 $p = $inv->get('/');            r('F-01', 'Portada del sitio responde 200', $p['code'] === 200 ? 'PASA' : 'FALLA', "HTTP {$p['code']}");
@@ -158,6 +161,20 @@ foreach (glob("$mailDir/*.eml") ?: [] as $fm) { $mailsTxt .= file_get_contents($
 $hayAmp = preg_match('#^unsubscribe:.*&amp;#mi', $mailsTxt) || preg_match('#https?://\S+&amp;\S+#', preg_replace('/^Content-Type.*/m', '', $mailsTxt)) ;
 r('F-16', 'Los enlaces de los correos de texto plano no llevan "&amp;" (si lo llevan, el enlace de baja no funciona)', $hayAmp ? 'FALLA' : 'PASA', $hayAmp ? snip((string) (preg_match('#https?://\S*&amp;\S*#', $mailsTxt, $mm) ? $mm[0] : ''), 110) : 'sin &amp;');
 
+// F-17: el enlace de baja del correo de texto plano, abierto tal cual, da de baja de verdad
+$planos = '';
+foreach (glob("$mailDir/*.eml") ?: [] as $fm) {
+	$raw = file_get_contents($fm);
+	if (preg_match('/Content-Type: text\/plain.*?\r?\n\r?\n(.*?)(\r?\n--|\z)/s', $raw, $mp)) { $planos .= quoted_printable_decode($mp[1]) . "\n"; }
+	if ($planos === '') { $planos = $raw; }
+}
+if (preg_match('#unsubscribe: (https?://\S+)#', $planos, $mu)) {
+	q('DELETE FROM jos_engage_unsubscribe');
+	$cu = new Cliente($BASE, $tmp, 'baja'); $cu->get(html_entity_decode($mu[1], ENT_NOQUOTES));
+	$cu2 = (int) one('SELECT COUNT(*) FROM jos_engage_unsubscribe');
+	r('F-17', 'El enlace de baja del correo de texto plano, abierto tal cual (sin sesion), registra la baja', $cu2 === 1 && strpos($mu[1], 'amp;') === false ? 'PASA' : 'FALLA', 'filas de baja=' . $cu2);
+} else { r('F-17', 'Enlace de baja en el correo de texto plano', 'NO PROBADA', 'no se encontro enlace de baja en los correos'); }
+
 // ======================== PS-01 / PS-02 / PS-03: XSS ========================
 $payloads = [
 	'<a href="&#106;avascript:alert(1)">x1</a>', '<a href="jav&Tab;ascript:alert(1)">x2</a>', '<a href="javascript&colon;alert(1)">x3</a>',
@@ -201,6 +218,15 @@ if ($adm->loginAdmin('admintest', $AP)) {
 	r('PS-02-bk', 'Backend: lista de comentarios con filas contaminadas (HTTP ' . $lim['code'] . ') sin script/on* inyectados', $lim['code'] === 200 && !$mal && !$scripts ? 'PASA' : 'FALLA', $lim['code'] === 200 ? ($mal ? implode(',', array_unique($mal)) : 'DOM limpio') : snip($lim['body'], 80));
 } else { r('PS-02-bk', 'Backend: lista con filas contaminadas', 'NO PROBADA', 'no se pudo iniciar sesion en /administrator'); }
 
+$ret = [];
+foreach (['/x"><img src=x onerror=alert(1337)>', "/x' onmouseover='alert(1337)", 'javascript:alert(1337)', '//evil.test/"><script>alert(1337)</script>'] as $mal) {
+	foreach (['/index.php?option=com_engage&task=comment.noexiste', '/index.php?option=com_engage&view=Comment&layout=edit'] as $u) {
+		$p = $inv->get($u . '&returnurl=' . rawurlencode(base64_encode($mal)));
+		if (preg_match('/onerror=alert\(1337\)>|onmouseover=.alert\(1337|<script>alert\(1337/i', $p['body']) || preg_match('/href="javascript:alert\(1337/i', $p['body'])) { $ret[] = snip($mal, 30); }
+	}
+}
+r('PS-03b', 'returnurl malicioso reflejado en la vista de edicion (enlace Cancelar y campo oculto): sin inyeccion de HTML/atributos', $ret ? 'FALLA' : 'PASA', $ret ? implode('; ', $ret) : '8 sondas limpias');
+
 // ======================== PS-05 CRLF ========================
 limpiar(); array_map('unlink', glob("$mailDir/*.eml") ?: []);
 $x = comentar($inv, 'art_publico', ['name' => "Juan\r\nBcc: victima@example.com", 'email' => "a@b.com\r\nCc: x@y.com", 'body' => 'crlf']);
@@ -214,6 +240,9 @@ $f = q("SELECT LENGTH(name) l FROM jos_engage_comments WHERE body LIKE 'nombre l
 r('PS-25a', 'Nombre de 10 000 caracteres: rechazado o truncado (columna 255), sin error 500', $x['code'] < 500 && (!$f || (int) $f['l'] <= 255) ? 'PASA' : 'FALLA', "HTTP {$x['code']} len=" . ($f['l'] ?? 'no guardado'));
 $x = comentar($inv, 'art_publico', ['body' => str_repeat('A', 200000)]);
 $f = (int) one("SELECT MAX(LENGTH(body)) FROM jos_engage_comments");
+usleep(600000);
+$mailsLargo = 0; foreach (glob("$mailDir/*.eml") ?: [] as $fm) { if (strpos(file_get_contents($fm), 'cid[0]=0') !== false || strpos(file_get_contents($fm), 'cid%5B0%5D=0') !== false) { $mailsLargo++; } }
+r('PS-25c', 'Comentario NO guardado (nombre de 10 000 caracteres, falla el INSERT): no se envia ningun correo de notificacion (0.6.14)', $mailsLargo === 0 ? 'PASA' : 'FALLA', "correos con cid=0: $mailsLargo");
 r('PS-25b', 'Cuerpo de 200 000 caracteres: respuesta < 500 (max_length por defecto)', $x['code'] < 500 ? 'PASA' : 'FALLA', "HTTP {$x['code']} max body guardado=$f");
 
 // ======================== PS-07: contenido restringido / despublicado ========================
