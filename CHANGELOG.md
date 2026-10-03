@@ -1,5 +1,15 @@
 # Registro de cambios del fork
 
+## 0.4.3 — 2026-10-03 (Fase 3, paso 3c: enlaces firmados atados al comentario, S5)
+- Qué:
+  1. `SignedURL::getToken()` firma ahora también el ID del comentario y usa HMAC-SHA-256 (antes SHA-1 sin `cid`). `verifyToken()` recibe el `cid` (parámetro nuevo al final; si falta o es <= 0 el token no vale). Se corrige además que `verifyToken` pasaba `''` a un parámetro `int` cuando faltaba `expires` (TypeError).
+  2. `ControllerFrontendCommentsTrait::checkToken()`: el enlace firmado solo se acepta para UN comentario. Antes se verificaba el primer `cid[]`, pero los controladores actúan sobre todos los `cid[]` de la petición (y `unsubscribe` prefiere `id` sobre `cid`), de modo que `&cid[]=otro` o `&id=otro` añadidos a un enlace válido quedaban autorizados. Ahora cualquier ID distinto o adicional (en GET o en la petición mezclada, valores no numéricos o anidados incluidos) descalifica el enlace y se pasa a la comprobación del token de formulario (CSRF), que para un GET falla.
+  3. `Email.php`: los enlaces PUBLISH, UNPUBLISH, DELETE, POSSIBLESPAM, SPAM y UNSPAM solo se firman para destinatarios con `core.edit.state` (y `core.delete` para DELETE) en `com_engage`; los demás destinatarios reciben el enlace público del comentario en su lugar. El enlace de baja (UNSUBSCRIBE) se firma para todos, como antes.
+- Por qué: el enlace de un correo para un comentario valía 24 h para cualquier otro comentario del mismo artículo y sustituía al token CSRF en acciones que cambian estado por GET; además se enviaba a destinatarios que no son moderadores.
+- Archivos: `src/component/frontend/src/Helper/SignedURL.php`, `src/component/frontend/src/Mixin/ControllerFrontendCommentsTrait.php`, `src/plugins/engage/email/src/Extension/Email.php`.
+- Impacto colateral a revisar: los enlaces ya enviados por correo (válidos 24 h) dejan de funcionar tras actualizar; el moderador pasará por la pantalla de inicio de sesión/token. Los permisos se evalúan con `authorise(..., 'com_engage')` (el mismo nivel que usan los modelos). Plantillas de correo personalizadas que muestran un botón "Publicar/Eliminar/Spam" a destinatarios sin permiso verán ahora el enlace del comentario. No probado en Joomla real ni con un correo real.
+- Pruebas: `tests/05-enlaces-firmados.php` (clase `SignedURL` y trait reales con Uri/Crypt del framework o stubs): token del comentario 5 en el 6, `cid[]` y `id` adicionales, cid anidado o no numérico, token del formato antiguo, tarea/correo/asset/caducidad/clave alterados, y el caso legítimo.
+
 ## 0.4.2 — 2026-10-03 (Fase 3, paso 3b: mapeo de filtros de Joomla a HTML Purifier, S4, y mayúsculas del autoload, S7)
 - Qué (todo en `HtmlFilter.php`):
   1. S7: `HTMLPUrifier.auto.php` / `HTMLPUrifier.includes.php` -> `HTMLPurifier.auto.php` / `HTMLPurifier.includes.php`. Con las opciones de carga `auto` y `all` (Configuración > Avanzado) se producía un `require_once` fatal en sistemas de archivos que distinguen mayúsculas (Linux).
