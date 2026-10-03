@@ -599,20 +599,20 @@ class CommentsModel extends ListModel
 		{
 			$sFrom = $fltFrom->toSql();
 			$sTo   = $fltTo->toSql();
-			$query->where($db->quoteName('c.created_on') . ' BETWEEN :from AND :to')
+			$query->where($db->quoteName('c.created') . ' BETWEEN :from AND :to')
 				->bind(':from', $sFrom, ParameterType::STRING)
 				->bind(':to', $sTo, ParameterType::STRING);
 		}
 		elseif (!empty($fltFrom))
 		{
 			$sFrom = $fltFrom->toSql();
-			$query->where($db->quoteName('c.created_on') . ' >= :from')
+			$query->where($db->quoteName('c.created') . ' >= :from')
 				->bind(':from', $sFrom, ParameterType::STRING);
 		}
 		elseif (!empty($fltTo))
 		{
 			$sTo = $fltTo->toSql();
-			$query->where($db->quoteName('c.created_on') . ' <= :to')
+			$query->where($db->quoteName('c.created') . ' <= :to')
 				->bind(':to', $sTo, ParameterType::STRING);
 		}
 

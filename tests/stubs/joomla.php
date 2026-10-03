@@ -84,6 +84,15 @@ namespace Joomla\CMS {
 		{
 			return new class { public function get($k) { return 42; } };
 		}
+		/** Fecha mínima: toSql() y diff() (suficiente para las pruebas del filtro de fechas). */
+		public static function getDate($t = 'now')
+		{
+			return new class($t) {
+				public function __construct(private $t) {}
+				public function toSql() { return gmdate('Y-m-d H:i:s', strtotime((string) $this->t)); }
+				public function diff($o) { return new \DateInterval('PT0S'); }
+			};
+		}
 	}
 }
 namespace Joomla\CMS\Access {

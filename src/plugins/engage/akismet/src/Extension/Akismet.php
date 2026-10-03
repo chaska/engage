@@ -246,7 +246,7 @@ class Akismet extends CMSPlugin implements SubscriberInterface
 
 		try
 		{
-			$createdOn = Factory::getDate($comment->created_on)->toISO8601();
+			$createdOn = Factory::getDate($comment->created)->toISO8601();
 		}
 		catch (Exception $e)
 		{
