@@ -26,9 +26,9 @@ use Joomla\Database\DatabaseInterface;
  */
 class Pkg_EngageInstallerScript extends InstallerScript
 {
-	protected $minimumPhp = '7.4.0';
+	protected $minimumPhp = '8.1.0';
 
-	protected $minimumJoomla = '4.3.0';
+	protected $minimumJoomla = '5.0.0';
 
 	protected $allowDowngrades = true;
 
@@ -129,6 +129,12 @@ class Pkg_EngageInstallerScript extends InstallerScript
 		if ($type === 'uninstall')
 		{
 			return true;
+		}
+
+		// Enforce $minimumPhp and $minimumJoomla (the parent class checks them; this override never called it before)
+		if (!parent::preflight($type, $parent))
+		{
+			return false;
 		}
 
 		$this->setDboFromAdapter($parent);
