@@ -1,5 +1,11 @@
 # Registro de cambios del fork
 
+## 0.6.5.1 — 2026-10-03 (documentación; la versión 0.6.6 queda para la corrección de código en curso)
+- docs/PRUEBAS-SEGURIDAD-JOOMLA6.md, sección 2: recontada con los 66 avisos oficiales del núcleo [OF] (el "54" era un error de suma; se quita la anotación de discrepancia de 0.6.5). Reparto por fecha de corrección: 2026-01-06: 2, 2026-03-31: 6, 2026-05-26: 20, 2026-07-07: 12, 2026-08-18: 10, 2026-09-25: 16.
+- Tabla de categorías: XSS 25, ACL 23, SQLi 3, path traversal/borrado/LFI 4 (antes 5: el arreglo de com_templates #48171 es un endurecimiento), auth/MFA 6 (antes 7: la enumeración por passkey CVE-2025-54477 es anterior a 6.0), CSRF 1, SSRF 1, subida 1, cabeceras/CORS 2. Criterio propio anotado: CVE-2026-48901 cuenta como XSS (bypass de filtrado).
+- Fila de 6.1.4/5.4.9: fecha de corrección oficial 2026-09-25 y fecha de publicación 2026-09-29.
+- Sin cambios de código ni del ZIP.
+
 ## 0.6.5 — 2026-10-03
 ### Documentación
 - docs/PRUEBAS-SEGURIDAD-JOOMLA6.md: CVE del núcleo contrastados con developer.joomla.org/security-centre (nueva marca [OF]); la comprobación la hizo Chas en su navegador y se aplica aquí tal como la entregó.
