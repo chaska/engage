@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--~
+  ~ @package   AkeebaEngage
+  ~ @copyright Copyright (c)2020-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+  ~ @license   GNU General Public License version 3, or later
+  -->
+<extension version="3.9.0" type="plugin" group="user" method="upgrade">
+    <name>PLG_USER_ENGAGE</name>
+    <description>PLG_USER_ENGAGE_XML_DESC</description>
+    <version>3.4.2</version>
+    <creationDate>2025-02-12</creationDate>
+    <author>Akeeba Ltd</author>
+    <authorEmail>no-reply@akeeba.com</authorEmail>
+    <authorUrl>https://www.akeeba.com</authorUrl>
+    <copyright>Copyright (c)2020-2025 Nicholas K. Dionysopoulos / Akeeba Ltd</copyright>
+    <license>GNU/GPL v3 or any later version</license>
+    <namespace path="src">Akeeba\Plugin\User\Engage</namespace>
+
+    <files>
+        <folder>services</folder>
+        <folder plugin="engage">src</folder>
+
+        <filename>.htaccess</filename>
+        <filename>web.config</filename>
+    </files>
+    <languages folder="language">
+        <language tag="de-DE">de-DE/plg_user_engage.ini</language>
+        <language tag="de-DE">de-DE/plg_user_engage.sys.ini</language>
+        <language tag="en-GB">en-GB/plg_user_engage.ini</language>
+        <language tag="en-GB">en-GB/plg_user_engage.sys.ini</language>
+        <language tag="el-GR">el-GR/plg_user_engage.ini</language>
+        <language tag="el-GR">el-GR/plg_user_engage.sys.ini</language>
+        <language tag="es-ES">es-ES/plg_user_engage.sys.ini</language>
+        <language tag="fr-FR">fr-FR/plg_user_engage.ini</language>
+        <language tag="fr-FR">fr-FR/plg_user_engage.sys.ini</language>
+        <language tag="nl-NL">nl-NL/plg_user_engage.ini</language>
+        <language tag="nl-NL">nl-NL/plg_user_engage.sys.ini</language>
+    </languages>
+
+    <config addfieldpath="/administrator/components/com_engage/fields">
+        <fields name="params">
+            <fieldset name="basic">
+
+                <field
+                        name="own_comments"
+                        type="radio"
+                        layout="joomla.form.field.radio.switcher"
+                        label="PLG_USER_ENGAGE_OWN_COMMENTS_LABEL"
+                        description="PLG_USER_ENGAGE_OWN_COMMENTS_DESC"
+                        default="1"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+
+            </fieldset>
+        </fields>
+    </config>
+</extension>
