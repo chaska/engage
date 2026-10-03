@@ -49,7 +49,7 @@ class CommentsModel extends ListModel
 	 * @since   3.0.0
 	 * @throws  Exception
 	 */
-	public function __construct($config = [], MVCFactoryInterface $factory = null)
+	public function __construct($config = [], ?MVCFactoryInterface $factory = null)
 	{
 		$config['filter_fields'] = $config['filter_fields'] ?? [
 				// Sortable and/or filter columns

@@ -35,8 +35,6 @@ trait CliRouting
 		$refClass     = new ReflectionClass(Uri::class);
 		$refInstances = $refClass->getProperty('instances');
 
-		$refInstances->setAccessible(true);
-
 		if (version_compare(PHP_VERSION, '8.3.0', 'ge'))
 		{
 			$instances = $refClass->getStaticPropertyValue('instances');
@@ -63,7 +61,6 @@ trait CliRouting
 		];
 
 		$refBase = $refClass->getProperty('base');
-		$refBase->setAccessible(true);
 
 		if (version_compare(PHP_VERSION, '8.3.0', 'ge'))
 		{
@@ -81,8 +78,6 @@ trait CliRouting
 
 		$refClass = new ReflectionClass(Route::class);
 		$refCache = $refClass->getProperty('_router');
-
-		$refCache->setAccessible(true);
 
 		if (version_compare(PHP_VERSION, '8.3.0', 'ge'))
 		{

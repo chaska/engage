@@ -46,7 +46,7 @@ class CommentsController extends AdminController
 	 * @throws  Exception
 	 * @since   3.0.0
 	 */
-	public function __construct($config = [], MVCFactoryInterface $factory = null, ?CMSApplication $app = null, ?Input $input = null)
+	public function __construct($config = [], ?MVCFactoryInterface $factory = null, ?CMSApplication $app = null, ?Input $input = null)
 	{
 		parent::__construct($config, $factory, $app, $input);
 

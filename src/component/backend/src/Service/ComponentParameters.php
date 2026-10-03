@@ -92,7 +92,6 @@ class ComponentParameters
 		{
 			$refClass = new ReflectionClass(ComponentHelper::class);
 			$refProp  = $refClass->getProperty('components');
-			$refProp->setAccessible(true);
 
 			if (version_compare(PHP_VERSION, '8.3.0', 'ge'))
 			{
@@ -118,8 +117,6 @@ class ComponentParameters
 		{
 			$refClass = new ReflectionClass(PluginHelper::class);
 			$refProp  = $refClass->getProperty('plugins');
-
-			$refProp->setAccessible(true);
 
 			if (version_compare(PHP_VERSION, '8.3.0', 'ge'))
 			{
