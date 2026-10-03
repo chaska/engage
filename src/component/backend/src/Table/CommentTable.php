@@ -97,7 +97,12 @@ class CommentTable extends AbstractTable
 		$result = $this->_realStore($updateNulls);
 
 		$this->triggerEvent('onAfterStore', [&$result, $updateNulls]);
-		$this->triggerEvent($isNew ? 'onAfterCreate' : 'onAfterUpdate', [&$updateNulls]);
+
+		// Si la escritura en la base de datos ha fallado no hubo comentario: no se notifica ni se registra nada.
+		if ($result)
+		{
+			$this->triggerEvent($isNew ? 'onAfterCreate' : 'onAfterUpdate', [&$updateNulls]);
+		}
 
 		return $result;
 	}
