@@ -221,15 +221,27 @@ echo "  $n PHP comprobados, $mal con errores\n";
 echo "== (d) Contenido idéntico a upstream\n";
 $iguales = $dif = $nuevos = 0;
 $modificados = [];
+// Dependencias de terceros reemplazadas deliberadamente por una versión más nueva: no se comparan archivo a archivo.
+$depsActualizadas = ['component/backend/vendor/' => 'admin/com_engage/vendor/'];
+$depsEnSrc = 0;
 $usados = [];
 foreach (listar($src) as $rel) {
+	foreach ($depsActualizadas as $pref => $o_) {
+		if (str_starts_with($rel, $pref)) { $depsEnSrc++; continue 2; }
+	}
 	$o = origenUpstream($rel);
 	if ($o === null) { $nuevos++; echo "  nuevo (sin origen): $rel\n"; continue; }
 	if (!is_file("$up/$o")) { $nuevos++; echo "  nuevo del fork (no existe en upstream): $rel\n"; continue; }
 	$usados[$o] = true;
 	if (hash_file('sha256', "$src/$rel") === hash_file('sha256', "$up/$o")) { $iguales++; } else { $modificados[] = $rel; }
 }
-$ausUp = array_values(array_filter(listar($up), fn($r) => !isset($usados[$r])));
+$ausUp = array_values(array_filter(listar($up), function ($r) use ($usados, $depsActualizadas) {
+	foreach ($depsActualizadas as $o_) { if (str_starts_with($r, $o_)) { return false; } }
+	return !isset($usados[$r]);
+}));
+$hpVer = is_file("$src/component/backend/vendor/ezyang/htmlpurifier/VERSION") ? trim(file_get_contents("$src/component/backend/vendor/ezyang/htmlpurifier/VERSION")) : '?';
+$hpUp  = is_file("$up/admin/com_engage/vendor/ezyang/htmlpurifier/VERSION") ? trim(file_get_contents("$up/admin/com_engage/vendor/ezyang/htmlpurifier/VERSION")) : '(sin VERSION; ver composer.json)';
+nota("dependencia reemplazada deliberadamente: component/backend/vendor ($depsEnSrc archivos en src; HTMLPurifier $hpVer; en upstream 3.4.2: $hpUp)");
 echo "  idénticos: $iguales; modificados deliberadamente: " . count($modificados) . "; sin origen: $dif; nuevos: $nuevos; archivos de upstream no copiados a src: " . count($ausUp) . "\n";
 foreach ($ausUp as $r) { ko("upstream no copiado: $r"); }
 foreach ($modificados as $r) { nota("modificado deliberadamente respecto a upstream (ver CHANGELOG.md): $r"); }
