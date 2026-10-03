@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--~
+  ~ @package   AkeebaEngage
+  ~ @copyright Copyright (c)2020-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+  ~ @license   GNU General Public License version 3, or later
+  -->
+<extension version="3.9.0" type="plugin" group="engage" method="upgrade">
+    <name>PLG_ENGAGE_EMAIL</name>
+    <description>PLG_ENGAGE_EMAIL_XML_DESC</description>
+    <version>3.4.2</version>
+    <creationDate>2025-02-12</creationDate>
+    <author>Akeeba Ltd</author>
+    <authorEmail>no-reply@akeeba.com</authorEmail>
+    <authorUrl>https://www.akeeba.com</authorUrl>
+    <copyright>Copyright (c)2020-2025 Nicholas K. Dionysopoulos / Akeeba Ltd</copyright>
+    <license>GNU/GPL v3 or any later version</license>
+    <namespace path="src">Akeeba\Plugin\Engage\Email</namespace>
+
+    <files>
+        <folder plugin="email">src</folder>
+        <folder>services</folder>
+
+        <filename>.htaccess</filename>
+        <filename>web.config</filename>
+    </files>
+    <languages folder="language">
+        <language tag="de-DE">de-DE/plg_engage_email.ini</language>
+        <language tag="de-DE">de-DE/plg_engage_email.sys.ini</language>
+        <language tag="en-GB">en-GB/plg_engage_email.ini</language>
+        <language tag="en-GB">en-GB/plg_engage_email.sys.ini</language>
+        <language tag="el-GR">el-GR/plg_engage_email.ini</language>
+        <language tag="el-GR">el-GR/plg_engage_email.sys.ini</language>
+        <language tag="fr-FR">fr-FR/plg_engage_email.ini</language>
+        <language tag="fr-FR">fr-FR/plg_engage_email.sys.ini</language>
+        <language tag="nl-NL">nl-NL/plg_engage_email.ini</language>
+        <language tag="nl-NL">nl-NL/plg_engage_email.sys.ini</language>
+    </languages>
+
+    <config addfieldpath="/administrator/components/com_engage/fields">
+        <fields name="params">
+            <fieldset
+                    name="basic"
+                    label="PLG_ENGAGE_EMAIL_FIELDSET_BASIC_LABEL"
+                    description="PLG_ENGAGE_EMAIL_FIELDSET_BASIC_DESC"
+            >
+                <field
+                        name="managers_notify"
+                        type="radio"
+                        layout="joomla.form.field.radio.switcher"
+                        label="PLG_ENGAGE_EMAIL_MANAGERS_TOPLEVEL_NOTIFY_LABEL"
+                        description="PLG_ENGAGE_EMAIL_MANAGERS_TOPLEVEL_NOTIFY_DESC"
+                        default="0"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+
+                <field
+                        name="managers_notify_spam"
+                        type="radio"
+                        layout="joomla.form.field.radio.switcher"
+                        label="PLG_ENGAGE_EMAIL_MANAGERS_TOPLEVEL_NOTIFY_SPAM_LABEL"
+                        description="PLG_ENGAGE_EMAIL_MANAGERS_TOPLEVEL_NOTIFY_SPAM_DESC"
+                        default="0"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+
+            </fieldset>
+        </fields>
+    </config>
+</extension>
