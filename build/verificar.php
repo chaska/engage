@@ -204,7 +204,7 @@ foreach ($idiomas as $a) {
 }
 ksort($porTag);
 if ($idiomas) {
-	nota(count($idiomas) . ' archivos de idioma declarados en los manifiestos pero que upstream no incluye (por idioma: ' . json_encode($porTag) . '). Ver README.');
+	ko(count($idiomas) . ' archivos de idioma declarados en los manifiestos y ausentes en la fuente (por idioma: ' . json_encode($porTag) . ')');
 }
 
 echo "== (c) php -l sobre src (sin vendor)\n";
