@@ -1,5 +1,10 @@
 # Registro de cambios del fork
 
+## 0.6.4 — 2026-10-03
+- Qué: nuevo `docs/PRUEBAS-SEGURIDAD-JOOMLA6.md` (solo documentación): cronología de incidentes de Joomla desde 6.0 (14-oct-2025), clases de vulnerabilidad vs. relevancia para Engage, 42 pruebas de seguridad, 15 de compatibilidad y lista de lo no verificado.
+- Límite: los avisos oficiales (developer.joomla.org, NVD) estaban bloqueados por el proxy; los CVE y rangos de versión marcados BQ proceden de resúmenes de buscador y NO están contrastados con la fuente primaria. Ninguna prueba de la lista se ha ejecutado aún.
+- Sin cambios de código ni del ZIP.
+
 ## 0.6.3 — 2026-10-03
 - Qué: el titular del copyright de los archivos nuevos del fork pasa a ser "fork comunitario de Engage iniciado por ChasKa" (antes "fork comunitario de Engage").
 - Archivos: `updates/pkgengage.xml` (solo comentario), `tests/11-version.php`, `tests/12-update-server.php`, `docs/PUBLICAR-RELEASE.md`, `CHANGELOG.md`. Sin cambios de código ni del contenido del ZIP salvo si cambia el comentario del XML de updates (no va dentro del ZIP).
