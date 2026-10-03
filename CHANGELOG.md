@@ -6,6 +6,7 @@
 - Causa raíz / mismo patrón: revisado todo `src/` (`->order(`, `list.ordering`, `list.direction`): solo hay un punto donde la ordenación venía de fuera; los demás `order()` son fijos. El listado del panel (`filter_fields` histórico: `id`, `name`, `created`...) se resuelve ahora a la tabla `c` (antes una columna sin calificar como `id` daba "ambiguous column"); el listado del panel sigue ordenando por `user_name`, `c.id`, `c.created`, `c.enabled` igual que antes.
 - Archivos: `src/component/backend/src/Helper/ListOrdering.php` (nuevo), `src/component/backend/src/Model/CommentsModel.php`, `src/component/frontend/src/Controller/CommentsController.php`.
 - Impacto colateral a revisar: un visitante que enviara a mano `akengage_order` distinto de `c.created`/`c.id` ahora ve el orden por fecha (no hay interfaz pública que lo ofrezca; el plugin solo fija la dirección). Observado y NO tocado: el filtro de fechas del modelo usa `c.created_on`, columna que no existe (la tabla tiene `created`); no es del alcance de esta versión, queda anotado para decidir.
+- `build/verificar.php`: los archivos que no existen en upstream se informan como "nuevo del fork" en lugar de fallo.
 - Pruebas: `tests/02-orden.php` (ListOrdering con 24 valores de ataque: `u.password`, `c.created; DROP TABLE x`, backticks, NUL, arrays, objetos...; y `getListQuery` real con stubs de Joomla comprobando el ORDER BY generado).
 
 ## 0.3.0 — 2026-10-03 (Fase 3, paso 1: Filesystem)
