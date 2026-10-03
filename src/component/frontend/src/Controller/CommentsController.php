@@ -458,4 +458,4 @@ class CommentsController extends AdminCommentsController
 		return $defaultLimit;
 	}
 
-}
+}

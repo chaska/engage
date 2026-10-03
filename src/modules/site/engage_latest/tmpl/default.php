@@ -66,6 +66,9 @@ endif;
 
 		$commentTable->load($comment->id);
 
+		// Same processing and purification as the comments list: never print the stored body as-is.
+		$commentBody = HTMLHelper::_('engage.processCommentTextForDisplay', $comment->body);
+
 		$commentUri->setFragment('akengage-comment-' . $comment->id);
 		$commentUri->setVar('akengage_cid', $comment->id);
 		?>
@@ -74,7 +77,7 @@ endif;
 				<div class="d-flex justify-content-between align-items-start">
 					<div class="h5">
 						<?php if ($link_title): ?>
-							<a href="<?= $commentsUri->toString() ?>">
+							<a href="<?= htmlspecialchars($commentsUri->toString(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
 								<?= htmlspecialchars($comment->article_title) ?>
 							</a>
 						<?php else: ?>
@@ -89,16 +92,16 @@ endif;
 			<div class="text-muted my-1">
 				<?= Text::sprintf(
 					'MOD_ENGAGE_LATEST_LBL_COMMENTED_ON',
-					$comment->user_name,
-					$commentUri->toString(),
+					htmlspecialchars((string) $comment->user_name, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+					htmlspecialchars($commentUri->toString(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
 					HTMLHelper::_('engage.date', Factory::getDate($comment->created))
 				) ?>
 			</div>
 			<div>
 				<?php if ($excerpt): ?>
-					<?= HTMLHelper::_('engage.textExcerpt', $comment->body, $excerpt_words, $excerpt_characters, '[…]') ?>
+					<?= HTMLHelper::_('engage.textExcerpt', $commentBody, $excerpt_words, $excerpt_characters, '[…]') ?>
 				<?php else: ?>
-					<?= $comment->body ?>
+					<?= $commentBody ?>
 				<?php endif; ?>
 			</div>
 		</li>

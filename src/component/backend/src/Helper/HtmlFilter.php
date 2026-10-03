@@ -77,6 +77,30 @@ class HtmlFilter
 	}
 
 	/**
+	 * Filters comment HTML for display (not for saving).
+	 *
+	 * - Mode "joomla": the text is returned unchanged (that mode explicitly delegates to the filtering done when the
+	 *   comment was saved).
+	 * - Modes "htmlpurifier" and "strict": the text is always purified, whoever is viewing it.
+	 *
+	 * @param   string|null  $text  The comment HTML
+	 *
+	 * @return  string  The text which is safe to display
+	 * @since   0.4.1
+	 */
+	public static function filterTextForDisplay(?string $text): string
+	{
+		$filterMode = self::getFilterMode();
+
+		if ($filterMode === 'joomla')
+		{
+			return $text ?? '';
+		}
+
+		return self::purify($text ?? '', $filterMode === 'strict');
+	}
+
+	/**
 	 * Make sure HTML Purifier's classes can be loaded.
 	 *
 	 * @return  void
@@ -182,11 +206,11 @@ class HtmlFilter
 		// Get Joomla filtering configuration
 		$joomlaFiltering = self::getJoomlaFilterSettings();
 
-		// No filtering: return the $text as-is
-		if ($joomlaFiltering['filterType'] == 'none')
-		{
-			return $text;
-		}
+		/**
+		 * Joomla's "No filtering" (the Super Users default) used to return the $text as-is here, even in strict mode.
+		 * That left the people with the most privileges (administrators looking at the comments) exposed to stored
+		 * XSS. HTML Purifier now always runs when this method is called, whatever the viewer's Joomla filter is.
+		 */
 
 		/**
 		 * No HTML
@@ -251,6 +275,8 @@ class HtmlFilter
 					break;
 
 				case 'none':
+					// "No filtering" in Joomla must not mean "no purifying" here: use the strict whitelist.
+					$config->set('HTML.Allowed', $whitelist);
 					break;
 
 				case 'blacklist':
@@ -496,4 +522,4 @@ class HtmlFilter
 
 		return self::$joomlaFilterSettings;
 	}
-}
+}
