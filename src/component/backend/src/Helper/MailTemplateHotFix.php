@@ -151,26 +151,50 @@ class MailTemplateHotFix
 		}
 	}
 
-	private static function hotFixMailTemplate(): void
+	/**
+	 * Primera versión de Joomla con el fallo (MailTemplate convierte las URL relativas ANTES de aplicar la plantilla).
+	 */
+	public const BUGGY_FROM = '5.2.0';
+
+	/**
+	 * Primera versión de Joomla que ya lo trae corregido (comprobado en 5.2.2, 5.2.3, 5.3.0, 5.4.0, 6.0.0 y las ramas
+	 * 5.4-dev y 6.1-dev: la conversión está justo antes de setBody()).
+	 */
+	public const FIXED_IN = '5.2.2';
+
+	/**
+	 * ¿Es esta versión de Joomla una de las afectadas? Solo 5.2.0 y 5.2.1 (rango cerrado).
+	 */
+	public static function isAffectedVersion(string $version): bool
 	{
-		if (!version_compare(JVERSION, '5.2.0', 'ge'))
+		return version_compare($version, self::BUGGY_FROM, '>=') && version_compare($version, self::FIXED_IN, '<');
+	}
+
+	/**
+	 * Devuelve el código de MailTemplate parcheado, o NULL si el código no está exactamente en el estado defectuoso
+	 * conocido (en ese caso no se parchea nada y se usa la clase estándar del núcleo).
+	 *
+	 * Estado defectuoso: la conversión aparece una sola vez, ANTES de crear el FileLayout, y setBody($htmlBody)
+	 * aparece una sola vez; además "class MailTemplate" aparece una sola vez.
+	 */
+	public static function buildPatchedSource(string $sourceCode): ?string
+	{
+		$convert = '$htmlBody = MailHelper::convertRelativeToAbsoluteUrls($htmlBody);';
+		$setBody = '$this->mailer->setBody($htmlBody)';
+
+		if (substr_count($sourceCode, 'class MailTemplate') !== 1
+			|| substr_count($sourceCode, $convert) !== 1
+			|| substr_count($sourceCode, $setBody) !== 1)
 		{
-			return;
+			return null;
 		}
 
-		if (!self::canRegisterWrapper())
+		$posLayout = strpos($sourceCode, 'new FileLayout(');
+
+		if ($posLayout === false || strpos($sourceCode, $convert) > $posLayout)
 		{
-			return;
+			return null;
 		}
-
-		if (class_exists(\Joomla\CMS\Mail\MailTemplateAkeebaWorkaround::class, false))
-		{
-			return;
-		}
-
-		$sourceFile = JPATH_LIBRARIES . '/src/Mail/MailTemplate.php';
-
-		$sourceCode = file_get_contents($sourceFile);
 
 		$sourceCode = str_replace(
 			'class MailTemplate',
@@ -178,17 +202,47 @@ class MailTemplateHotFix
 			$sourceCode
 		);
 
-		$sourceCode = str_replace(
-			'$htmlBody = MailHelper::convertRelativeToAbsoluteUrls($htmlBody);',
-			'',
-			$sourceCode
-		);
+		$sourceCode = str_replace($convert, '', $sourceCode);
 
-		$sourceCode = str_replace(
-			'$this->mailer->setBody($htmlBody)',
-			'$htmlBody = MailHelper::convertRelativeToAbsoluteUrls($htmlBody);$this->mailer->setBody($htmlBody)',
-			$sourceCode
-		);
+		return str_replace($setBody, $convert . $setBody, $sourceCode);
+	}
+
+	/**
+	 * Aplica el parche solo en Joomla 5.2.0 y 5.2.1 y solo si el código tiene el estado defectuoso conocido.
+	 *
+	 * @return  bool  True si MailTemplateAkeebaWorkaround está disponible.
+	 */
+	private static function hotFixMailTemplate(): bool
+	{
+		if (!defined('JVERSION') || !self::isAffectedVersion(JVERSION))
+		{
+			return false;
+		}
+
+		if (class_exists(\Joomla\CMS\Mail\MailTemplateAkeebaWorkaround::class, false))
+		{
+			return true;
+		}
+
+		if (!self::canRegisterWrapper())
+		{
+			return false;
+		}
+
+		$sourceFile = JPATH_LIBRARIES . '/src/Mail/MailTemplate.php';
+		$sourceCode = is_file($sourceFile) ? file_get_contents($sourceFile) : false;
+
+		if (!is_string($sourceCode))
+		{
+			return false;
+		}
+
+		$sourceCode = self::buildPatchedSource($sourceCode);
+
+		if ($sourceCode === null)
+		{
+			return false;
+		}
 
 		self::registerStreamWrapper();
 
@@ -196,24 +250,29 @@ class MailTemplateHotFix
 
 		if (!file_put_contents($tempFile, $sourceCode))
 		{
-			return;
+			return false;
 		}
 
 		@include_once $tempFile;
+
+		return class_exists(\Joomla\CMS\Mail\MailTemplateAkeebaWorkaround::class, false);
 	}
 
 	public static function getAWorkingMailTemplate($templateId, $language, ?Mail $mailer = null): MailTemplate
 	{
 		try
 		{
-			self::hotFixMailTemplate();
-
-			return new \Joomla\CMS\Mail\MailTemplateAkeebaWorkaround($templateId, $language, $mailer);
+			if (self::hotFixMailTemplate())
+			{
+				return new \Joomla\CMS\Mail\MailTemplateAkeebaWorkaround($templateId, $language, $mailer);
+			}
 		}
 		catch (\Throwable $e)
 		{
-			return new \Joomla\CMS\Mail\MailTemplate($templateId, $language, $mailer);
+			// Se usa la clase estándar del núcleo.
 		}
+
+		return new \Joomla\CMS\Mail\MailTemplate($templateId, $language, $mailer);
 	}
 
 	/**
