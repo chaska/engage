@@ -123,13 +123,15 @@ class CommentModel extends AdminCommentModel
 	 */
 	public function validate($form, $data, $group = null)
 	{
-		$assetId = $data['asset_id'] ?? 0;
-
 		try
 		{
+			$data    = $this->whitelistSubmittedData((array) $data);
+			$assetId = (int) $data['asset_id'];
+
 			$this->assertAssetAccess($assetId);
 			$this->assertCommentsOpen($assetId);
 			$this->assertAcceptTos($data['accept_tos'] ?? false);
+			$this->assertValidParent((int) $data['parent_id'], $assetId, empty($data['id']));
 		}
 		catch (Exception $e)
 		{
@@ -139,6 +141,121 @@ class CommentModel extends AdminCommentModel
 		}
 
 		return parent::validate($form, $data, $group);
+	}
+
+	/**
+	 * Fuerza los campos que el visitante NO decide (mass assignment: id, asset_id, parent_id y campos del servidor).
+	 *
+	 * - Comentario existente: asset_id y parent_id son SIEMPRE los almacenados; el formulario de edición no puede
+	 *   mover un comentario a otro contenido ni colgarlo de otro comentario (ni crear ciclos en el árbol).
+	 * - Comentario nuevo: id = 0; asset_id y parent_id solo se aceptan como enteros decimales; se descartan los campos
+	 *   que fija el servidor (enabled, created, created_by, modified, modified_by, ip, user_agent).
+	 *
+	 * @param   array  $data  Datos enviados
+	 *
+	 * @return  array
+	 * @throws  Exception
+	 * @since   0.6.8
+	 */
+	private function whitelistSubmittedData(array $data): array
+	{
+		$toInt = static function ($v): ?int {
+			if (is_int($v))
+			{
+				return $v;
+			}
+
+			return (is_string($v) && preg_match('/^[0-9]{1,18}$/', $v)) ? (int) $v : null;
+		};
+
+		$rawId = $data['id'] ?? 0;
+		$id    = ($rawId === '' || $rawId === null) ? 0 : $toInt($rawId);
+
+		if ($id === null || $id < 0)
+		{
+			throw new RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
+		}
+
+		if ($id > 0)
+		{
+			/** @var CommentTable $stored */
+			$stored = $this->getTable('Comment', 'Administrator');
+
+			if (!$stored->load($id))
+			{
+				throw new RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
+			}
+
+			$data['id']        = $id;
+			$data['asset_id']  = (int) $stored->asset_id;
+			$data['parent_id'] = (int) ($stored->parent_id ?? 0);
+
+			return $data;
+		}
+
+		foreach (['enabled', 'created', 'created_by', 'modified', 'modified_by', 'ip', 'user_agent'] as $field)
+		{
+			unset($data[$field]);
+		}
+
+		$rawParent = $data['parent_id'] ?? 0;
+		$parentId  = ($rawParent === '' || $rawParent === null) ? 0 : $toInt($rawParent);
+
+		if ($parentId === null && is_string($rawParent) && preg_match('/^-[0-9]{1,18}$/', $rawParent))
+		{
+			// Un negativo siempre se ha tratado como "sin padre" (CommentTable::onBeforeCheck).
+			$parentId = 0;
+		}
+
+		if ($parentId === null)
+		{
+			throw new RuntimeException(Text::_('COM_ENGAGE_COMMENTS_ERR_INVALID_PARENT'));
+		}
+
+		$data['id']        = 0;
+		$data['asset_id']  = $toInt($data['asset_id'] ?? 0) ?? 0;
+		$data['parent_id'] = max(0, $parentId);
+
+		return $data;
+	}
+
+	/**
+	 * Comprueba el comentario al que se responde: existe, es del mismo contenido y es visible para quien responde
+	 * (publicado, salvo moderadores). Todos los fallos dan el mismo mensaje para no revelar si el comentario existe.
+	 *
+	 * @param   int   $parentId  ID del comentario padre (0 = ninguno)
+	 * @param   int   $assetId   Asset ID del contenido que se comenta
+	 * @param   bool  $isNew     Solo se comprueba en comentarios nuevos
+	 *
+	 * @return  void
+	 * @since   0.6.8
+	 */
+	private function assertValidParent(int $parentId, int $assetId, bool $isNew): void
+	{
+		if (!$isNew || $parentId <= 0)
+		{
+			return;
+		}
+
+		/** @var CommentTable $parent */
+		$parent = $this->getTable('Comment', 'Administrator');
+
+		if (!$parent->load($parentId) || ((int) $parent->asset_id !== $assetId))
+		{
+			throw new RuntimeException(Text::_('COM_ENGAGE_COMMENTS_ERR_INVALID_PARENT'));
+		}
+
+		if ($parent->enabled == 1)
+		{
+			return;
+		}
+
+		$user = UserFetcher::getUser();
+
+		if (!$user->authorise('core.manage', 'com_engage') && !$user->authorise('core.edit.state', 'com_engage'))
+		{
+			throw new RuntimeException(Text::_('COM_ENGAGE_COMMENTS_ERR_INVALID_PARENT'));
+		}
 	}
 
 	/**
