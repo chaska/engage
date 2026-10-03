@@ -436,6 +436,14 @@ class Email extends CMSPlugin implements SubscriberInterface
 			$jCreatedOn = Factory::getDate($comment->created);
 			$jCreatedOn->setTimezone($tz);
 
+			/**
+			 * Moderation links (publish, unpublish, delete, spam) are only generated for recipients who are allowed to use
+			 * them. Everyone else gets the plain link to the comment. The unsubscribe link is for everybody.
+			 */
+			$canState    = $this->recipientCan($recipient, 'core.edit.state');
+			$canDelete   = $this->recipientCan($recipient, 'core.delete');
+			$fallbackUrl = $publicUri->toString();
+
 			// Try to send an email
 			try
 			{
@@ -443,12 +451,12 @@ class Email extends CMSPlugin implements SubscriberInterface
 					'RECIPIENT_NAME'   => strip_tags($recipient->name),
 					'RECIPIENT_EMAIL'  => strip_tags($recipient->email),
 					'DATE_LOCAL'       => $jCreatedOn->format($dateFormat, true),
-					'PUBLISH_URL'      => SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.publish', urlencode($returnUrlComment)), $comment, $recipient->email),
-					'UNPUBLISH_URL'    => SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.unpublish', urlencode($returnUrl)), $comment, $recipient->email),
-					'DELETE_URL'       => SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.delete', urlencode($returnUrl)), $comment, $recipient->email),
-					'POSSIBLESPAM_URL' => SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.possiblespam', urlencode($returnUrl)), $comment, $recipient->email),
-					'SPAM_URL'         => SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.reportspam', urlencode($returnUrl)), $comment, $recipient->email),
-					'UNSPAM_URL'       => SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.reportham', urlencode($returnUrlComment)), $comment, $recipient->email),
+					'PUBLISH_URL'      => $canState ? SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.publish', urlencode($returnUrlComment)), $comment, $recipient->email) : $fallbackUrl,
+					'UNPUBLISH_URL'    => $canState ? SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.unpublish', urlencode($returnUrl)), $comment, $recipient->email) : $fallbackUrl,
+					'DELETE_URL'       => $canDelete ? SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.delete', urlencode($returnUrl)), $comment, $recipient->email) : $fallbackUrl,
+					'POSSIBLESPAM_URL' => $canState ? SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.possiblespam', urlencode($returnUrl)), $comment, $recipient->email) : $fallbackUrl,
+					'SPAM_URL'         => $canState ? SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.reportspam', urlencode($returnUrl)), $comment, $recipient->email) : $fallbackUrl,
+					'UNSPAM_URL'       => $canState ? SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.reportham', urlencode($returnUrlComment)), $comment, $recipient->email) : $fallbackUrl,
 					'UNSUBSCRIBE_URL'  => SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.unsubscribe', urlencode($returnUrl)), $comment, $recipient->email),
 				]), $recipient);
 			}
@@ -456,6 +464,27 @@ class Email extends CMSPlugin implements SubscriberInterface
 			{
 				continue;
 			}
+		}
+	}
+
+	/**
+	 * Does the email recipient have the given privilege in Akeeba Engage?
+	 *
+	 * @param   User    $recipient  The recipient
+	 * @param   string  $action     The privilege, e.g. core.edit.state
+	 *
+	 * @return  bool
+	 * @since   0.4.3
+	 */
+	private function recipientCan(User $recipient, string $action): bool
+	{
+		try
+		{
+			return (bool) $recipient->authorise($action, 'com_engage');
+		}
+		catch (\Throwable $e)
+		{
+			return false;
 		}
 	}
 

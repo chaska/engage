@@ -66,29 +66,34 @@ final class SignedURL
 		$uri->setVar('email', $email);
 		$uri->setVar('expires', $expires);
 		$uri->setVar('cid[]', $comment->id);
-		$uri->setVar('token', self::getToken($task, $email, $comment->asset_id, $expires));
+		$uri->setVar('token', self::getToken($task, $email, $comment->asset_id, $expires, (int) $comment->id));
 
 		return $uri->toString(['path', 'query', 'fragment']);
 	}
 
 	/**
-	 * Use HMAC-SHA-1 to generate a secure token
+	 * Use HMAC-SHA-256 to generate a secure token
+	 *
+	 * The signature covers the task, the email address, the article's asset ID, the expiration time AND the ID of the
+	 * comment the link acts upon. Without the comment ID a link sent for one comment could be reused on any other
+	 * comment of the same article.
 	 *
 	 * @param   string  $task      The component task to include in the signature
 	 * @param   string  $email     The email address to include in the signature
 	 * @param   string  $asset_id  The article's asset_id to include in the signature
 	 * @param   int     $expires   The expiration UNIX timestamp to include in the signature
+	 * @param   int     $cid       The ID of the comment to include in the signature
 	 *
 	 * @return  string
 	 * @throws  Exception
 	 * @since   1.0.0
 	 */
-	public static function getToken(string $task, string $email, string $asset_id, int $expires): string
+	public static function getToken(string $task, string $email, string $asset_id, int $expires, int $cid): string
 	{
-		$signString = $task . '-' . $email . '-' . $asset_id . '-' . $expires;
-		$key        = Factory::getApplication()->get('secret');
+		$signString = $task . '-' . $email . '-' . $asset_id . '-' . $expires . '-' . $cid;
+		$key        = (string) Factory::getApplication()->get('secret');
 
-		return hash_hmac('sha1', $signString, $key, false);
+		return hash_hmac('sha256', $signString, $key, false);
 	}
 
 	/**
@@ -100,12 +105,14 @@ final class SignedURL
 	 * @param   string|null  $asset_id  The article's asset ID, used to calculate the reference signature
 	 * @param   int|null     $expires   The expiration datetime of the signature, used to calculate the reference
 	 *                                  signature
+	 * @param   int|null     $cid       The ID of the comment the link acts upon, used to calculate the reference
+	 *                                  signature
 	 *
 	 * @return  bool
 	 * @throws  Exception
 	 * @since   1.0.0
 	 */
-	public static function verifyToken(?string $token, ?string $task, ?string $email, ?string $asset_id, ?int $expires)
+	public static function verifyToken(?string $token, ?string $task, ?string $email, ?string $asset_id, ?int $expires, ?int $cid = null)
 	{
 		/**
 		 * IMPORTANT! While an empty token or empty individual token components immediately disqualify the token, we
@@ -114,7 +121,7 @@ final class SignedURL
 		 * evaluation, would cause the token check to be variable time which could cause subtle security issues. We
 		 * really need to go through "stupid" code to achieve a constant time token verification.
 		 */
-		$validToken   = self::getToken($task ?? '', $email ?? '', $asset_id ?? '', $expires ?? '');
+		$validToken   = self::getToken($task ?? '', $email ?? '', $asset_id ?? '', $expires ?? 0, $cid ?? 0);
 		$confirmToken = Crypt::timingSafeCompare($validToken, $token ?? '');
 
 		if (is_null($task))
@@ -133,6 +140,11 @@ final class SignedURL
 		}
 
 		if (is_null($expires))
+		{
+			$confirmToken = false;
+		}
+
+		if (is_null($cid) || $cid <= 0)
 		{
 			$confirmToken = false;
 		}

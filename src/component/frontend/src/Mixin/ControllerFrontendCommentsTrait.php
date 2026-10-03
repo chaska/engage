@@ -54,13 +54,43 @@ trait ControllerFrontendCommentsTrait
 				throw new RuntimeException('', 0xDEAD);
 			}
 
+			/**
+			 * A signed link authorises ONE comment: the one whose ID is in the signature. The controllers act on
+			 * every ID found in the request (cid[], id), so any additional or different ID, wherever it comes from,
+			 * disqualifies the signed link and we fall through to the form token check.
+			 */
+			$allIds = array_merge(
+				(array) $this->input->get('cid', [], 'array'),
+				(array) $this->input->get->get('cid', [], 'array'),
+				[$this->input->get('id', 0, 'raw'), $this->input->get->get('id', 0, 'raw')]
+			);
+			$unique = [];
+
+			foreach ($allIds as $candidate)
+			{
+				if (!is_scalar($candidate) || ($candidate !== '' && !is_numeric($candidate)))
+				{
+					throw new RuntimeException('', 0xDEAD);
+				}
+
+				if (intval($candidate) !== 0)
+				{
+					$unique[intval($candidate)] = true;
+				}
+			}
+
+			if (count($unique) !== 1 || !isset($unique[$id]))
+			{
+				throw new RuntimeException('', 0xDEAD);
+			}
+
 			// If the token is valid we can return true
 			$task     = $this->input->get->getCmd('task');
 			$email    = $this->input->get->getString('email');
 			$expires  = $this->input->get->getInt('expires');
 			$asset_id = $table->asset_id;
 
-			if (SignedURL::verifyToken($token, $task, $email, $asset_id, $expires))
+			if (SignedURL::verifyToken($token, $task, $email, $asset_id, $expires, (int) $id))
 			{
 				return true;
 			}

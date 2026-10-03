@@ -76,6 +76,10 @@ namespace Joomla\CMS\Component {
 namespace Joomla\CMS {
 	class Factory
 	{
+		public static function getApplication()
+		{
+			return new class { public function get($k, $d = null) { return $k === 'secret' ? ($GLOBALS['T_SECRET'] ?? 'secreto-de-prueba') : $d; } };
+		}
 		public static function getUser()
 		{
 			return new class { public function get($k) { return 42; } };
@@ -96,4 +100,18 @@ namespace Joomla\CMS\Filter {
 }
 namespace Joomla\Database {
 	trait DatabaseAwareTrait {}
+}
+
+namespace Joomla\CMS\Crypt {
+	class Crypt { public static function timingSafeCompare($a, $b) { return hash_equals((string) $a, (string) $b); } }
+}
+namespace Joomla\CMS\Router {
+	class Route
+	{
+		const TLS_IGNORE = 0;
+		public static function _($url, $xhtml = true, $tls = 0, $absolute = false) { return 'https://example.com/' . $url; }
+	}
+}
+namespace Joomla\CMS\Uri {
+	class Uri extends \Joomla\Uri\Uri {}
 }
