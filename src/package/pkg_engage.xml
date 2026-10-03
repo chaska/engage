@@ -53,6 +53,6 @@
     <scriptfile>script.engage.php</scriptfile>
 
     <updateservers>
-        <server type="extension" priority="1" name="Akeeba Engage Updates">https://cdn.akeeba.com/updates/pkgengage.xml</server>
+        <server type="extension" priority="1" name="Engage (fork comunitario) Updates">https://raw.githubusercontent.com/chaska/engage/main/updates/pkgengage.xml</server>
     </updateservers>
 </extension>

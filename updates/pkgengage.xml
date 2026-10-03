@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Servidor de actualizaciones del fork comunitario de Engage (lo consulta Joomla; ver <updateservers> en
+  src/package/pkg_engage.xml). Copyright (c)2026 fork comunitario de Engage; GNU General Public License v3 o posterior.
+  El <sha256> lo escribe build/build.php (php build/build.php) a partir del ZIP generado: no se edita a mano.
+  El ZIP se publica como archivo adjunto de la release v<version> de GitHub (ver docs/PUBLICAR-RELEASE.md).
+  Esta URL (rama main) solo debe actualizarse DESPUES de publicar la release, o Joomla verá una descarga que no existe.
+-->
+<updates>
+	<update>
+		<name>Engage</name>
+		<description>Engage, sistema de comentarios para Joomla (fork comunitario)</description>
+		<element>pkg_engage</element>
+		<type>package</type>
+		<version>3.4.2.1</version>
+		<infourl title="Engage (fork comunitario)">https://github.com/chaska/engage</infourl>
+		<downloads>
+			<downloadurl type="full" format="zip">https://github.com/chaska/engage/releases/download/v3.4.2.1/pkg_engage-3.4.2.1.zip</downloadurl>
+		</downloads>
+		<sha256>1db0e254b692085fb7d02e9438b0c4bd4c38d59363190c4bf10a739cbd12f8b1</sha256>
+		<tags>
+			<tag>stable</tag>
+		</tags>
+		<maintainer>Fork comunitario de Engage</maintainer>
+		<maintainerurl>https://github.com/chaska/engage</maintainerurl>
+		<targetplatform name="joomla" version="((5\.[0-9])|(6\.[0-9]))"/>
+		<php_minimum>8.1</php_minimum>
+		<supported_databases mysql="8.0.13" mariadb="10.4.0"/>
+	</update>
+</updates>

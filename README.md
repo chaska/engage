@@ -22,6 +22,8 @@ Fase 3 (versiones del fork 0.3.0 a 0.5.3): compatibilidad con Joomla 5 y 6 y PHP
 | `src/plugins/<grupo>/<nombre>/` | Los 10 plugins (con `language/`). |
 | `src/package/` | `pkg_engage.xml`, `script.engage.php` y `language/<tag>/pkg_engage.sys.ini` (es-ES y en-GB). |
 | `build/build.php` | Genera los ZIP en `dist/` (ignorado por git). |
+| `updates/pkgengage.xml` | Servidor de actualizaciones de Joomla (el `<sha256>` lo escribe `build/build.php`). |
+| `docs/PUBLICAR-RELEASE.md` | Cómo publicar la release a mano. |
 | `build/verificar.php` | Comprobaciones: manifiestos frente a ZIP, `php -l`, comparación con upstream, XML, reproducibilidad. |
 | `LICENSE`, `NOTICE.md`, `CHANGELOG.md` | Licencia GPL v3, atribución y registro de cambios. |
 
@@ -41,7 +43,7 @@ La versión se lee de `src/package/pkg_engage.xml`; los nombres de los ZIP, de l
 
 ## Pendiente y limitaciones conocidas
 
-- **URL de actualizaciones**: `pkg_engage.xml` sigue apuntando a `https://cdn.akeeba.com/updates/pkgengage.xml`. Se cambiará en la Fase 4 (sin tocar de momento).
+- **Servidor de actualizaciones**: desde la 0.6.1 `pkg_engage.xml` apunta a `updates/pkgengage.xml` de este repositorio (vía raw.githubusercontent.com). La release `v3.4.2.1` y su ZIP **aún no están publicados en GitHub**: ver `docs/PUBLICAR-RELEASE.md`.
 - **Idiomas**: los manifiestos de upstream declaraban 97 archivos `de-DE`, `el-GR`, `fr-FR` y `nl-NL` que no existen. Desde la 0.5.2 ya no se declaran y el paquete declara también `es-ES/pkg_engage.sys.ini`. Idiomas incluidos: en-GB y es-ES.
 - No se ha instalado en Joomla: solo se verifica la estructura de los ZIP frente a los manifiestos.
 

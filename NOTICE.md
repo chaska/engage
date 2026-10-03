@@ -24,3 +24,7 @@ Este fork **no es un producto de Akeeba Ltd, no está respaldado por ella y no t
 - HTMLPurifier 4.19.1 (`src/component/backend/vendor/ezyang/htmlpurifier/`; la versión 3.4.2 original llevaba la 4.17.0), con su propia licencia (LGPL 2.1 o posterior, archivo `LICENSE` conservado), sin modificar. Obtenida de https://github.com/ezyang/htmlpurifier (etiqueta v4.19.1, commit 5e0539132d934f936fbae2c88b55d58f9438623f) mediante Composer.
 
 - Fuente `Akeeba-Products.woff` (`media/com_engage/fonts/`): incluida en el original; su licencia concreta no consta en los archivos y está pendiente de revisar.
+
+## Código de Joomla en las pruebas
+
+- `tests/joomla-real/` contiene copias sin modificar de unas pocas clases de Joomla CMS (GPL v2 o posterior, © Open Source Matters, Inc.) usadas solo por las pruebas; no se incluyen en ningún ZIP. Procedencia y commits en `tests/joomla-real/LEEME.md`.
