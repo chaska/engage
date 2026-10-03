@@ -125,11 +125,11 @@ class HtmlFilter
 				break;
 
 			case 'auto':
-				require_once $backendPath . '/vendor/ezyang/htmlpurifier/library/HTMLPUrifier.auto.php';
+				require_once $backendPath . '/vendor/ezyang/htmlpurifier/library/HTMLPurifier.auto.php';
 				break;
 
 			case 'all':
-				require_once $backendPath . '/vendor/ezyang/htmlpurifier/library/HTMLPUrifier.includes.php';
+				require_once $backendPath . '/vendor/ezyang/htmlpurifier/library/HTMLPurifier.includes.php';
 				break;
 		}
 	}
@@ -280,15 +280,15 @@ class HtmlFilter
 					break;
 
 				case 'blacklist':
-					$config->set('HTML.ForbiddenElements', $joomlaFiltering['blacklistTags']);
-					$config->set('HTML.ForbiddenAttributes', $joomlaFiltering['blacklistTags']);
+					$config->set('HTML.ForbiddenElements', array_values($joomlaFiltering['blacklistTags']));
+					$config->set('HTML.ForbiddenAttributes', array_values($joomlaFiltering['blacklistAttributes']));
 					break;
 
 				case 'whitelist':
-					$config->set('HTML.AllowedElements', $joomlaFiltering['whitelistTags']);
-					$config->set('HTML.AllowedAttributes', array_map(function ($x) {
+					$config->set('HTML.AllowedElements', array_values($joomlaFiltering['whitelistTags']));
+					$config->set('HTML.AllowedAttributes', array_values(array_map(function ($x) {
 						return '*.' . $x;
-					}, $joomlaFiltering['whitelistTags']));
+					}, $joomlaFiltering['whitelistAttributes'])));
 					break;
 			}
 		}
@@ -464,7 +464,7 @@ class HtmlFilter
 
 			if ($customListAttributes)
 			{
-				self::$joomlaFilterSettings['blacklistTags'] = $customListAttributes;
+				self::$joomlaFilterSettings['blacklistAttributes'] = $customListAttributes;
 			}
 
 			return self::$joomlaFilterSettings;
@@ -484,17 +484,23 @@ class HtmlFilter
 			$blackListTags       = array_diff($blackListTags, $whiteListTags);
 			$blackListAttributes = array_diff($blackListAttributes, $whiteListAttributes);
 
-			// Remove whitelisted tags from filter's default blacklist
-			if ($whiteListTags)
-			{
-				self::$joomlaFilterSettings['blacklistTags'] = array_diff($blackListTags, $whiteListTags);
-			}
+			/**
+			 * Like Joomla's own text filter: the effective blacklist is the filter's default blacklist plus the
+			 * configured one, minus whatever was explicitly whitelisted.
+			 */
+			self::$joomlaFilterSettings['blacklistTags'] = array_values(
+				array_diff(
+					array_unique(array_merge(self::$joomlaFilterSettings['blacklistTags'] ?? [], $blackListTags)),
+					$whiteListTags
+				)
+			);
 
-			// Remove whitelisted attributes from filter's default blacklist
-			if ($whiteListAttributes)
-			{
-				self::$joomlaFilterSettings['blacklistTags'] = array_diff($blackListAttributes, $whiteListAttributes);
-			}
+			self::$joomlaFilterSettings['blacklistAttributes'] = array_values(
+				array_diff(
+					array_unique(array_merge(self::$joomlaFilterSettings['blacklistAttributes'] ?? [], $blackListAttributes)),
+					$whiteListAttributes
+				)
+			);
 
 			return self::$joomlaFilterSettings;
 		}
@@ -507,7 +513,7 @@ class HtmlFilter
 		if ($whiteList)
 		{
 			self::$joomlaFilterSettings['filterType']          = 'whitelist';
-			self::$joomlaFilterSettings['whitelistTags']       = $whiteList;
+			self::$joomlaFilterSettings['whitelistTags']       = $whiteListTags;
 			self::$joomlaFilterSettings['whitelistAttributes'] = $whiteListAttributes;
 
 			return self::$joomlaFilterSettings;
