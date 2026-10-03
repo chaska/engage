@@ -24,7 +24,10 @@ function comentar(Cliente $c, int $art, int $cat, int $asset, array $j): array
 {
 	$p = $c->get("/index.php?option=com_content&view=article&id=$art&catid=$cat");
 	$t = Cliente::token($p['body']);
-	return $c->post('/index.php?option=com_engage&task=comment.save', ['returnurl' => base64_encode($c->base . '/'), $t => 1, 'jform' => array_merge(['asset_id' => $asset, 'parent_id' => 0], $j)]);
+	$x = $c->post('/index.php?option=com_engage&task=comment.save', ['returnurl' => base64_encode($c->base . '/'), $t => 1, 'jform' => array_merge(['asset_id' => $asset, 'parent_id' => 0], $j)]);
+	fwrite(STDERR, sprintf("   POST comentario (%s): HTTP %d\n", substr($j['body'], 0, 30), $x['code']));
+	if ($x['code'] >= 400) { file_put_contents($GLOBALS['WORK'] . '/tmp/post-error-' . $x['code'] . '.html', $x['headers'] . $x['body']); }
+	return $x;
 }
 $A = $ids['art_publico']; $C = $ids['cat_publica']; $AS = $ids['art_publico_asset'];
 $g = new Cliente($BASE, "$WORK/tmp", 'dr-g'); $r = new Cliente($BASE, "$WORK/tmp", 'dr-r'); $r->login('registrado1', $UP);

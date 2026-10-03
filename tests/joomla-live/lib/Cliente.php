@@ -13,7 +13,7 @@ class Cliente
 		@unlink($this->jar);
 	}
 
-	/** @return array{code:int,loc:string,headers:string,body:string,ms:int} */
+	/** @return array{code:int,loc:string,headers:string,body:string,ms:int,err:string} */
 	public function req(string $metodo, string $ruta, array $campos = [], array $cabeceras = [], bool $crudo = false): array
 	{
 		$url = preg_match('#^https?://#', $ruta) ? $ruta : $this->base . $ruta;
@@ -29,13 +29,14 @@ class Cliente
 		$t0   = microtime(true);
 		$resp = curl_exec($ch);
 		$ms   = (int) ((microtime(true) - $t0) * 1000);
+		$err  = curl_error($ch);
 		$hs   = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);
 		$code = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
 		curl_close($ch);
 		$hdr  = substr((string) $resp, 0, $hs);
 		$loc  = preg_match('/^Location:\s*(.+?)\r?$/mi', $hdr, $m) ? trim($m[1]) : '';
 
-		return $this->ultimo = ['code' => $code, 'loc' => $loc, 'headers' => $hdr, 'body' => (string) substr((string) $resp, $hs), 'ms' => $ms];
+		return $this->ultimo = ['code' => $code, 'loc' => $loc, 'headers' => $hdr, 'body' => (string) substr((string) $resp, $hs), 'ms' => $ms, 'err' => $err];
 	}
 
 	public function get(string $ruta, array $cab = []): array { return $this->req('GET', $ruta, [], $cab); }

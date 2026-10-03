@@ -1,5 +1,11 @@
 # Registro de cambios del fork
 
+## 0.6.16 — 2026-10-03 (pruebas en un Joomla 6.1.4 real; sin cambios en el paquete)
+- Qué: se monta un Joomla 6.1.4 desechable (paquete oficial de GitHub Releases, MariaDB 10.11.14, PHP 8.3.6, `php -S`, SMTP de captura), se instala el paquete del fork y se ejecutan 73 comprobaciones funcionales y de seguridad por HTTP, además de una prueba de actualización desde el 3.4.2 original reconstruido de `upstream/3.4.2-instalado`.
+- Resultado: instalación limpia sin errores; actualización 3.4.2 -> 3.4.2.1 conserva las tablas `engage_*` (volcado idéntico), permisos, plantillas de correo y el `enabled`/`params` de las 13 extensiones, sin ficheros sobrantes y reescribiendo en su sitio la fila del update site; 73 PASA / 0 FALLA / 0 NO PROBADA con el paquete final, tras corregir los fallos reales hallados (0.6.10 a 0.6.15). Lo no verificado está en la sección 6 del documento.
+- Archivos: `docs/RESULTADOS-PRUEBAS-JOOMLA-REAL.md` (nuevo), `tests/joomla-live/` (nuevo: scripts reproducibles, sin contraseñas ni binarios de Joomla), `docs/PUBLICAR-RELEASE.md` (hash vigente).
+- Impacto: ninguno en el código instalable ni en el ZIP; `tests/run.php` no ejecuta `tests/joomla-live/`.
+
 ## 0.6.15 — 2026-10-03 (corrección hallada en Joomla 6.1.4 real: aviso de PHP en cada comentario con Akismet activo)
 - Qué era real: `Akismet::onAkeebaEngageCheckSpam()` hacía `[$comment, $isNew] = array_values($event->getArguments())`, pero `CommentModel` dispara el evento con UN solo argumento (`[$table]`). Resultado en el sitio real con el plugin Akismet activado: `PHP Warning: Undefined array key 1` (`Akismet.php:67`) por cada comentario enviado (visible al visitante si el servidor muestra errores) y `$isNew` siempre nulo, de modo que Akismet recibía `recheck_reason = edit` también en comentarios nuevos. Defecto heredado (el original llama igual).
 - Cambio: el comentario es el primer argumento; `$isNew` solo se toma del evento si es un booleano, y si no se deduce del ID del comentario (sin ID = nuevo).
