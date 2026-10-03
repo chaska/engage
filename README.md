@@ -43,7 +43,7 @@ La versión se lee de `src/package/pkg_engage.xml`; los nombres de los ZIP, de l
 
 ## Pendiente y limitaciones conocidas
 
-- **Servidor de actualizaciones**: desde la 0.6.1 `pkg_engage.xml` apunta a `updates/pkgengage.xml` de este repositorio (vía raw.githubusercontent.com). La release `v3.4.2.1` y su ZIP **aún no están publicados en GitHub**: ver `docs/PUBLICAR-RELEASE.md`.
+- **Servidor de actualizaciones**: desde la 0.6.1 `pkg_engage.xml` apunta a `updates/pkgengage.xml` de este repositorio (vía raw.githubusercontent.com). La release `v3.4.2.1` y su ZIP **aún no están publicados en GitHub**: ver `docs/PUBLICAR-RELEASE.md`. El update site antiguo de `cdn.akeeba.com` no se desactiva por código (Joomla lo reubica solo al actualizar); comprobación manual en ese documento.
 - **Idiomas**: los manifiestos de upstream declaraban 97 archivos `de-DE`, `el-GR`, `fr-FR` y `nl-NL` que no existen. Desde la 0.5.2 ya no se declaran y el paquete declara también `es-ES/pkg_engage.sys.ini`. Idiomas incluidos: en-GB y es-ES.
 - No se ha instalado en Joomla: solo se verifica la estructura de los ZIP frente a los manifiestos.
 
