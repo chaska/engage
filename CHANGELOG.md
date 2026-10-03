@@ -1,5 +1,12 @@
 # Registro de cambios del fork
 
+## 0.6.10 — 2026-10-03 (corrección hallada en Joomla 6.1.4 real: el comando `engage:cleanspam` no se registraba)
+- Qué era real: al montar un Joomla 6.1.4 de pruebas e instalar el paquete, `php cli/joomla.php list` no mostraba `engage:cleanspam`. Causa: `CleanSpam::configure()` llamaba `addArgument('max-time', InputOption::VALUE_OPTIONAL, ..., 10)`: una constante de OPCIÓN (4) como modo de ARGUMENTO, donde 4 es `IS_ARRAY`; Symfony Console lanza "A default value for an array argument must be an array" y el plugin `console/engage` captura la excepción en silencio, así que el comando desaparecía sin aviso. El defecto viene del código original (está igual en `upstream/3.4.2-instalado`); no se manifiesta en la ejecución desde el panel/cron web, solo por CLI.
+- Cambio: `InputArgument::OPTIONAL` en los dos argumentos y conversión a entero de `max-time` y `max-days` antes de usarlos (un texto ya no llega a `cleanSpam()`).
+- Archivos: `src/component/backend/src/CliCommand/CleanSpam.php`, `tests/17-cli-argumentos.php` (nuevo; si se define `JOOMLA_SITE` lo valida también contra el Symfony Console real de ese Joomla).
+- Verificado en el sitio real: tras reinstalar el paquete, `engage:cleanspam` aparece en `list` y se ejecuta ("0 spam comments were permanently deleted").
+- Impacto colateral: ninguno funcional; cambia el hash del ZIP y el `<sha256>` de `updates/pkgengage.xml` (confirmados en el mismo commit).
+
 ## 0.6.9 — 2026-10-03 (seguridad: topes de paginación, hallazgo 4 / PS-13)
 - Qué era real: `CommentsController` (frontend) leía `akengage_limit` y `akengage_limitstart` con `getUserStateFromRequest(..., tipo 'none')` y los pasaba al modelo tal cual. Un visitante podía pedir `akengage_limit=0` (hilo completo), `999999999` (sin tope) o un texto/array (TypeError en `commentIDTreeSliceWithDepth(int $start, ?int $limit)`). Además, con el valor por defecto 0 ("Todos") y `akengage_cid` en la URL, `intdiv($index, $limit)` dividía por cero.
 - Cambio: nueva `Administrator\Helper\ListLimits` (`limit()`, `start()`); las dos lecturas usan filtro `int` y pasan por ella. Máximo 500 por página = la mayor opción numérica de `default_limit` en `config.xml` (el "Todos" (0) solo lo puede fijar el administrador como valor por defecto; un 0, negativo o no entero del visitante se sustituye por ese valor por defecto); `limitstart` entero entre 0 y 1.000.000, si no 0. `intdiv` solo si el límite es > 0.
