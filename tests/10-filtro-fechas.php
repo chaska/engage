@@ -31,6 +31,20 @@ foreach ([['2026-01-01 00:00:00', null], ['2026-01-01 00:00:00', '2026-02-01 00:
 	t_ok(isset($fechas[0]) && str_contains($fechas[0], '`c`.`created`') && !str_contains($fechas[0], 'created_on'), '   usa `c`.`created`, no created_on');
 }
 
+echo "B2) 0.6.12: 'hasta' solo, y desde > hasta (se intercambian) sin avisos de PHP\n";
+set_error_handler(function ($n, $m) { throw new ErrorException($m, 0, $n); });
+foreach ([[null, '2026-02-01 00:00:00', '<='], ['2026-03-01 00:00:00', '2026-02-01 00:00:00', 'BETWEEN'], ['2026-01-01 00:00:00', '2026-02-01 00:00:00', 'BETWEEN']] as [$from, $to, $op]) {
+	$m = $rc->newInstanceWithoutConstructor();
+	$m->state = new FakeState(); $m->db = new FakeDb();
+	$m->state->set('filter.from', $from); $m->state->set('filter.to', $to);
+	try {
+		$q = $gl->invoke($m);
+		$fechas = array_values(array_filter($q->where, fn($w) => str_contains($w, ':from') || str_contains($w, ':to')));
+		t_ok(count($fechas) === 1 && str_contains($fechas[0], $op), 'desde=' . json_encode($from) . ' hasta=' . json_encode($to) . ' -> ' . ($fechas[0] ?? '(ninguna)'));
+	} catch (ErrorException $e) { t_ok(false, 'aviso PHP: ' . $e->getMessage()); }
+}
+restore_error_handler();
+
 echo "C) Sin created_on en el código PHP\n";
 $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
 $malos = [];

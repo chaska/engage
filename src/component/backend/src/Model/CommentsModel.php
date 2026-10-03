@@ -579,7 +579,7 @@ class CommentsModel extends ListModel
 
 		try
 		{
-			$fltTo = $fltFrom ? Factory::getDate($fltTo) : null;
+			$fltTo = $fltTo ? Factory::getDate($fltTo) : null;
 		}
 		catch (Exception $e)
 		{
@@ -587,7 +587,7 @@ class CommentsModel extends ListModel
 		}
 
 		// Swap dates if both are defined but from is later than to.
-		if (!empty($fltTo) && !empty($fltFrom) && ($fltTo->diff($fltFrom) != 0))
+		if (!empty($fltTo) && !empty($fltFrom) && ($fltFrom > $fltTo))
 		{
 			$temp    = $fltFrom;
 			$fltFrom = $fltTo;
@@ -640,14 +640,15 @@ class CommentsModel extends ListModel
 
 	protected function getStoreId($id = '')
 	{
-		$id .= ':' . $this->getState('filter.search');
-		$id .= ':' . $this->getState('filter.from');
-		$id .= ':' . $this->getState('filter.to');
-		$id .= ':' . $this->getState('filter.created_by');
-		$id .= ':' . $this->getState('filter.enabled');
-		$id .= ':' . $this->getState('filter.asset_id');
-		$id .= ':' . $this->getState('filter.parent_id');
-		$id .= ':' . $this->getState('filter.frontend');
+		// serialize(): los filtros pueden llegar como array desde la petición (filter[search][]=x) y no se pueden concatenar.
+		$id .= ':' . serialize($this->getState('filter.search'));
+		$id .= ':' . serialize($this->getState('filter.from'));
+		$id .= ':' . serialize($this->getState('filter.to'));
+		$id .= ':' . serialize($this->getState('filter.created_by'));
+		$id .= ':' . serialize($this->getState('filter.enabled'));
+		$id .= ':' . serialize($this->getState('filter.asset_id'));
+		$id .= ':' . serialize($this->getState('filter.parent_id'));
+		$id .= ':' . serialize($this->getState('filter.frontend'));
 		$id .= ':' . serialize($this->getState('filter.categories_include'));
 		$id .= ':' . serialize($this->getState('filter.categories_exclude'));
 
