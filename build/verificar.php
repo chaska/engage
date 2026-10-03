@@ -112,11 +112,11 @@ function declarados(SimpleXMLElement $x, string $base = ''): array
 }
 
 echo "== (b) Manifiestos frente a los ZIP\n";
-if (!is_file("$dist/pkg_engage-3.4.2.zip")) {
-	exit("Falta dist/. Ejecuta antes php build/build.php\n");
-}
 $pkg = simplexml_load_file("$src/package/pkg_engage.xml");
 $ver = (string) $pkg->version;
+if (!is_file("$dist/pkg_engage-$ver.zip")) {
+	exit("Falta dist/pkg_engage-$ver.zip. Ejecuta antes php build/build.php\n");
+}
 $pz  = new ZipArchive();
 $pz->open("$dist/pkg_engage-$ver.zip");
 $pnom = [];
