@@ -10,6 +10,7 @@ namespace Akeeba\Component\Engage\Site\Controller;
 defined('_JEXEC') or die;
 
 use Akeeba\Component\Engage\Administrator\Controller\CommentsController as AdminCommentsController;
+use Akeeba\Component\Engage\Administrator\Helper\ListOrdering;
 use Akeeba\Component\Engage\Administrator\Helper\UserFetcher;
 use Akeeba\Component\Engage\Administrator\Mixin\ControllerRedirectionTrait;
 use Akeeba\Component\Engage\Administrator\Mixin\ControllerReturnURLTrait;
@@ -359,9 +360,8 @@ class CommentsController extends AdminCommentsController
 		$defaultLimit = $this->getDefaultListLimit();
 		$start        = $this->app->getUserStateFromRequest('com_engage.comments.limitstart', 'akengage_limitstart', 0);
 		$limit        = $this->app->getUserStateFromRequest('com_engage.comments.limit', 'akengage_limit', $defaultLimit);
-		$ordering     = $this->input->get('akengage_order', 'c.created');
-		$orderDir     = strtoupper($this->input->get('akengage_order_Dir', 'DESC') ?: 'DESC');
-		$orderDir     = in_array($orderDir, ['ASC', 'DESC']) ? $orderDir : 'DESC';
+		$ordering     = ListOrdering::frontendColumn($this->input->get('akengage_order', 'c.created'));
+		$orderDir     = ListOrdering::direction($this->input->get('akengage_order_Dir', 'DESC'));
 
 		/** @var CommentsModel $model */
 		$model     = $this->getModel('Comments', 'Site', ['ignore_request' => true]);

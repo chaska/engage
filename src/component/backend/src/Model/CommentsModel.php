@@ -9,6 +9,7 @@ namespace Akeeba\Component\Engage\Administrator\Model;
 
 defined('_JEXEC') or die;
 
+use Akeeba\Component\Engage\Administrator\Helper\ListOrdering;
 use Akeeba\Component\Engage\Administrator\Helper\Timer;
 use Akeeba\Component\Engage\Administrator\Mixin\ModelPopulateStateTrait;
 use DateInterval;
@@ -616,8 +617,9 @@ class CommentsModel extends ListModel
 		}
 
 		// List ordering clause
-		$orderCol  = $this->state->get('list.ordering', 'c.created');
-		$orderDirn = $this->state->get('list.direction', 'DESC');
+		// Lista blanca: nunca se usa tal cual el valor del estado (puede venir de la petición del visitante).
+		$orderCol  = ListOrdering::column($this->state->get('list.ordering', 'c.created'));
+		$orderDirn = ListOrdering::direction($this->state->get('list.direction', 'DESC'));
 		$ordering  = $db->quoteName($orderCol) . ' ' . $db->escape($orderDirn);
 
 		/**
