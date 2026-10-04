@@ -235,9 +235,14 @@
 .eg-admin .eg-switch[aria-checked="true"]:active .eg-switch__knob { transform: translateX(20px); }
 
 /* ------------------------------------------------------------------ Control segmentado */
+/* 0.6.27: segmentos de IGUAL anchura (rejilla de una columna por opcion, en UNA fila) y ancho propio del contenido. El criterio de apilado ya no es
+   el numero de opciones sino el ancho real del texto (clases del servidor): `eg-row--short` (suma de etiquetas <= 32 caracteres y ninguna > 12,
+   p. ej. 1 a 6, Si/No, Ascendente/Descendente, Ninguna/Pequena/Media/Grande) y `eg-row--wide` (alguna > 24 o suma > 40: Modo de Gravatar,
+   Clasificacion), que se apila a todo el ancho con una rejilla regular. */
 .eg-admin .eg-seg {
-	display: inline-flex;
-	flex-wrap: wrap;
+	display: inline-grid;
+	grid-auto-flow: column;
+	grid-auto-columns: 1fr;
 	max-width: 100%;
 	gap: 2px;
 	padding: 3px;
@@ -273,9 +278,17 @@
 	box-shadow: 0 4px 10px -3px var(--eg-admin-accent);
 }
 
-/* Segmentado con opciones largas (fila en pila): ocupa todo el ancho y las opciones se reparten y envuelven en varias lineas */
-.eg-admin .eg-row--wide .eg-seg { display: flex; width: 100%; }
-.eg-admin .eg-row--wide .eg-seg__btn { flex: 1 1 12rem; }
+/* Etiquetas cortas: nunca se parten; si no caben ni debajo del texto, el control se desplaza en horizontal (antes se reduce el relleno) */
+.eg-admin .eg-row--short .eg-seg { overflow-x: auto; }
+.eg-admin .eg-row--short .eg-seg__btn { white-space: nowrap; overflow-wrap: normal; }
+
+/* Opciones largas (fila en pila): todo el ancho, rejilla regular (columnas iguales; si hay que partir, se parte por igual) */
+.eg-admin .eg-row--wide .eg-seg {
+	display: grid;
+	grid-auto-flow: row;
+	grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+	width: 100%;
+}
 
 /* ------------------------------------------------------------------ Campos */
 .eg-admin .eg-input {
@@ -475,8 +488,15 @@
 	.eg-admin .eg-row__ctl { flex-basis: 100%; }
 	.eg-admin .eg-input,
 	.eg-admin .eg-input--select { width: 100%; }
-	.eg-admin .eg-seg { width: 100%; }
-	.eg-admin .eg-seg__btn { flex: 1 1 auto; }
+	/* etiquetas medias: a todo el ancho, en rejilla regular; las cortas conservan su ancho propio y en una sola fila */
+	.eg-admin .eg-row:not(.eg-row--short):not(.eg-row--wide) .eg-seg {
+		display: grid;
+		grid-auto-flow: row;
+		grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+		width: 100%;
+	}
+
+	.eg-admin .eg-row--short .eg-seg__btn { min-width: 40px; padding: 6px 10px; }
 	.eg-admin .eg-navitem__t { font-size: .85rem; }
 }
 
