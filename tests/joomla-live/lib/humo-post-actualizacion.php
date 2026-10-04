@@ -37,6 +37,21 @@ if ($a->loginAdmin('admintest', $AP)) {
 	t(preg_match('/name="jform\[default_limit\]"[^>]*value="5"|value="5"[^>]*name="jform\[default_limit\]"|<option value="5" selected/', $o['body']) === 1, 'panel: el ajuste default_limit=5 del administrador se conserva');
 	$d = $a->get('/administrator/index.php?option=com_cpanel');
 	t($d['code'] === 200, 'panel: escritorio sin error');
+	// 0.6.24: la entrada del componente (el elemento del menu, link index.php?option=com_engage) abre el PANEL DE CONTROL y el menu sigue funcionando
+	$m = $db->query("SELECT id, link, published FROM jos_menu WHERE client_id=1 AND menutype='main' AND link='index.php?option=com_engage'")->fetch_assoc();
+	t((bool) $m && (int) $m['published'] === 1, 'menu: el elemento Akeeba Engage (index.php?option=com_engage) existe y esta publicado' . ($m ? " (id {$m['id']})" : ''));
+	$e = $a->get('/administrator/index.php?option=com_engage');
+	t($e['code'] === 200 && strpos($e['body'], 'id="eg-admin"') !== false && strpos($e['body'], 'data-eg-view="controlpanel"') !== false, 'menu: al pulsar Akeeba Engage se abre el panel de control (HTTP ' . $e['code'] . ')');
+	$h = $a->get('/administrator/index.php?option=com_cpanel');
+	t(strpos($h['body'], 'index.php?option=com_engage') !== false, 'menu renderizado: el menu lateral lleva el enlace index.php?option=com_engage');
+	$ok2 = true;
+	foreach (['comments', 'emailtemplates', 'controlpanel'] as $v) {
+		$r = $a->get('/administrator/index.php?option=com_engage&view=' . $v);
+		$ok2 = $ok2 && $r['code'] === 200 && stripos($r['body'], 'Fatal') === false;
+	}
+	t($ok2, 'las tres vistas (comments, emailtemplates, controlpanel) responden 200');
+	$mn = $db->query("SELECT title, link FROM jos_menu WHERE client_id=1 AND parent_id=(SELECT id FROM (SELECT id FROM jos_menu WHERE client_id=1 AND link='index.php?option=com_engage' LIMIT 1) x) ORDER BY lft")->fetch_all(MYSQLI_ASSOC);
+	echo '  INFO  submenus en #__menu tras actualizar: ' . ($mn ? implode(', ', array_column($mn, 'title')) : '(ninguno: Joomla no modifica el menu existente)') . "\n";
 } else { t(false, 'no se pudo entrar en el panel'); }
 echo "  -> $ok correctas, $ko fallidas\n";
 exit($ko ? 1 : 0);

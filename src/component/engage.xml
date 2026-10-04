@@ -38,6 +38,14 @@
 		<!-- Administration menu -->
 		<menu>COM_ENGAGE</menu>
 
+		<!-- Fork 0.6.24: submenu. Una instalacion nueva lo crea; Joomla NO toca el menu de una instalacion existente
+		     ("Akeeba Engage", enlace index.php?option=com_engage), que desde 0.6.24 abre el panel de control. -->
+		<submenu>
+			<menu link="option=com_engage&amp;view=controlpanel">COM_ENGAGE_MENU_CONTROLPANEL</menu>
+			<menu link="option=com_engage&amp;view=comments">COM_ENGAGE_MENU_COMMENTS</menu>
+			<menu link="option=com_engage&amp;view=emailtemplates">COM_ENGAGE_MENU_EMAILTEMPLATES</menu>
+		</submenu>
+
 		<!-- Back-end files -->
 		<files folder="backend">
 			<folder>forms</folder>

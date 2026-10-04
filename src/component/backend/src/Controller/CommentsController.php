@@ -70,6 +70,20 @@ class CommentsController extends AdminController
 	}
 
 	/**
+	 * Fork 0.6.24: the quick actions of the control panel send a "return" URL (internal URLs only, see
+	 * ControllerReturnURLTrait). Without that parameter nothing changes: the usual redirect to the list stays.
+	 */
+	protected function onAfterPublish()
+	{
+		$this->applyReturnUrl();
+	}
+
+	protected function onAfterDelete(): void
+	{
+		$this->applyReturnUrl();
+	}
+
+	/**
 	 * Report a message as positively not spam and publish it.
 	 *
 	 * @throws  Exception

@@ -12,12 +12,14 @@ php "$AQUI/lib/empaquetar-upstream.php" "$REPO/upstream/3.4.2-instalado" "$WORK/
 echo "== 2. Instalacion del 3.4.2 original"
 bash "$AQUI/02-instalar-engage.sh" "$WORK/upstream-pkg/dist/pkg_engage-3.4.2.zip" > "$OUT/instalacion-3.4.2.txt" 2>&1; head -3 "$OUT/instalacion-3.4.2.txt"
 echo "== 3. Datos reales y ajustes"
+mysql "$DB_NAME" -e "DELETE FROM jos_engage_comments" 2>/dev/null || true   # reejecutable: sin comentarios de pasadas anteriores
 JOOMLA_SITE="$WORK/$SITE_DIR" BASE_URL="$BASE_URL" php "$AQUI/lib/seed.php" > "$WORK/$IDS_FILE"
 WORK="$WORK" IDS_FILE="$IDS_FILE" DB_NAME="$DB_NAME" BASE_URL="$BASE_URL" php "$AQUI/lib/datos-reales.php"
 snap() { # $1 = prefijo del fichero
 	mysqldump --skip-comments --skip-extended-insert --order-by-primary "$DB_NAME" jos_engage_comments jos_engage_unsubscribe > "$OUT/$1-tablas.sql"
 	mysql -N "$DB_NAME" -e "SELECT element,folder,type,enabled,access,ordering,params FROM jos_extensions WHERE element LIKE '%engage%' OR folder='engage' ORDER BY type,folder,element" > "$OUT/$1-extensiones.txt"
 	mysql -N "$DB_NAME" -e "SELECT name,rules FROM jos_assets WHERE name='com_engage'" > "$OUT/$1-reglas.txt"
+	mysql -N "$DB_NAME" -e "SELECT id,title,alias,link,parent_id,menutype,client_id,component_id,published,level,path,img FROM jos_menu WHERE client_id=1 AND (link LIKE '%com_engage%' OR component_id=(SELECT extension_id FROM jos_extensions WHERE element='com_engage' AND type='component')) ORDER BY lft" > "$OUT/$1-menu.txt"
 	mysql -N "$DB_NAME" -e "SELECT template_id,extension,language,subject FROM jos_mail_templates WHERE template_id LIKE 'com_engage%' ORDER BY 1,3" > "$OUT/$1-plantillas-correo.txt"
 	mysql -t "$DB_NAME" -e "SELECT update_site_id,name,location,enabled FROM jos_update_sites WHERE name LIKE '%ngage%'; SELECT us.update_site_id, e.element FROM jos_update_sites_extensions us JOIN jos_extensions e USING (extension_id) WHERE e.element LIKE '%engage%'; SELECT * FROM jos_schemas WHERE extension_id=(SELECT extension_id FROM jos_extensions WHERE element='com_engage' AND type='component'); SELECT type,element,folder,JSON_VALUE(manifest_cache,'\$.version') AS version FROM jos_extensions WHERE element LIKE '%engage%' OR folder='engage'" > "$OUT/$1-estado.txt"
 	(cd "$WORK/$SITE_DIR" && find components/com_engage administrator/components/com_engage media/com_engage modules/mod_engage_latest plugins/*/engage plugins/engage plugins/system/engagecache -type f 2>/dev/null | sort | xargs sha256sum) > "$OUT/$1-ficheros.txt"
@@ -31,6 +33,7 @@ echo "== 5. Comparacion"
 cmp -s "$OUT/antes-tablas.sql" "$OUT/despues-tablas.sql" && echo "TABLAS engage_*: identicas (volcado completo)" || { echo "TABLAS engage_*: DIFERENCIAS"; diff "$OUT/antes-tablas.sql" "$OUT/despues-tablas.sql" | head -20; }
 cmp -s "$OUT/antes-reglas.txt" "$OUT/despues-reglas.txt" && echo "PERMISOS (asset com_engage): identicos" || { echo "PERMISOS: DIFERENCIAS"; diff "$OUT/antes-reglas.txt" "$OUT/despues-reglas.txt"; }
 cmp -s "$OUT/antes-plantillas-correo.txt" "$OUT/despues-plantillas-correo.txt" && echo "PLANTILLAS de correo: identicas" || { echo "PLANTILLAS de correo: DIFERENCIAS"; diff "$OUT/antes-plantillas-correo.txt" "$OUT/despues-plantillas-correo.txt" | head; }
+echo "-- menu de administracion (#__menu) antes vs despues (0.6.24: el elemento 'Akeeba Engage' debe seguir igual y abrir el panel):"; echo "   antes:"; sed 's/^/     /' "$OUT/antes-menu.txt"; echo "   despues:"; sed 's/^/     /' "$OUT/despues-menu.txt"
 echo "-- extensiones (enabled/params) antes vs despues:"; diff "$OUT/antes-extensiones.txt" "$OUT/despues-extensiones.txt" && echo "(sin diferencias)"
 echo "-- estado (update site, schemas, versiones) antes vs despues:"; diff "$OUT/antes-estado.txt" "$OUT/despues-estado.txt" || true
 echo "-- ficheros: sobrantes del 3.4.2 que ya no estan en el fork:"

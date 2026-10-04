@@ -107,6 +107,33 @@
 		},
 
 		{
+			"name": "com_engage.panel",
+			"description": "Control panel design system (.eg-admin): light, mid and dark",
+			"type": "style",
+			"uri": "com_engage/panel.css"
+		},
+
+		{
+			"name": "com_engage.panel.theme",
+			"description": "Applies the saved control panel design before painting (no defer on purpose)",
+			"type": "script",
+			"uri": "com_engage/panel-theme.js"
+		},
+
+		{
+			"name": "com_engage.panel",
+			"description": "Control panel behaviour: design switcher, confirmation dialog, chart tooltip",
+			"type": "script",
+			"uri": "com_engage/panel.js",
+			"dependencies": [
+				"core"
+			],
+			"attributes": {
+				"defer": true
+			}
+		},
+
+		{
 			"name": "com_engage.backend",
 			"type": "preset",
 			"dependencies": [
