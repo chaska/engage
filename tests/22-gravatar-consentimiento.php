@@ -175,7 +175,7 @@ namespace {
 		$sys = file_get_contents("$root/plugins/engage/gravatar/language/$l/plg_engage_gravatar.sys.ini");
 		foreach (['MODE_LABEL', 'MODE_DESC', 'MODE_ASK', 'MODE_OFF', 'MODE_ALWAYS', 'SHOW_NOTICE_LABEL', 'SHOW_NOTICE_DESC'] as $k) { t_ok(strpos($sys, "PLG_ENGAGE_GRAVATAR_$k=") !== false, "$l: PLG_ENGAGE_GRAVATAR_$k"); }
 	}
-	t_ok(strpos(file_get_contents("$root/component/frontend/language/es-ES/com_engage.ini"), 'Mostrar fotos de Gravatar (esto envía tu IP a gravatar.com)') !== false, 'es-ES: texto del boton acordado');
+	t_ok(strpos(file_get_contents("$root/component/frontend/language/es-ES/com_engage.ini"), 'Mostrar fotos de Gravatar (esto envía su IP a gravatar.com)') !== false, 'es-ES: texto del boton acordado');
 	$x = simplexml_load_file($root . '/plugins/engage/gravatar/gravatar.xml');
 	$modo = $x->xpath('//field[@name="mode"]')[0]; $notice = $x->xpath('//field[@name="show_notice"]')[0];
 	t_ok((string) $modo['default'] === 'ask' && ['ask', 'off', 'always'] === array_map(fn($o) => (string) $o['value'], iterator_to_array($modo->option, false)), 'gravatar.xml: mode con defecto ask y valores ask/off/always');
