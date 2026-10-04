@@ -301,7 +301,7 @@ final class BBCode
 
 								// Do not encode the anchor text. This leads to double encoding of the anchor text, ending up showing things like &mu; instead of μ.
 								// $anchorText = htmlentities($anchorText, ENT_QUOTES);
-								$newText = '<a rel="nofollow" href="' . htmlentities($url, ENT_COMPAT) . '">' . $anchorText . '</a>';
+								$newText = '<a rel="nofollow ugc noreferrer" href="' . htmlentities($url, ENT_COMPAT) . '">' . $anchorText . '</a>';
 							}
 							else
 							{

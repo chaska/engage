@@ -203,6 +203,18 @@ Hallazgos:
 
 NO PROBADO en esta sección: el texto en es-ES renderizado (el sitio de pruebas solo tiene en-GB; las cadenas es-ES existen y las comprueba `tests/22`), otros navegadores distintos de Chromium (Firefox, Safari), lectores de pantalla reales, Joomla 5.x, y Gravatar real (la red externa está bloqueada: se probó el intento de petición, no la imagen devuelta).
 
-## 8. Estado del paquete
+## 8. Enlaces de comentarios con rel="nofollow ugc noreferrer" (0.6.18)
+
+Entorno: el Joomla 6.1.4 de las secciones anteriores (MariaDB 10.11, PHP 8.3, `php -S`), reinstalado el paquete 0.6.18 con `02-instalar-engage.sh`. `bash 06-rel-ugc.sh` inserta 8 comentarios publicados en el artículo público y comprueba el HTML servido a un invitado (DOM): **10 PASA / 0 FALLA**.
+
+- Sin `rel`, con `rel="nofollow"`, con `rel="noopener nofollow"`, `HREF`/`REL` en mayúsculas con espacios, comillas simples con `&` en la URL, tres enlaces en un comentario y BBCode (`[url=...]` y `[url]...[/url]`): todos los `<a>` salen con un único `rel="nofollow ugc noreferrer"`.
+- `javascript:` / `JaVaScRiPt:` y `onclick` siguen saneados (el `<a>` queda sin `href`).
+- Los enlaces propios del componente fuera del cuerpo (8 revisados) no llevan `ugc`.
+- Con la configuración por defecto (`a[href]`) el purificador descarta el `rel` del usuario antes de que se añada el nuestro, por eso `noopener` no aparece en el HTML servido; la conservación de `noopener` y de otros valores se prueba en `tests/23-rel-nofollow-ugc.php`.
+- Batería anterior tras el cambio: 73 PASA / 0 FALLA / 0 NO PROBADA; registro de errores de PHP vacío.
+
+NO PROBADO: el módulo `engage_latest` renderizado en una posición real (usa la misma función, comprobado en el fuente), Joomla 5.x, y el efecto real en buscadores.
+
+## 9. Estado del paquete
 
 Hash del ZIP al cierre de esta tanda y coincidencia con `updates/pkgengage.xml`: ver `docs/PUBLICAR-RELEASE.md` y comprobar con `php build/build.php` (reproducible). No se ha publicado ninguna release: la URL de descarga de `updates/pkgengage.xml` no existirá hasta que el propietario suba **ese mismo ZIP** a la release `v3.4.2.1`.

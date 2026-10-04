@@ -62,8 +62,8 @@ final class Engage
 	/**
 	 * Processes the comment text for display in the front-end
 	 *
-	 * - Removes all rel attributes (in case you use Joomla's text filters which don't do that)
-	 * - Adds rel="nofollow noreferrer" to all links
+	 * - Merges any existing rel attributes of links (in case you use Joomla's text filters) and removes them from other tags
+	 * - Adds rel="nofollow ugc noreferrer" to all links, keeping other existing values such as noopener
 	 *
 	 * @param   string|null  $text  The comment text
 	 *
@@ -78,8 +78,7 @@ final class Engage
 		}
 
 		$text = $this->processFlatComment($text);
-		$text = $this->processRemoveRelAttributes($text);
-		$text = $this->processAnchorTagsNoFollow($text);
+		$text = $this->processRelAttributes($text);
 
 		return $text;
 	}
@@ -317,37 +316,79 @@ final class Engage
 
 
 	/**
-	 * Remove existing rel attributes from all tags
+	 * Normalise the rel attribute of every tag in the comment text.
+	 *
+	 * - Non-anchor tags: any rel attribute is removed.
+	 * - Anchors with an href: all rel attributes (double-quoted, single-quoted or unquoted, in any letter case) are merged
+	 *   into ONE rel="nofollow ugc noreferrer ..." attribute. Existing values such as noopener are kept, nothing is
+	 *   duplicated and applying this twice gives the same result (idempotent). "ugc" is Google's value for user generated
+	 *   content.
 	 *
 	 * @param   string  $text  The comment text to process
 	 *
 	 * @return  string
 	 * @since   1.0.0
 	 */
-	private function processRemoveRelAttributes(string $text): string
+	private function processRelAttributes(string $text): string
 	{
-		$text = preg_replace_callback('/(<[a-z_\-\.]*\s*[^>]*\s+)(rel\s*=\s*"[^"]+")/i', function (array $matches): string {
-			return $matches[1];
-		}, $text);
+		$attr = '\s*([^\s=\/"\'<>]+)(?:\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s"\'>]+))?';
 
-		return $text;
-	}
+		return preg_replace_callback(
+			'/<([a-z][a-z0-9\-_.:]*)((?:[^>"\']|"[^"]*"|\'[^\']*\')*)>/i',
+			function (array $m) use ($attr): string {
+				$isAnchor = strtolower($m[1]) === 'a';
+				$tokens   = [];
+				$hasHref  = false;
 
-	/**
-	 * Add rel="nofollow noreferrer" to anchor tags
-	 *
-	 * @param   string  $text  The comment text to process
-	 *
-	 * @return  string
-	 * @since   1.0.0
-	 */
-	private function processAnchorTagsNoFollow(string $text): string
-	{
-		$text = preg_replace_callback('/(<a\s*[^>]*\s+)href\s*=/i', function (array $matches): string {
-			return rtrim($matches[1]) . ' rel="nofollow noreferrer" href=';
-		}, $text);
+				$rest = preg_replace_callback(
+					'/' . $attr . '/',
+					function (array $a) use (&$tokens, &$hasHref): string {
+						$name = strtolower($a[1]);
 
-		return $text;
+						if ($name === 'href')
+						{
+							$hasHref = true;
+						}
+
+						if ($name !== 'rel')
+						{
+							return $a[0];
+						}
+
+						if (preg_match('/=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s"\'>]+))/', $a[0], $v))
+						{
+							$value = $v[1] . ($v[2] ?? '') . ($v[3] ?? '');
+
+							foreach (preg_split('/\s+/', strtolower(html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8')), -1, PREG_SPLIT_NO_EMPTY) as $t)
+							{
+								if (preg_match('/^[a-z0-9_\-]+$/', $t))
+								{
+									$tokens[] = $t;
+								}
+							}
+						}
+
+						return '';
+					},
+					$m[2]
+				);
+
+				if (!$isAnchor)
+				{
+					return '<' . $m[1] . $rest . '>';
+				}
+
+				if (!$hasHref)
+				{
+					return $m[0];
+				}
+
+				$rel = array_values(array_unique(array_merge(['nofollow', 'ugc', 'noreferrer'], $tokens)));
+
+				return '<' . $m[1] . ' rel="' . implode(' ', $rel) . '"' . $rest . '>';
+			},
+			$text
+		) ?? $text;
 	}
 
 	/**
@@ -398,4 +439,4 @@ final class Engage
 
 		return false;
 	}
-}
+}
