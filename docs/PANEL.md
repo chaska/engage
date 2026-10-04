@@ -105,3 +105,9 @@ Nada de esto puede tocar permisos, parámetros de otras extensiones ni escalar p
 ## Pruebas
 
 `tests/29-ajustes.php` (239 comprobaciones; esquema leído de los manifiestos reales, validación por tipo, servicio con permisos/almacén simulados, seguridad estática) y `tests/joomla-live/12-ajustes.sh` (navegador y HTTP reales sobre Joomla 6.1.4; ver `tests/joomla-live/LEEME.md`).
+
+## Filas con controles anchos (0.6.26)
+
+La fila «etiqueta + control» es ahora una fila flexible con salto de línea: la columna de texto pide como mínimo 16 rem y, si el control no cabe a su lado, baja a la línea siguiente (a la izquierda). Los controles segmentados con opciones largas (más de 4 opciones, más de 40 caracteres en total o alguna de más de 24; p. ej. «Modo de Gravatar» y «Clasificación») pasan siempre a pila: etiqueta y ayuda arriba y el control debajo a todo el ancho, con las opciones repartidas y envueltas en varias líneas. Es CSS y un criterio del servidor (clase `eg-row--wide`); no depende de JavaScript. Los interruptores, selectores, números y segmentados cortos no cambian.
+
+![Privacidad y Gravatar](img/config-gravatar.png)
