@@ -71,7 +71,11 @@ $avatar        = $avatarData['src'];
 // Gravatar URL to load only after the visitor consents (plugin mode "ask"); empty otherwise.
 $avatarDeferred = $avatarData['deferred'];
 $avatarAttrs    = ($avatarDeferred === '') ? '' : (' data-engage-gravatar="' . htmlspecialchars($avatarDeferred, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"'
-	. ($avatarData['notice'] ? '' : ' data-engage-gravatar-notice="0"'));
+	. ($avatarData['notice'] ? '' : ' data-engage-gravatar-notice="0"')
+	// 0.6.19: the decision comes from the JBCookies module. Data attributes (escaped) so that the page cache keeps them.
+	. (($avatarData['source'] ?? 'engage') === 'jbcookies'
+		? ' data-engage-gravatar-source="jbcookies" data-engage-gravatar-group="' . htmlspecialchars((string) ($avatarData['group'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"'
+		: ''));
 
 if ($avatarDeferred !== '')
 {

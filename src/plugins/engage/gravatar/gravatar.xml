@@ -60,6 +60,28 @@
                     <option value="1">JYES</option>
                 </field>
 
+                <field name="consent_source"
+                       type="list"
+                       label="PLG_ENGAGE_GRAVATAR_CONSENT_SOURCE_LABEL"
+                       description="PLG_ENGAGE_GRAVATAR_CONSENT_SOURCE_DESC"
+                       default="engage"
+                       showon="mode:ask"
+                >
+                    <option value="engage">PLG_ENGAGE_GRAVATAR_CONSENT_SOURCE_ENGAGE</option>
+                    <option value="jbcookies">PLG_ENGAGE_GRAVATAR_CONSENT_SOURCE_JBCOOKIES</option>
+                </field>
+
+                <field name="jbcookies_group"
+                       type="text"
+                       label="PLG_ENGAGE_GRAVATAR_JBCOOKIES_GROUP_LABEL"
+                       description="PLG_ENGAGE_GRAVATAR_JBCOOKIES_GROUP_DESC"
+                       hint="marketing"
+                       default=""
+                       filter="string"
+                       maxlength="64"
+                       showon="mode:ask[AND]consent_source:jbcookies"
+                />
+
                 <field name="profile_link"
                        type="radio"
                        layout="joomla.form.field.radio.switcher"

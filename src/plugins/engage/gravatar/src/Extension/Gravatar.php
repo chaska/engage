@@ -67,6 +67,20 @@ class Gravatar extends CMSPlugin implements SubscriberInterface
 	public const MODE_ALWAYS = 'always';
 
 	/**
+	 * The visitor's decision is taken by the plugin's own notice / the JavaScript API (localStorage). DEFAULT.
+	 *
+	 * @since 0.6.19
+	 */
+	public const SOURCE_ENGAGE = 'engage';
+
+	/**
+	 * The decision is taken from the JBCookies module (cookie "jbcookies"); the plugin's own notice is never shown.
+	 *
+	 * @since 0.6.19
+	 */
+	public const SOURCE_JBCOOKIES = 'jbcookies';
+
+	/**
 	 * Returns the configured mode. A missing or unknown value is "ask", the safest option that still shows avatars.
 	 *
 	 * @return  string
@@ -77,6 +91,63 @@ class Gravatar extends CMSPlugin implements SubscriberInterface
 		$mode = $this->params->get('mode', self::MODE_ASK);
 
 		return in_array($mode, [self::MODE_OFF, self::MODE_ASK, self::MODE_ALWAYS], true) ? $mode : self::MODE_ASK;
+	}
+
+	/**
+	 * Returns where the consent decision comes from. Only "ask" mode can use an external source; with any other mode, and
+	 * with a missing or unknown value, it is "engage" (the behaviour of 0.6.17 / 0.6.18, unchanged).
+	 *
+	 * @return  string
+	 * @since   0.6.19
+	 */
+	public function getConsentSource(): string
+	{
+		if ($this->getMode() !== self::MODE_ASK)
+		{
+			return self::SOURCE_ENGAGE;
+		}
+
+		return $this->params->get('consent_source', self::SOURCE_ENGAGE) === self::SOURCE_JBCOOKIES
+			? self::SOURCE_JBCOOKIES
+			: self::SOURCE_ENGAGE;
+	}
+
+	/**
+	 * Returns the JBCookies preference group which must be switched on for "Save selection" to grant consent. Strict
+	 * filter: lower case a-z, 0-9, "_" and "-" (max 64). Anything else, the group "necessary" (it is always on, so it
+	 * proves nothing) and names which exist on every JavaScript object give an empty string = only "Accept all" grants.
+	 *
+	 * @return  string
+	 * @since   0.6.19
+	 */
+	public function getJbcookiesGroup(): string
+	{
+		return self::sanitizeGroup($this->params->get('jbcookies_group', ''));
+	}
+
+	/**
+	 * Strict filter for the JBCookies group slug. The same rule is applied again by gravatar.js.
+	 *
+	 * @param   mixed  $group  The raw value
+	 *
+	 * @return  string  The slug, or '' if it is not acceptable
+	 * @since   0.6.19
+	 */
+	public static function sanitizeGroup($group): string
+	{
+		if (!is_string($group))
+		{
+			return '';
+		}
+
+		$group = trim($group);
+
+		if (!preg_match('/^[a-z0-9_-]{1,64}$/D', $group) || in_array($group, ['necessary', '__proto__', 'constructor', 'prototype'], true))
+		{
+			return '';
+		}
+
+		return $group;
 	}
 
 	/**
@@ -130,10 +201,15 @@ class Gravatar extends CMSPlugin implements SubscriberInterface
 			return;
 		}
 
-		$deferred         = $event->getArgument('deferred', []);
+		$deferred = $event->getArgument('deferred', []);
+		$external = $this->getConsentSource() === self::SOURCE_JBCOOKIES;
+
 		$deferred[$local] = [
 			'url'    => $url,
-			'notice' => (int) $this->params->get('show_notice', 1) !== 0,
+			// With JBCookies the module is the only consent UI: the plugin's own notice is never shown.
+			'notice' => !$external && (int) $this->params->get('show_notice', 1) !== 0,
+			'source' => $external ? self::SOURCE_JBCOOKIES : self::SOURCE_ENGAGE,
+			'group'  => $external ? $this->getJbcookiesGroup() : '',
 		];
 
 		$event->setArgument('deferred', $deferred);
