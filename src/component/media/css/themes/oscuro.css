@@ -1,0 +1,420 @@
+/*!
+ * @package   AkeebaEngage
+ * @copyright Copyright (c)2020-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @license   GNU General Public License version 3, or later
+ *
+ * Tema visual «Oscuro» (0.6.23). Se carga SOLO si está elegido en Componentes > Engage > Opciones > Apariencia,
+ * después de replies.css y comments.css. El tema «classic» (por defecto) no carga ninguna hoja.
+ * Panel y tarjetas oscuros con texto claro y buen contraste; pensado para plantillas oscuras y legible también sobre páginas claras.
+ *
+ * Reglas del tema:
+ *  - Cada tarjeta fija SIEMPRE fondo y color de texto (y el de enlaces, nombres, fechas, botones y cita), así que se lee
+ *    sobre cualquier plantilla, clara u oscura. No hay texto que herede el color de la plantilla dentro de una tarjeta.
+ *  - Todos los colores y medidas son variables --eg-* definidas en :root. Para cambiarlas, redefínalas DESPUÉS de esta hoja
+ *    (CSS personalizado de su plantilla o ajuste «Cargar CSS personalizado»); la lista está en docs/TEMAS.md.
+ *  - Los selectores van acotados a section.akengage-outer-container.akengage-theme--dark (clase que pone la plantilla
+ *    de Engage en el contenedor) y no tocan nada fuera de los comentarios.
+ *  - reply_indent y reply_show_quote no se tocan. reply_style: «line» usa la barra lateral del tema; «soft» y «none» las
+ *    resuelve replies.css (más específico) y aquí solo se da un color opaco al fondo suave con --akengage-reply-bg.
+ *  - Los !important son necesarios: las utilidades de Bootstrap (border-start, bg-light, text-muted, ps-2...) los llevan.
+ */
+
+:root {
+	--eg-acento: #60a5fa;  /* color de decoración: barra lateral, guía, foco */
+	--eg-enlace: #93c5fd;  /* enlaces y botones (contraste mínimo 4,5:1 con el fondo de la tarjeta) */
+	--eg-enlace-hover: #dbeafe;  /* enlaces y botón principal al pasar el ratón */
+	--eg-sobre-boton: #0b1220;  /* texto sobre un botón relleno */
+	--eg-sobre-boton-hover: #0b1220;  /* texto del botón principal al pasar el ratón */
+	--eg-boton-solido-borde: #93c5fd;  /* borde de los botones rellenos (los separa de una página oscura) */
+	--eg-fondo: #1e293b;  /* fondo de la tarjeta */
+	--eg-fondo-cabecera: #263449;  /* fondo de la cabecera de la tarjeta */
+	--eg-fondo-respuesta: #233147;  /* fondo de las respuestas con reply_style = soft */
+	--eg-fondo-boton: #1e293b;  /* fondo de los botones con borde */
+	--eg-borde: #3b4a63;  /* bordes y separadores */
+	--eg-texto: #f1f5f9;  /* texto principal */
+	--eg-texto-suave: #bcc8d9;  /* fechas, IP, correo y textos secundarios */
+	--eg-cita-fondo: #2b3b55;  /* fondo de la etiqueta «En respuesta a» y de las citas */
+	--eg-codigo-fondo: #0f172a;  /* fondo de código */
+	--eg-codigo-texto: #e2e8f0;  /* texto de código */
+	--eg-ok: #86efac;  /* verde: nombre de usuario, «No es spam» */
+	--eg-peligro: #fca5a5;  /* rojo: borrar, invitado */
+	--eg-aviso: #fcd34d;  /* ámbar oscuro: moderador, «Posible spam» */
+	--eg-spam: #f59e0b;  /* barra lateral de «Posible spam» */
+	--eg-fondo-spam: #2e2814;  /* fondo de la tarjeta de «Posible spam» */
+	--eg-sinpublicar: #f87171;  /* barra lateral de «Sin publicar» */
+	--eg-fondo-sinpublicar: #33202a;  /* fondo de la tarjeta «Sin publicar» */
+	--eg-banner-spam-fondo: #78350f;  /* franja «Posible spam»: fondo */
+	--eg-banner-spam-texto: #fef3c7;  /* franja «Posible spam»: texto */
+	--eg-banner-sinpublicar-fondo: #7f1d1d;  /* franja «Sin publicar»: fondo */
+	--eg-banner-sinpublicar-texto: #fee2e2;  /* franja «Sin publicar»: texto */
+	--eg-guia: rgba(147, 197, 253, .35);  /* línea vertical del hilo de respuestas */
+	--eg-foco: rgba(147, 197, 253, .35);  /* anillo de foco de los campos */
+	--eg-input-fondo: #0f172a;  /* campos del formulario: fondo */
+	--eg-input-texto: #f1f5f9;  /* campos del formulario: texto */
+	--eg-input-borde: #64748b;  /* campos del formulario: borde */
+	--eg-panel-fondo: #0f172a;  /* fondo del contenedor completo (transparente en este tema) */
+	--eg-panel-texto: #e2e8f0;  /* texto del contenedor completo (el de la plantilla en este tema) */
+	--eg-radio: 12px;  /* redondeo de la tarjeta */
+	--eg-radio-boton: 8px;  /* redondeo de los botones */
+	--eg-radio-cita: 8px;  /* redondeo de la etiqueta de cita */
+	--eg-radio-avatar: 50%;  /* redondeo del avatar */
+	--eg-radio-campo: 8px;  /* redondeo de campos y código */
+	--eg-sombra: 0 2px 10px rgba(0, 0, 0, .35);  /* sombra de la tarjeta */
+	--eg-sombra-hover: 0 4px 16px rgba(0, 0, 0, .45);  /* sombra al pasar el ratón */
+	--eg-sombra-respuesta: 0 1px 4px rgba(0, 0, 0, .30);  /* sombra de las respuestas */
+	--eg-sombra-avatar: 0 0 0 2px #3b4a63;  /* sombra y aro del avatar */
+	--eg-borde-ancho: 1px;  /* grosor del borde de la tarjeta */
+	--eg-barra-ancho: 4px;  /* grosor de la barra lateral de estado */
+	--eg-guia-ancho: 2px;  /* grosor de la guía del hilo */
+	--eg-separacion: 1rem;  /* espacio entre comentarios */
+	--eg-relleno: 1.2rem;  /* relleno horizontal del texto */
+	--eg-relleno-cabecera: .8rem 1rem;  /* relleno de la cabecera */
+	--eg-cita-relleno: .25rem .65rem;  /* relleno de la etiqueta de cita */
+	--eg-boton-relleno: .2rem .75rem;  /* relleno de los botones de moderación */
+	--eg-boton-responder-relleno: .3rem 1rem;  /* relleno del botón Responder */
+	--eg-panel-relleno: 1rem;  /* relleno del contenedor completo */
+	--eg-panel-radio: 14px;  /* redondeo del contenedor completo */
+	--eg-fuente: inherit;  /* tipografía (heredada de la plantilla) */
+	--eg-fuente-tam: 1rem;  /* tamaño del texto del comentario */
+	--eg-interlineado: 1.6;  /* interlineado del comentario */
+	--eg-movimiento: box-shadow .2s ease, background-color .15s ease, color .15s ease;  /* transiciones */
+	--akengage-reply-bg: var(--eg-fondo-respuesta);
+}
+
+/* Contenedor de los comentarios: transparente salvo en el tema oscuro, que lo convierte en un panel */
+section.akengage-outer-container.akengage-theme--dark {
+	background-color: var(--eg-panel-fondo);
+	color: var(--eg-panel-texto);
+	padding: var(--eg-panel-relleno);
+	border-radius: var(--eg-panel-radio);
+	font-family: var(--eg-fuente);
+}
+section.akengage-outer-container.akengage-theme--dark h3.akengage-title {
+	border-bottom-color: var(--eg-borde) !important;
+}
+/* Oscuro: el panel fija el color de TODO su texto (títulos, etiquetas, ayudas), aunque la plantilla sea clara o fuerce un color */
+section.akengage-outer-container.akengage-theme--dark :where(div, span, p, label, legend, small, strong, b, i, em, ul, ol, li, form, h1, h2, h3, h4, h5, h6) {
+	color: var(--eg-panel-texto) !important;
+}
+section.akengage-outer-container.akengage-theme--dark a:not(.btn):not(.page-link) { color: var(--eg-enlace) !important; }
+section.akengage-outer-container.akengage-theme--dark > .alert { background-color: var(--eg-fondo-cabecera) !important; color: var(--eg-texto) !important; border-color: var(--eg-borde); }
+section.akengage-outer-container.akengage-theme--dark > .alert :where(h3, p, div, span) { color: var(--eg-texto) !important; }
+
+
+/* Blindaje de color: dentro de las tarjetas el texto es SIEMPRE el del tema, aunque la plantilla (p. ej. Helix en modo oscuro)
+   fuerce un color a todos los elementos con !important. Después se restauran los colores propios (nombre, fecha, cita, botones...)
+   con reglas igual de específicas y posteriores. */
+section.akengage-outer-container.akengage-theme--dark .akengage-list-container :where(div, span, p, footer, small, strong, b, i, em, u, ul, ol, li, blockquote, pre, code, time, h1, h2, h3, h4, h5, h6, table, thead, tbody, tr, td, th) {
+	color: var(--eg-texto) !important;
+}
+
+/* Paginación (comments.css, en modo oscuro del dispositivo, pinta los enlaces con !important) */
+section.akengage-outer-container.akengage-theme--dark .akengage-pagination .page-link {
+	background-color: var(--eg-fondo) !important;
+	color: var(--eg-enlace) !important;
+	border-color: var(--eg-borde) !important;
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-pagination .active > .page-link,
+section.akengage-outer-container.akengage-theme--dark .akengage-pagination .page-link.active,
+section.akengage-outer-container.akengage-theme--dark .akengage-pagination .page-link:hover,
+section.akengage-outer-container.akengage-theme--dark .akengage-pagination .page-link:focus-visible {
+	background-color: var(--eg-enlace) !important;
+	color: var(--eg-sobre-boton) !important;
+	border-color: var(--eg-enlace) !important;
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-pagination .disabled > .page-link {
+	background-color: var(--eg-fondo) !important;
+	color: var(--eg-texto-suave) !important;
+}
+
+/* Lista y separación entre comentarios */
+section.akengage-outer-container.akengage-theme--dark ul.akengage-comment-list > li.akengage-comment-item {
+	margin-bottom: var(--eg-separacion) !important;
+}
+
+/* Tarjeta de cada comentario (publicado) */
+section.akengage-outer-container.akengage-theme--dark article[class*="akengage-comment--"] {
+	background-color: var(--eg-fondo);
+	color: var(--eg-texto) !important;
+	border: var(--eg-borde-ancho) solid var(--eg-borde) !important;
+	border-left: var(--eg-barra-ancho) solid var(--eg-acento) !important;
+	border-radius: var(--eg-radio);
+	padding: 0 !important;
+	margin-top: 0 !important;
+	overflow: hidden;
+	box-shadow: var(--eg-sombra);
+	transition: var(--eg-movimiento);
+}
+section.akengage-outer-container.akengage-theme--dark article[class*="akengage-comment--"]:hover {
+	box-shadow: var(--eg-sombra-hover);
+}
+/* Estados: publicado, posible spam, sin publicar (borde y fondo propios, siempre con su texto) */
+section.akengage-outer-container.akengage-theme--dark article.akengage-comment--primary {
+	border-left-color: var(--eg-acento) !important;
+}
+section.akengage-outer-container.akengage-theme--dark article.akengage-comment--spam {
+	background-color: var(--eg-fondo-spam) !important;
+	border-left-color: var(--eg-spam) !important;
+}
+section.akengage-outer-container.akengage-theme--dark article.akengage-comment--unpublished {
+	background-color: var(--eg-fondo-sinpublicar) !important;
+	border-left-color: var(--eg-sinpublicar) !important;
+}
+
+/* Cabecera: avatar, nombre, fecha y botones */
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-properties {
+	background-color: var(--eg-fondo-cabecera) !important;
+	color: var(--eg-texto) !important;
+	padding: var(--eg-relleno-cabecera) !important;
+	margin: 0 !important;
+	border-bottom: var(--eg-borde-ancho) solid var(--eg-borde) !important;
+	gap: .9rem !important;
+	align-items: center;
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-commenter-avatar {
+	border-radius: var(--eg-radio-avatar) !important;
+	box-shadow: var(--eg-sombra-avatar) !important;
+}
+section.akengage-outer-container.akengage-theme--dark .akengange-commenter-name,
+section.akengage-outer-container.akengage-theme--dark .akengange-commenter-name [itemprop="name"] {
+	font-size: 1.05rem;
+	color: var(--eg-texto) !important;
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-commenter-ismoderator { color: var(--eg-aviso) !important; }
+section.akengage-outer-container.akengage-theme--dark .akengage-commenter-isuser { color: var(--eg-texto-suave) !important; }
+section.akengage-outer-container.akengage-theme--dark .akengage-commenter-username { color: var(--eg-ok) !important; }
+section.akengage-outer-container.akengage-theme--dark .akengage-commenter-isguest { color: var(--eg-peligro) !important; }
+section.akengage-outer-container.akengage-theme--dark .akengage-commenter-email { color: var(--eg-texto-suave) !important; }
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-permalink,
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-permalink a {
+	color: var(--eg-texto-suave) !important;
+	font-size: .85rem;
+}
+/* comments.css (su bloque prefers-color-scheme: dark) pinta la fecha con !important y un selector larguísimo: este lo repite con
+   una clase más para que el tema (claro u oscuro) mande también cuando el dispositivo está en modo oscuro. */
+section.akengage-outer-container.akengage-theme--dark div.akengage-list-container ul.akengage-comment-list li.akengage-comment-item article[class^="akengage-comment"] footer.akengage-comment-properties div.akengange-comment-head div.akengage-comment-info div.akengage-comment-permalink > a {
+	color: var(--eg-texto-suave) !important;
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-ip,
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-ip a {
+	color: var(--eg-texto-suave) !important;
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-ip a { text-decoration: underline; }
+
+/* Aviso de «Posible spam» / «Sin publicar» */
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-publish-type {
+	padding: .45rem var(--eg-relleno) !important;
+	margin: 0 !important;
+}
+section.akengage-outer-container.akengage-theme--dark article.akengage-comment--spam .akengage-comment-publish-type {
+	background-color: var(--eg-banner-spam-fondo) !important;
+	color: var(--eg-banner-spam-texto) !important;
+}
+section.akengage-outer-container.akengage-theme--dark article.akengage-comment--unpublished .akengage-comment-publish-type {
+	background-color: var(--eg-banner-sinpublicar-fondo) !important;
+	color: var(--eg-banner-sinpublicar-texto) !important;
+}
+
+/* Cita «En respuesta a ...» */
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-replyto {
+	margin: .85rem var(--eg-relleno) 0 !important;
+	padding: var(--eg-cita-relleno);
+	display: inline-block;
+	background-color: var(--eg-cita-fondo) !important;
+	color: var(--eg-texto-suave) !important;
+	border-radius: var(--eg-radio-cita);
+	font-size: .82rem;
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-replyto-link {
+	color: var(--eg-enlace) !important;
+	font-weight: 600;
+	text-decoration: none;
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-replyto-link:hover,
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-replyto-link:focus-visible { text-decoration: underline; color: var(--eg-enlace-hover) !important; }
+
+/* Texto del comentario */
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-body {
+	padding: 1rem var(--eg-relleno) .4rem;
+	font-size: var(--eg-fuente-tam);
+	line-height: var(--eg-interlineado);
+	color: var(--eg-texto) !important;
+	background-color: transparent;
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-body p:last-child { margin-bottom: .4rem; }
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-body a {
+	color: var(--eg-enlace) !important;
+	text-decoration: underline;
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-body a:hover,
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-body a:focus-visible { color: var(--eg-enlace-hover) !important; }
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-body blockquote {
+	margin: .8rem 0;
+	padding: .6rem 1rem;
+	border-left: 3px solid var(--eg-acento);
+	background-color: var(--eg-cita-fondo);
+	color: inherit;
+	border-radius: 0 var(--eg-radio-cita) var(--eg-radio-cita) 0;
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-body pre,
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-body code {
+	background-color: var(--eg-codigo-fondo);
+	color: var(--eg-codigo-texto);
+	border-radius: var(--eg-radio-campo);
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-body > div.text-muted {
+	color: var(--eg-texto-suave) !important;
+	border-top-color: var(--eg-borde) !important;
+}
+
+/* Botones (moderación, Responder, Cancelar) */
+section.akengage-outer-container.akengage-theme--dark .akengage-list-container .akengage-comment-actions button.btn,
+section.akengage-outer-container.akengage-theme--dark .akengage-list-container .akengage-comment-reply button.btn,
+section.akengage-outer-container.akengage-theme--dark #akengage-comment-inreplyto-cancel {
+	--eg-b: var(--eg-enlace);
+	background-color: var(--eg-fondo-boton) !important;
+	color: var(--eg-b) !important;
+	border: 1px solid var(--eg-b) !important;
+	border-radius: var(--eg-radio-boton);
+	padding: var(--eg-boton-relleno);
+	font-size: .8rem;
+	font-weight: 600;
+	margin: 0;
+	transition: var(--eg-movimiento);
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-list-container .btn.btn-outline-secondary { --eg-b: var(--eg-texto-suave); }
+section.akengage-outer-container.akengage-theme--dark .akengage-list-container .btn.btn-outline-success { --eg-b: var(--eg-ok); }
+section.akengage-outer-container.akengage-theme--dark .akengage-list-container .btn.btn-outline-danger,
+section.akengage-outer-container.akengage-theme--dark #akengage-comment-inreplyto-cancel { --eg-b: var(--eg-peligro); }
+section.akengage-outer-container.akengage-theme--dark .akengage-list-container .btn.btn-outline-warning { --eg-b: var(--eg-aviso); }
+section.akengage-outer-container.akengage-theme--dark .akengage-list-container .akengage-comment-actions button.btn:hover,
+section.akengage-outer-container.akengage-theme--dark .akengage-list-container .akengage-comment-actions button.btn:focus-visible,
+section.akengage-outer-container.akengage-theme--dark .akengage-list-container .akengage-comment-actions button.btn:active,
+section.akengage-outer-container.akengage-theme--dark .akengage-list-container .akengage-comment-reply button.btn:hover,
+section.akengage-outer-container.akengage-theme--dark .akengage-list-container .akengage-comment-reply button.btn:focus-visible,
+section.akengage-outer-container.akengage-theme--dark .akengage-list-container .akengage-comment-reply button.btn:active,
+section.akengage-outer-container.akengage-theme--dark #akengage-comment-inreplyto-cancel:hover,
+section.akengage-outer-container.akengage-theme--dark #akengage-comment-inreplyto-cancel:focus-visible {
+	background-color: var(--eg-b) !important;
+	color: var(--eg-sobre-boton) !important;
+	border-color: var(--eg-b) !important;
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-reply { padding: .2rem var(--eg-relleno) .9rem; }
+section.akengage-outer-container.akengage-theme--dark .akengage-list-container .akengage-comment-reply button.btn {
+	padding: var(--eg-boton-responder-relleno);
+	font-size: .9rem;
+	margin-bottom: 0 !important;
+}
+
+/* Respuestas: hilo con guía vertical (sin desplazar la sangría de reply_indent) */
+section.akengage-outer-container.akengage-theme--dark ul.akengage-comment-list ul.akengage-comment-list:not(.akengage-reply-indent--none) {
+	margin-top: .2rem;
+	box-shadow: inset var(--eg-guia-ancho) 0 0 0 var(--eg-guia);
+}
+section.akengage-outer-container.akengage-theme--dark ul.akengage-comment-list ul.akengage-comment-list article[class*="akengage-comment--"] {
+	box-shadow: var(--eg-sombra-respuesta);
+}
+/* reply_style = soft: fondo opaco del tema (replies.css lo aplica a las respuestas publicadas) */
+section.akengage-outer-container.akengage-theme--dark ul.akengage-reply-style--soft article.akengage-comment--primary {
+	border-color: var(--eg-borde) !important;
+}
+
+/* Formulario de comentar */
+section.akengage-outer-container.akengage-theme--dark #akengageCommentForm > div {
+	border-top-color: var(--eg-borde) !important;
+}
+section.akengage-outer-container.akengage-theme--dark #akengageCommentForm .form-control,
+section.akengage-outer-container.akengage-theme--dark #akengageCommentForm .form-select,
+section.akengage-outer-container.akengage-theme--dark #akengageCommentForm textarea,
+section.akengage-outer-container.akengage-theme--dark #akengageCommentForm input[type="text"],
+section.akengage-outer-container.akengage-theme--dark #akengageCommentForm input[type="email"],
+section.akengage-outer-container.akengage-theme--dark #akengageCommentForm input[type="url"] {
+	background-color: var(--eg-input-fondo) !important;
+	color: var(--eg-input-texto) !important;
+	border: 1px solid var(--eg-input-borde) !important;
+	border-radius: var(--eg-radio-campo);
+}
+section.akengage-outer-container.akengage-theme--dark #akengageCommentForm .form-control::placeholder,
+section.akengage-outer-container.akengage-theme--dark #akengageCommentForm textarea::placeholder { color: var(--eg-texto-suave); opacity: 1; }
+section.akengage-outer-container.akengage-theme--dark #akengageCommentForm .form-control:focus,
+section.akengage-outer-container.akengage-theme--dark #akengageCommentForm .form-select:focus,
+section.akengage-outer-container.akengage-theme--dark #akengageCommentForm textarea:focus {
+	border-color: var(--eg-acento) !important;
+	box-shadow: 0 0 0 3px var(--eg-foco);
+	outline: 0;
+}
+section.akengage-outer-container.akengage-theme--dark #akengage-comment-inreplyto-wrapper {
+	background-color: var(--eg-fondo-cabecera) !important;
+	color: var(--eg-texto) !important;
+	border: 1px solid var(--eg-borde);
+	border-left: var(--eg-barra-ancho) solid var(--eg-acento);
+	border-radius: var(--eg-radio-cita);
+}
+section.akengage-outer-container.akengage-theme--dark #akengage-comment-inreplyto-name { color: var(--eg-enlace) !important; }
+section.akengage-outer-container.akengage-theme--dark #akengageCommentForm .akengage-comment-submit-btn,
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-hider .btn {
+	background-color: var(--eg-enlace) !important;
+	color: var(--eg-sobre-boton) !important;
+	border: 2px solid var(--eg-boton-solido-borde) !important;
+	border-radius: var(--eg-radio-boton);
+	font-weight: 600;
+	transition: var(--eg-movimiento);
+}
+section.akengage-outer-container.akengage-theme--dark #akengageCommentForm .akengage-comment-submit-btn:hover,
+section.akengage-outer-container.akengage-theme--dark #akengageCommentForm .akengage-comment-submit-btn:focus-visible,
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-hider .btn:hover,
+section.akengage-outer-container.akengage-theme--dark .akengage-comment-hider .btn:focus-visible {
+	background-color: var(--eg-enlace-hover) !important;
+	border-color: var(--eg-boton-solido-borde) !important;
+	color: var(--eg-sobre-boton-hover) !important;
+}
+
+/* Aviso de Gravatar (plugin Gravatar en modo «preguntar») */
+section.akengage-outer-container.akengage-theme--dark .akengage-gravatar-notice {
+	background-color: var(--eg-fondo-cabecera) !important;
+	color: var(--eg-texto) !important;
+	border: 1px solid var(--eg-borde) !important;
+	border-left: var(--eg-barra-ancho) solid var(--eg-acento) !important;
+	border-radius: var(--eg-radio-cita);
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-gravatar-notice :where(div, span, p, small, strong) { color: var(--eg-texto) !important; }
+section.akengage-outer-container.akengage-theme--dark .akengage-gravatar-notice .btn-link {
+	background-color: transparent !important;
+	color: var(--eg-enlace) !important;
+	border: 0 !important;
+	text-decoration: underline;
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-gravatar-notice .btn-link:hover,
+section.akengage-outer-container.akengage-theme--dark .akengage-gravatar-notice .btn-link:focus-visible { color: var(--eg-enlace-hover) !important; background-color: transparent !important; }
+section.akengage-outer-container.akengage-theme--dark .akengage-gravatar-notice .btn-primary {
+	background-color: var(--eg-enlace) !important;
+	color: var(--eg-sobre-boton) !important;
+	border: 1px solid var(--eg-enlace) !important;
+	border-radius: var(--eg-radio-boton);
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-gravatar-notice .btn-primary:hover,
+section.akengage-outer-container.akengage-theme--dark .akengage-gravatar-notice .btn-primary:focus-visible {
+	background-color: var(--eg-enlace-hover) !important;
+	border-color: var(--eg-enlace-hover) !important;
+	color: var(--eg-sobre-boton-hover) !important;
+}
+
+/* Móvil */
+@media (max-width: 575.98px) {
+	:root {
+		--eg-relleno: .9rem;
+		--eg-relleno-cabecera: .7rem .75rem;
+	}
+	section.akengage-outer-container.akengage-theme--dark .akengage-comment-body { padding-top: .8rem; padding-bottom: .3rem; }
+	section.akengage-outer-container.akengage-theme--dark .akengage-comment-replyto { margin-top: .7rem !important; }
+}
+
+/* Accesibilidad: sin animaciones si el visitante lo prefiere */
+@media (prefers-reduced-motion: reduce) {
+	section.akengage-outer-container.akengage-theme--dark,
+	section.akengage-outer-container.akengage-theme--dark * {
+		transition: none !important;
+		transform: none !important;
+		animation: none !important;
+	}
+}

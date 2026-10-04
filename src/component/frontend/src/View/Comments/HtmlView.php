@@ -110,6 +110,15 @@ class HtmlView extends BaseHtmlView
 	public $replyStyle = 'line';
 
 	/**
+	 * Visual theme of the comments: classic (default, no extra CSS), modern, minimal or dark (component option theme).
+	 * Only whitelisted values are ever stored here, because it ends up in a CSS class name.
+	 *
+	 * @var   string
+	 * @since 0.6.23
+	 */
+	public $theme = 'classic';
+
+	/**
 	 * Currently logged in user's permissions
 	 *
 	 * @var   array
@@ -275,6 +284,8 @@ class HtmlView extends BaseHtmlView
 		$replyStyle          = (string) $params->get('reply_style', 'line');
 		$this->replyIndent   = in_array($replyIndent, ['none', 'small', 'medium', 'large'], true) ? $replyIndent : 'medium';
 		$this->replyStyle    = in_array($replyStyle, ['line', 'soft', 'none'], true) ? $replyStyle : 'line';
+		$theme               = (string) $params->get('theme', 'classic');
+		$this->theme         = in_array($theme, ['classic', 'modern', 'minimal', 'dark'], true) ? $theme : 'classic';
 		$this->replyToNames  = $this->showInReplyTo ? $this->loadReplyToNames() : ['same' => [], 'other' => []];
 
 		// Page parameters

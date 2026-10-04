@@ -12,6 +12,10 @@ Fase 1: la fuente está reorganizada en `src/` y hay un script que genera los ZI
 
 Fase 3 (versiones del fork 0.3.0 a 0.5.3): compatibilidad con Joomla 5 y 6 y PHP 8.1 a 8.4, correcciones de seguridad y HTMLPurifier 4.19.1, aplicando `docs/INFORME-FASE2-JOOMLA6.md`. Cada cambio consta en `CHANGELOG.md` con sus archivos y su impacto. Los archivos modificados deliberadamente respecto a la referencia 3.4.2 los lista `php build/verificar.php`. La versión propia de los manifiestos es la 3.4.2.1 (desde la 0.6.0). Nada de esto se ha probado en un Joomla real: solo hay pruebas con stubs (`php tests/run.php`).
 
+## Temas visuales (0.6.23)
+
+En **Componentes > Engage > Opciones > Apariencia** se elige el aspecto de los comentarios sin pegar CSS: `Clásico` (por defecto, no cambia nada), `Moderno`, `Minimalista` u `Oscuro`. Cada tema fija siempre fondo y color de texto, así que se lee sobre plantillas claras y oscuras, y sus colores y medidas son variables `--eg-*` que se pueden sobrescribir desde el CSS de la plantilla. Guía, capturas y lista de variables: [`docs/TEMAS.md`](docs/TEMAS.md).
+
 ## Estructura
 
 | Ruta | Contenido |
