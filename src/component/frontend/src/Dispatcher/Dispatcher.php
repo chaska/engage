@@ -36,6 +36,19 @@ class Dispatcher extends AdminDispatcher
 		// 0.6.21: indentation and look of the replies (options reply_indent / reply_style). Always loaded, in both modes.
 		$this->commonMediaKeys[] = 'style:com_engage.replies';
 
+		// 0.6.23: visual theme. "classic" (the default, or any unknown value) loads nothing; the others load exactly one sheet, after the two above.
+		$themeAssets = [
+			'modern'  => 'style:com_engage.theme.modern',
+			'minimal' => 'style:com_engage.theme.minimal',
+			'dark'    => 'style:com_engage.theme.dark',
+		];
+		$theme = (string) $cParams->get('theme', 'classic');
+
+		if (isset($themeAssets[$theme]))
+		{
+			$this->commonMediaKeys[] = $themeAssets[$theme];
+		}
+
 		parent::onBeforeDispatch();
 	}
 

@@ -34,6 +34,27 @@
 		},
 
 		{
+			"name": "com_engage.theme.modern",
+			"description": "Visual theme: Modern (cards with shadow)",
+			"type": "style",
+			"uri": "com_engage/themes/moderno.css"
+		},
+
+		{
+			"name": "com_engage.theme.minimal",
+			"description": "Visual theme: Minimal (no shadows, thin lines)",
+			"type": "style",
+			"uri": "com_engage/themes/minimalista.css"
+		},
+
+		{
+			"name": "com_engage.theme.dark",
+			"description": "Visual theme: Dark (dark cards, light text)",
+			"type": "style",
+			"uri": "com_engage/themes/oscuro.css"
+		},
+
+		{
 			"name": "com_engage.backend",
 			"description": "Backend JavaScript",
 			"type": "script",
