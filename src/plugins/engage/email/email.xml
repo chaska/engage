@@ -26,6 +26,7 @@
     <languages folder="language">
         <language tag="en-GB">en-GB/plg_engage_email.ini</language>
         <language tag="en-GB">en-GB/plg_engage_email.sys.ini</language>
+        <language tag="es-ES">es-ES/plg_engage_email.sys.ini</language>
     </languages>
 
     <config addfieldpath="/administrator/components/com_engage/fields">
