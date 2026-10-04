@@ -119,6 +119,15 @@ class HtmlView extends BaseHtmlView
 	public $theme = 'classic';
 
 	/**
+	 * Avatar on narrow screens (component option mobile_avatar): auto, show or hide. Whitelisted.
+	 * Ends up in a CSS class name only through mobileAvatarClass().
+	 *
+	 * @var   string
+	 * @since 0.6.28
+	 */
+	public $mobileAvatar = 'auto';
+
+	/**
 	 * Currently logged in user's permissions
 	 *
 	 * @var   array
@@ -286,6 +295,8 @@ class HtmlView extends BaseHtmlView
 		$this->replyStyle    = in_array($replyStyle, ['line', 'soft', 'none'], true) ? $replyStyle : 'line';
 		$theme               = (string) $params->get('theme', 'classic');
 		$this->theme         = in_array($theme, ['classic', 'modern', 'minimal', 'dark'], true) ? $theme : 'classic';
+		$mobileAvatar        = (string) $params->get('mobile_avatar', 'auto');
+		$this->mobileAvatar  = in_array($mobileAvatar, ['auto', 'show', 'hide'], true) ? $mobileAvatar : 'auto';
 		$this->replyToNames  = $this->showInReplyTo ? $this->loadReplyToNames() : ['same' => [], 'other' => []];
 
 		// Page parameters
@@ -596,5 +607,29 @@ class HtmlView extends BaseHtmlView
 		{
 			return new DateTimeZone('UTC');
 		}
+	}
+
+	/**
+	 * CSS class (with leading space) that tells the stylesheets what to do with the avatar below 576 px. Empty for the
+	 * classic theme with "auto", so that its HTML stays byte for byte the original one.
+	 *
+	 * auto: the theme decides (classic keeps the original behaviour; modern, minimal and dark show a smaller avatar).
+	 *
+	 * @return  string
+	 * @since   0.6.28
+	 */
+	public function mobileAvatarClass(): string
+	{
+		if ($this->mobileAvatar === 'hide')
+		{
+			return ' akengage-mobile-avatar--hide';
+		}
+
+		if ($this->mobileAvatar === 'show' || ($this->mobileAvatar === 'auto' && $this->theme !== 'classic'))
+		{
+			return ' akengage-mobile-avatar--show';
+		}
+
+		return '';
 	}
 }

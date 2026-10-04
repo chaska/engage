@@ -59,6 +59,7 @@
 	--eg-radio-cita: 8px;  /* redondeo de la etiqueta de cita */
 	--eg-radio-aviso: 10px;  /* redondeo del aviso de Gravatar (caja de varias líneas: nunca el de píldora) */
 	--eg-radio-avatar: 50%;  /* redondeo del avatar */
+	--eg-avatar-movil: 40px;  /* tamaño del avatar por debajo de 576 px (opción «Avatar en móvil») */
 	--eg-radio-campo: 8px;  /* redondeo de campos y código */
 	--eg-sombra: 0 2px 10px rgba(0, 0, 0, .35);  /* sombra de la tarjeta */
 	--eg-sombra-hover: 0 4px 16px rgba(0, 0, 0, .45);  /* sombra al pasar el ratón */

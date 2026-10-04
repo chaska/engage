@@ -27,7 +27,7 @@ use Joomla\CMS\Language\Text;
 
 $cParams = ComponentHelper::getParams('com_engage');
 ?>
-<section id="akengage-comments-section" class="akengage-outer-container<?= ($this->theme !== 'classic') ? ' akengage-theme--' . $this->escape($this->theme) : '' ?>"
+<section id="akengage-comments-section" class="akengage-outer-container<?= ($this->theme !== 'classic') ? ' akengage-theme--' . $this->escape($this->theme) : '' ?><?= $this->escape($this->mobileAvatarClass()) ?>"
 		aria-label="<?= Text::_('COM_ENGAGE_COMMENTS_SECTION_HEADER') ?>">
 
 	<h3 class="akengage-title h4 border-bottom mb-2">
