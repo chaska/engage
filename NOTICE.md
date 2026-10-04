@@ -9,6 +9,10 @@ Este repositorio es un **fork comunitario no oficial** de **Akeeba Engage**.
 - Copyright original: Copyright (c) 2020-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
 - Licencia: la que figura en el código 3.4.2 — GNU General Public License versión 3, o posterior (ver `LICENSE`). Las cabeceras y manifiestos del original se conservan tal cual.
 
+## Fork
+
+- Fork comunitario no oficial **iniciado y dirigido por ChasKa** (2026). El fork añade su propia línea de copyright («fork comunitario de Engage iniciado por ChasKa») en los archivos nuevos que crea, sin eliminar nunca la del autor original.
+
 ## Sin afiliación
 
 Este fork **no es un producto de Akeeba Ltd, no está respaldado por ella y no tiene afiliación con ella**. "Akeeba" y "Engage" pertenecen a sus respectivos titulares.

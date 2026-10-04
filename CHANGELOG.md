@@ -1,5 +1,10 @@
 # Registro de cambios del fork
 
+## 0.6.28.1 — 2026-10-04 (documentación; sin cambios en el paquete)
+- Qué: `README.md` reescrito y ordenado para `main` (estado real, requisitos, novedades respecto a 3.4.2, instalación con copia de seguridad, estructura, índice de documentación, compilar y probar, limitaciones, créditos). Se corrige lo que ya no era cierto («no se ha instalado en Joomla»: se probó en Joomla 6.1.4 real, incluida la actualización desde 3.4.2).
+- `NOTICE.md`: se añade la mención al fork «iniciado y dirigido por ChasKa» (la atribución al autor original no cambia).
+- Sin cambios de código ni del ZIP.
+
 ## 0.6.28 — 2026-10-04 (Avatar en móvil: nueva opción «Avatar en móvil»; con Moderno, Minimalista y Oscuro el avatar vuelve a verse en pantallas estrechas; con Clásico y «Automático» no cambia nada)
 - Qué y por qué (fallo real de Chas, Joomla 6.1.4 + Helix, tema Moderno, móvil): en la versión móvil desaparecían los avatares de los comentarios. Causa: el contenedor del avatar en `default_list.php` lleva las clases de Bootstrap `d-none d-sm-block` (heredadas del Engage 3.4.2), que lo ocultan por debajo de 576 px aunque en móvil hay sitio de sobra.
 - Opción nueva `mobile_avatar` («Avatar en móvil»; Opciones > Apariencia, y en las opciones modernas, categoría Diseño, justo debajo del tema, como control de 3 segmentos cortos). `auto` (por defecto): decide el tema; Clásico conserva el comportamiento original (oculto por debajo de 576 px) y Moderno, Minimalista y Oscuro lo muestran reducido. `show`: visible en móvil con cualquier tema (también Clásico). `hide`: oculto en móvil con cualquier tema. Desde 576 px no cambia nada.
