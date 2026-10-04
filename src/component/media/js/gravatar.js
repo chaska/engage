@@ -14,6 +14,14 @@
  *
  * API: window.AkeebaEngageGravatar = {grant(), revoke(), isGranted()}. Cookie managers can also dispatch on document
  * the event "engage:gravatar-consent" with detail: {granted: true|false}. See docs/GRAVATAR-CONSENTIMIENTO.md.
+ *
+ * 0.6.19, consent source "jbcookies" (img attribute data-engage-gravatar-source="jbcookies"): the decision belongs to the
+ * JBCookies module. It is read from its JS-readable cookie "jbcookies" on load and again when the module dispatches
+ * "jbcookies:update". Consent is granted ONLY if status === "allow", or status === "custom" and the configured group
+ * (data-engage-gravatar-group) is exactly 1 / true in preferences. Anything else (no cookie, deny, broken JSON, odd
+ * values) is NOT consent. In this mode localStorage is neither read nor written, grant() only re-checks the cookie (it
+ * can never grant against the module) and revoke() always works. Passive checks (focus, visibility, pageshow, click on
+ * the module's "change my decision" link) can only REVOKE, never grant.
  */
 (function (window, document) {
     "use strict";
@@ -22,12 +30,22 @@
     var ATTR_URL = "data-engage-gravatar";
     var ATTR_NO_NOTICE = "data-engage-gravatar-notice";
     var ATTR_LOCAL = "data-engage-gravatar-local";
+    var ATTR_SOURCE = "data-engage-gravatar-source";
+    var ATTR_GROUP = "data-engage-gravatar-group";
+
+    var JB_COOKIE = "jbcookies";
+    var JB_MAX_LENGTH = 4096;
+    var JB_GROUP = /^[a-z0-9_-]{1,64}$/;
+    // "necessary" is always 1 (it proves nothing); the others exist on every JavaScript object.
+    var JB_BAD_GROUPS = ["necessary", "__proto__", "constructor", "prototype"];
 
     // Strict whitelist: the only thing which may ever be assigned to an img src by this script.
     var ALLOWED_URL = /^https:\/\/www\.gravatar\.com\/avatar\/[0-9a-f]{32,64}(\?[A-Za-z0-9_=&%.+\-]*)?$/;
 
     var granted = false;
     var noticeEl = null;
+    var external = false;   // true: the decision comes from the JBCookies module
+    var jbGroup = "";
 
     function text(key, fallback)
     {
@@ -79,6 +97,155 @@
         {
             // Storage blocked: the choice only lasts until the page is reloaded.
         }
+    }
+
+    function isPlainObject(value)
+    {
+        return value !== null && typeof value === "object" && !Array.isArray(value);
+    }
+
+    function validGroup(value)
+    {
+        return typeof value === "string" && JB_GROUP.test(value) && JB_BAD_GROUPS.indexOf(value) === -1 ? value : "";
+    }
+
+    /**
+     * Pure rule: does the (already URL-decoded) value of the jbcookies cookie grant consent for this group?
+     * Only an explicit allow does; every doubt is "no".
+     */
+    function jbDecide(raw, group)
+    {
+        if (typeof raw !== "string" || raw === "" || raw.length > JB_MAX_LENGTH)
+        {
+            return false;
+        }
+
+        var status = "";
+        var prefs = null;
+
+        try
+        {
+            var parsed = JSON.parse(raw);
+
+            if (isPlainObject(parsed) && Object.prototype.hasOwnProperty.call(parsed, "status") && typeof parsed.status === "string")
+            {
+                status = parsed.status;
+                prefs = Object.prototype.hasOwnProperty.call(parsed, "preferences") ? parsed.preferences : null;
+            }
+        }
+        catch (e)
+        {
+            status = "";
+        }
+
+        if (status === "" && (raw === "allow" || raw === "deny" || raw === "custom"))
+        {
+            // Legacy plain text value, accepted by the module.
+            status = raw;
+            prefs = null;
+        }
+
+        if (status === "allow")
+        {
+            return true;
+        }
+
+        group = validGroup(group);
+
+        if (status !== "custom" || group === "" || !isPlainObject(prefs) || !Object.prototype.hasOwnProperty.call(prefs, group))
+        {
+            return false;
+        }
+
+        return prefs[group] === 1 || prefs[group] === true;
+    }
+
+    /** Values of every cookie called "jbcookies" (URL-decoded). A value which cannot be decoded is returned as "". */
+    function jbCookieValues()
+    {
+        var values = [];
+        var all;
+
+        try
+        {
+            all = String(document.cookie || "");
+        }
+        catch (e)
+        {
+            return values;
+        }
+
+        var parts = all.split(";");
+
+        for (var i = 0; i < parts.length; i++)
+        {
+            var part = parts[i];
+            var eq = part.indexOf("=");
+
+            if (eq === -1 || part.slice(0, eq).trim() !== JB_COOKIE)
+            {
+                continue;
+            }
+
+            var value = part.slice(eq + 1).trim();
+
+            try
+            {
+                values.push(decodeURIComponent(value));
+            }
+            catch (e)
+            {
+                values.push("");
+            }
+        }
+
+        return values;
+    }
+
+    /** The module's current decision. With no cookie, or two cookies of the same name where any does not grant: false. */
+    function jbGranted()
+    {
+        var values = jbCookieValues();
+
+        if (values.length === 0)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < values.length; i++)
+        {
+            if (!jbDecide(values[i], jbGroup))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    function detectSource()
+    {
+        var images = getImages();
+
+        external = false;
+        jbGroup = "";
+
+        // Any image without the explicit "jbcookies" marker keeps the whole page in the default (own) mode.
+        if (images.length === 0)
+        {
+            return;
+        }
+
+        for (var i = 0; i < images.length; i++)
+        {
+            if (images[i].getAttribute(ATTR_SOURCE) !== "jbcookies")
+            {
+                return;
+            }
+        }
+
+        external = true;
+        jbGroup = validGroup(images[0].getAttribute(ATTR_GROUP) || "");
     }
 
     function getImages()
@@ -223,6 +390,34 @@
         renderNotice(false);
     }
 
+    function setExternalState(on)
+    {
+        var changed = granted !== on;
+
+        granted = on;
+        applyToImages();
+
+        if (changed)
+        {
+            announce(on);
+        }
+    }
+
+    // JBCookies: follow the module's decision (grants and revokes).
+    function syncFromJbcookies()
+    {
+        setExternalState(jbGranted());
+    }
+
+    // JBCookies: passive checks (no event from the module) may only withdraw consent, never give it.
+    function recheckJbcookies()
+    {
+        if (granted && !jbGranted())
+        {
+            setExternalState(false);
+        }
+    }
+
     function announce(on)
     {
         try
@@ -237,6 +432,13 @@
 
     function grant()
     {
+        if (external)
+        {
+            // Never against the module: this only re-reads its cookie.
+            syncFromJbcookies();
+            return;
+        }
+
         granted = true;
         writeStored(true);
         applyToImages();
@@ -246,6 +448,12 @@
 
     function revoke()
     {
+        if (external)
+        {
+            setExternalState(false);
+            return;
+        }
+
         granted = false;
         writeStored(false);
         applyToImages();
@@ -283,8 +491,42 @@
         }
     });
 
+    function initJbcookies()
+    {
+        granted = false;
+        syncFromJbcookies();
+
+        document.addEventListener("jbcookies:update", syncFromJbcookies);
+        document.addEventListener("visibilitychange", function () {
+            if (document.visibilityState !== "hidden")
+            {
+                recheckJbcookies();
+            }
+        });
+        window.addEventListener("focus", recheckJbcookies);
+        window.addEventListener("pageshow", recheckJbcookies);
+        // The module's "change my decision" link erases the cookie WITHOUT dispatching any event.
+        document.addEventListener("click", function (e) {
+            var target = e && e.target;
+
+            if (target && typeof target.closest === "function" && target.closest(".jb-cookie-decline"))
+            {
+                // The module's own handler has already erased the cookie when the click bubbles up to the document.
+                setTimeout(recheckJbcookies, 0);
+            }
+        });
+    }
+
     function init()
     {
+        detectSource();
+
+        if (external)
+        {
+            initJbcookies();
+            return;
+        }
+
         granted = readStored();
 
         if (getImages().length === 0)

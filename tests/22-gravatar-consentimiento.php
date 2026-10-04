@@ -155,7 +155,7 @@ namespace {
 	t_ok($normJs !== '' && $normJs === $normPhp, 'la expresion de lista blanca es la misma en PHP y en gravatar.js');
 	t_ok(preg_match('/\.src\s*=|innerHTML|eval\(|new Function|document\.write|outerHTML|insertAdjacentHTML/', $js) === 0, 'gravatar.js: sin eval, innerHTML ni asignaciones directas a .src');
 	t_ok(substr_count($js, 'setAttribute("src", url)') === 1 && strpos($js, 'ALLOWED_URL.test(url)') < strpos($js, 'setAttribute("src", url)'), 'gravatar.js: la unica asignacion de una URL externa va tras la lista blanca');
-	t_ok(strpos($js, 'engage_gravatar_consent') !== false && strpos($js, 'engage:gravatar-consent') !== false && strpos($js, 'window.AkeebaEngageGravatar') !== false && strpos($js, 'document.cookie') === false, 'gravatar.js: clave de localStorage, evento y API; sin cookies');
+	t_ok(strpos($js, 'engage_gravatar_consent') !== false && strpos($js, 'engage:gravatar-consent') !== false && strpos($js, 'window.AkeebaEngageGravatar') !== false && preg_match('/document\.cookie\s*=(?!=)/', $js) === 0, 'gravatar.js: clave de localStorage, evento y API; nunca escribe cookies (0.6.19: solo lee la de JBCookies)');
 	$rc = 0; $out = [];
 	if (trim((string) shell_exec('command -v node'))) { exec('node --check ' . escapeshellarg($root . '/component/media/js/gravatar.js') . ' 2>&1', $out, $rc); t_ok($rc === 0, 'gravatar.js: node --check'); }
 

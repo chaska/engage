@@ -215,6 +215,35 @@ Entorno: el Joomla 6.1.4 de las secciones anteriores (MariaDB 10.11, PHP 8.3, `p
 
 NO PROBADO: el módulo `engage_latest` renderizado en una posición real (usa la misma función, comprobado en el fuente), Joomla 5.x, y el efecto real en buscadores.
 
+## 10. Gravatar gobernado por JBCookies (0.6.19)
+
+Entorno: el Joomla 6.1.4 de las secciones anteriores, paquete 0.6.19 instalado con `02-instalar-engage.sh` y el módulo **JBCookies** (`mod_jbcookies`, ZIP `JBCookies-6.0.2.zip` de JoomBall, SHA-256 `fda7814f8908b6edc8edd9c16d805a2379e633d261ccacf8841012a080932fe6`) instalado **tal cual** con `extension:install` (el instalador de Joomla acepta la carpeta raíz del ZIP; no hizo falta reempaquetar; el manifiesto interno dice versión 6.0.1) y publicado en la posición `footer` de Cassiopeia, en todas las páginas. El ZIP no está en el repositorio: `JBCOOKIES_ZIP=... bash 07-jbcookies.sh`. Chromium headless 1194 con Playwright, peticiones a gravatar.com interceptadas y registradas (PNG de 1x1; nada sale a Internet; cualquier otro host externo se aborta y se cuenta).
+
+| Bloque | Resultado |
+|---|---|
+| `tests/24-gravatar-jbcookies.php` (plugin real con stubs + `gravatar.js` real en `vm`) | 90 correctas / 0 fallidas (89 en el JS: tabla de 59 casos de la regla de concesión y comportamiento dinámico) |
+| `07-jbcookies.sh`, navegador real con los botones del módulo (`lib/jbcookies-navegador.js`) | 39 PASA / 0 FALLA |
+| Ídem con la caché de página de Joomla (plugin `cache` + `engagecache`, `caching=1`) | 3 PASA / 0 FALLA |
+| Regresión `05-gravatar.sh` (modo `engage`, con el módulo despublicado) | 27 + 22 + 4 PASA / 0 FALLA |
+| Batería `03-sembrar-y-probar.sh` y `06-rel-ugc.sh` | 73 PASA / 0 FALLA / 0 NO PROBADA; 10 PASA / 0 FALLA |
+
+Lo comprobado con el módulo real (evidencia en `$WORK/resultados-jbcookies*.json`):
+
+- Antes de decidir: 0 peticiones a gravatar.com y 0 a terceros, el aviso de JBCookies visible, los 2 avatares con el SVG local y `data-engage-gravatar-source="jbcookies"`, sin aviso propio de Engage, sin cookie ni clave `engage_gravatar_consent`.
+- **Aceptar todo**: cookie `{"status":"allow","preferences":{"necessary":1,"analytics":1,"marketing":1,"unassigned":1}}`, 2 peticiones `https://www.gravatar.com/avatar/<64 hex>` sin Referer, imágenes cargadas, `localStorage` sin usar. Recargar: persiste (2 peticiones, sin aviso). Icono «cambiar mi decisión»: la cookie se borra sin evento y las fotos se retiran al instante (clic detectado); recargar: 0 peticiones.
+- **Rechazar todas** (desde *Ajustes*): `deny`, 0 peticiones, también tras recargar; aceptar y luego rechazar: las fotos vuelven al SVG local.
+- **Guardar selección** con `jbcookies_group=marketing`: con *marketing* activado (`custom`, `marketing:1`) 2 peticiones; con *marketing* desactivado (`marketing:0`) 0 peticiones y 0 tras recargar; pasar de desactivado a activado en la misma página carga las fotos al recibir `jbcookies:update`; con solo *analytics* activado, 0. Con el grupo **vacío**, «Guardar selección» (todos los interruptores activados) **no** concede y «Aceptar todo» del modal sí. `jbcookies_group=necessary` se descarta (grupo vacío en el HTML); un grupo con comillas/HTML se sirve como `data-engage-gravatar-group=""` y el texto inyectado no aparece.
+- Cookies hostiles puestas a mano (JSON roto, `%` roto, `ALLOW`, `"1"`, `preferences` array, `__proto__`, `deny`, vacía): 0 peticiones en las 8; los valores válidos (`allow`, JSON `allow`, `custom` con el grupo a 1) cargan; `deny` y `custom` en texto no. Cookie borrada desde fuera + `focus`: se retiran las fotos; `focus`/`visibilitychange` nunca conceden; `jbcookies:update` relee la cookie y concede; `revoke()` retira siempre y `grant()` sin cookie `allow` no concede.
+- Regresión: `consent_source` ausente o `engage` (aunque haya un `jbcookies_group` guardado) con una cookie `jbcookies=allow` presente: la cookie se ignora, aviso propio presente, 0 peticiones, el botón sigue cargando las fotos y guardando `engage_gravatar_consent=1`; `off` y `always` ignoran los parámetros nuevos; con el módulo despublicado y `jbcookies`: 0 peticiones y sin avisos.
+- Los grupos de la ventana de *Ajustes* son los 4 fijos (`necessary` bloqueado, `analytics`, `marketing`, `unassigned`) y salen **todos activados** (leído en el DOM real).
+
+Hallazgos (del módulo de terceros, no de Engage):
+- Reinstalar JBCookies encima del ya instalado falla en Joomla 6.1.4: `In script.php line 119: Class "Joomla\CMS\Filesystem\File" not found`. La instalación nueva y la desinstalación funcionan. `07-jbcookies.sh` reutiliza el módulo ya instalado.
+- La licencia es inconsistente (GPL v3 en `LICENSE` y `mod_jbcookies.xml`, «Non-Commercial» en su `README.md`): el fork no lo distribuye.
+- JBCookies no bloquea scripts por sí mismo; solo guarda la decisión y avisa por evento.
+
+NO PROBADO: Firefox y Safari (solo Chromium), otro tema distinto de Cassiopeia (el módulo exige Bootstrap), Joomla 5.x, JBCookies con la opción «dominio/subdominio» de la cookie, el texto en es-ES renderizado en el panel (el sitio de pruebas solo tiene en-GB; las cadenas es-ES las comprueba `tests/24`), y el caso de un visitante con las cookies bloqueadas.
+
 ## 9. Estado del paquete
 
 Hash del ZIP al cierre de esta tanda y coincidencia con `updates/pkgengage.xml`: ver `docs/PUBLICAR-RELEASE.md` y comprobar con `php build/build.php` (reproducible). No se ha publicado ninguna release: la URL de descarga de `updates/pkgengage.xml` no existirá hasta que el propietario suba **ese mismo ZIP** a la release `v3.4.2.1`.

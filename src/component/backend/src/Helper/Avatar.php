@@ -57,14 +57,15 @@ class Avatar
 	 * @param   int       $size           Image width in pixels
 	 * @param   null      $fallbackEmail  Fallback email address is the user does not exist
 	 *
-	 * @return  array{src: string, deferred: string, notice: bool}  src is always safe to put in the img src; deferred is
-	 *                                                              empty or a URL for the data-engage-gravatar attribute
+	 * @return  array{src: string, deferred: string, notice: bool, source: string, group: string}  src is always safe to
+	 *          put in the img src; deferred is empty or a URL for the data-engage-gravatar attribute; source is "engage"
+	 *          or "jbcookies" (0.6.19) and group the JBCookies group slug (or '')
 	 * @throws  Exception
 	 * @since   0.6.17
 	 */
 	public static function getUserAvatarData(?int $user_id, int $size = 128, $fallbackEmail = null): array
 	{
-		$empty = ['src' => '', 'deferred' => '', 'notice' => true];
+		$empty = ['src' => '', 'deferred' => '', 'notice' => true, 'source' => 'engage', 'group' => ''];
 
 		// Get the user and the normalised user ID.
 		$user    = (is_numeric($user_id) && ($user_id > 0)) ? UserFetcher::getUser($user_id) : null;
@@ -94,7 +95,7 @@ class Avatar
 
 		if (!empty($fromField))
 		{
-			return self::$avatarImages[$user_id] = ['src' => $fromField, 'deferred' => '', 'notice' => true];
+			return self::$avatarImages[$user_id] = ['src' => $fromField, 'deferred' => '', 'notice' => true, 'source' => 'engage', 'group' => ''];
 		}
 
 		// TODO Support Joomla plugin events — if Joomla ever has such an event...
@@ -108,7 +109,7 @@ class Avatar
 	 *
 	 * @param   array  $eventData  ['results' => string[], 'deferred' => array<string, array{url: string, notice: bool}>]
 	 *
-	 * @return  array{src: string, deferred: string, notice: bool}
+	 * @return  array{src: string, deferred: string, notice: bool, source: string, group: string}
 	 * @since   0.6.17
 	 */
 	private static function pickAvatar(array $eventData): array
@@ -119,7 +120,7 @@ class Avatar
 
 		if (empty($avatars))
 		{
-			return ['src' => '', 'deferred' => '', 'notice' => true];
+			return ['src' => '', 'deferred' => '', 'notice' => true, 'source' => 'engage', 'group' => ''];
 		}
 
 		$src      = array_shift($avatars);
@@ -129,6 +130,9 @@ class Avatar
 			'src'      => $src,
 			'deferred' => (is_array($deferred) && is_string($deferred['url'] ?? null)) ? $deferred['url'] : '',
 			'notice'   => !is_array($deferred) || !array_key_exists('notice', $deferred) || (bool) $deferred['notice'],
+			// 0.6.19: where the consent decision comes from. Anything other than exactly "jbcookies" is "engage".
+			'source'   => (is_array($deferred) && ($deferred['source'] ?? null) === 'jbcookies') ? 'jbcookies' : 'engage',
+			'group'    => (is_array($deferred) && is_string($deferred['group'] ?? null) && preg_match('/^[a-z0-9_-]{1,64}$/D', $deferred['group'])) ? $deferred['group'] : '',
 		];
 	}
 
