@@ -12,6 +12,7 @@ defined('_JEXEC') or die;
 use Akeeba\Component\Engage\Administrator\Helper\PanelData;
 use Akeeba\Component\Engage\Administrator\Helper\PanelHealth;
 use Akeeba\Component\Engage\Administrator\Helper\PanelIcons as I;
+use Akeeba\Component\Engage\Administrator\Helper\PanelUi;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -31,7 +32,8 @@ $n      = static fn($v): string => number_format((int) $v, 0, $es ? ',' : '.', $
 
 $panelUrl      = 'index.php?option=com_engage&view=controlpanel';
 $commentsUrl   = 'index.php?option=com_engage&view=comments';
-$settingsUrl   = 'index.php?option=com_config&view=component&component=com_engage&return=' . base64_encode($panelUrl);
+$settingsUrl   = 'index.php?option=com_engage&view=settings';
+$permsUrl      = $settingsUrl . '&section=permissions';
 $healthText    = ['ok' => Text::_('COM_ENGAGE_PANEL_LEVEL_OK'), 'warn' => Text::_('COM_ENGAGE_PANEL_LEVEL_WARN'), 'bad' => Text::_('COM_ENGAGE_PANEL_LEVEL_BAD')];
 $stateInfo     = [
 	1  => ['ok', 'COM_ENGAGE_PANEL_STATE_PUBLISHED'],
@@ -47,7 +49,7 @@ $fixUrl = function (array $fix) use ($settingsUrl): string {
 		case 'updatesites':
 			return 'index.php?option=com_installer&view=updatesites';
 		case 'settings':
-			return $settingsUrl;
+			return $settingsUrl . '&section=' . rawurlencode((string) ($fix['section'] ?? 'design'));
 	}
 
 	return '';
@@ -73,15 +75,7 @@ echo I::sprite();
 				<?= I::icon($health['level']) ?>
 				<span><?= $e(Text::sprintf($summaryKey, $health['counts']['warn'], $health['counts']['bad'])) ?></span>
 			</a>
-			<div class="eg-theme" role="radiogroup" aria-label="<?= $e(Text::_('COM_ENGAGE_PANEL_THEME_LABEL')) ?>">
-				<?php foreach (['light' => 'sun', 'mid' => 'dim', 'dark' => 'moon', 'auto' => 'half'] as $t => $icon) : ?>
-					<button type="button" class="eg-theme__btn" role="radio" aria-checked="false" tabindex="-1"
-							data-eg-theme-set="<?= $e($t) ?>">
-						<?= I::icon($icon) ?>
-						<span><?= $e(Text::_('COM_ENGAGE_PANEL_THEME_' . strtoupper($t))) ?></span>
-					</button>
-				<?php endforeach; ?>
-			</div>
+			<?= PanelUi::themeSwitcher() ?>
 		</div>
 	</header>
 
@@ -124,7 +118,7 @@ echo I::sprite();
 					</a>
 				</li>
 				<li>
-					<a class="eg-tile" href="<?= $url($settingsUrl . '#permissions') ?>">
+					<a class="eg-tile" href="<?= $url($permsUrl) ?>">
 						<span class="eg-icobox eg-icobox--orange"><?= I::icon('lock') ?></span>
 						<span class="eg-tile__label"><?= $e(Text::_('COM_ENGAGE_PANEL_TILE_PERMISSIONS')) ?></span>
 						<span class="eg-tile__hint"><?= $e(Text::_('COM_ENGAGE_PANEL_TILE_PERMISSIONS_HINT')) ?></span>

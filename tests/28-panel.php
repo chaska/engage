@@ -25,7 +25,7 @@ foreach (['backend/src/Controller/ControlpanelController.php', 'backend/src/View
 }
 $x = simplexml_load_string($lee("$c/engage.xml"));
 $sub = $x->xpath('//administration/submenu/menu');
-t_ok(count($sub) === 3 && (string) $sub[0]['link'] === 'option=com_engage&view=controlpanel' && (string) $sub[1]['link'] === 'option=com_engage&view=comments' && (string) $sub[2]['link'] === 'option=com_engage&view=emailtemplates', 'el manifiesto declara el submenu: panel, comentarios, plantillas de email');
+t_ok(count($sub) === 4 && (string) $sub[0]['link'] === 'option=com_engage&view=controlpanel' && (string) $sub[1]['link'] === 'option=com_engage&view=comments' && (string) $sub[2]['link'] === 'option=com_engage&view=emailtemplates' && (string) $sub[3]['link'] === 'option=com_engage&view=settings', 'el manifiesto declara el submenu: panel, comentarios, plantillas de email y opciones (0.6.25)');
 t_ok((string) $x->administration->menu === 'COM_ENGAGE' && !isset($x->administration->menu['link']), 'el elemento principal sigue siendo COM_ENGAGE sin enlace propio (index.php?option=com_engage, que abre el panel)');
 $disp = $lf("$c/backend/src/Dispatcher/Dispatcher.php");
 t_ok(str_contains($disp, "protected \$defaultController = 'controlpanel';"), 'el Dispatcher abre por defecto el panel de control');
@@ -182,7 +182,7 @@ t_ok(str_contains(PanelIcons::sprite(), 'aria-hidden="true"') && substr_count(Pa
 preg_match_all('/<\?=\s*(.+?)\s*\?>/s', $plant, $ex);
 $sinEscapar = [];
 foreach ($ex[1] as $e) {
-	if (preg_match('/^(\$e\(|\$url\(|I::icon\(|\(int\)|\$quickToken$)/', $e)) { continue; }
+	if (preg_match('/^(\$e\(|\$url\(|I::icon\(|PanelUi::themeSwitcher\(\)|\(int\)|\$quickToken$)/', $e)) { continue; }
 	$sinEscapar[] = $e;
 }
 t_ok(!$sinEscapar, 'toda salida <?= de la plantilla va escapada ($e, $url), es un icono, un entero o el token' . ($sinEscapar ? ' -> ' . implode(' | ', array_slice($sinEscapar, 0, 3)) : ''));

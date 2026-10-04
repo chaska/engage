@@ -18,6 +18,12 @@ Al pulsar **Akeeba Engage** en el menú de administración se abre ahora un pane
 
 ![Panel de control en el diseño Claro](docs/img/panel-claro.png)
 
+## Opciones modernas (0.6.25)
+
+**Engage > Opciones**: categorías a la izquierda, ajustes con interruptores y botones de opción que **se aplican al instante** (sin «Guardar y cerrar»), selector de tema con tarjetas de vista previa y vista previa en vivo de las respuestas, con los mismos tres diseños que el panel. Solo se aceptan ajustes declarados en `config.xml` y en los plugins de Engage, validados en el servidor y con token de seguridad. La pantalla clásica de Joomla sigue disponible («Opciones clásicas»). Ver [`docs/PANEL.md`](docs/PANEL.md).
+
+![Opciones modernas](docs/img/config-claro.png)
+
 ## Temas visuales (0.6.23)
 
 En **Componentes > Engage > Opciones > Apariencia** se elige el aspecto de los comentarios sin pegar CSS: `Clásico` (por defecto, no cambia nada), `Moderno`, `Minimalista` u `Oscuro`. Cada tema fija siempre fondo y color de texto, así que se lee sobre plantillas claras y oscuras, y sus colores y medidas son variables `--eg-*` que se pueden sobrescribir desde el CSS de la plantilla. Guía, capturas y lista de variables: [`docs/TEMAS.md`](docs/TEMAS.md).

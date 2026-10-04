@@ -44,6 +44,7 @@
 			<menu link="option=com_engage&amp;view=controlpanel">COM_ENGAGE_MENU_CONTROLPANEL</menu>
 			<menu link="option=com_engage&amp;view=comments">COM_ENGAGE_MENU_COMMENTS</menu>
 			<menu link="option=com_engage&amp;view=emailtemplates">COM_ENGAGE_MENU_EMAILTEMPLATES</menu>
+			<menu link="option=com_engage&amp;view=settings">COM_ENGAGE_MENU_SETTINGS</menu>
 		</submenu>
 
 		<!-- Back-end files -->
