@@ -32,10 +32,13 @@ class Dispatcher extends ComponentDispatcher
 	/**
 	 * The default controller (and view), if none is specified in the request.
 	 *
+	 * Fork 0.6.24: the entry screen of the component is the control panel (it used to be the comments list). The comments
+	 * list keeps working as view=comments, and so do all the old URLs which name a view or a controller explicitly.
+	 *
 	 * @var   string
 	 * @since 3.0.0
 	 */
-	protected $defaultController = 'comments';
+	protected $defaultController = 'controlpanel';
 
 	/**
 	 * Maps old versions' view names to the current view names.
