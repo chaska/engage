@@ -26,5 +26,6 @@
 	<languages folder="language">
 		<language tag="en-GB">en-GB/plg_console_engage.ini</language>
 		<language tag="en-GB">en-GB/plg_console_engage.sys.ini</language>
+		<language tag="es-ES">es-ES/plg_console_engage.sys.ini</language>
 	</languages>
 </extension>

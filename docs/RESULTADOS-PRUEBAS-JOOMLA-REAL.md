@@ -244,6 +244,21 @@ Hallazgos (del módulo de terceros, no de Engage):
 
 NO PROBADO: Firefox y Safari (solo Chromium), otro tema distinto de Cassiopeia (el módulo exige Bootstrap), Joomla 5.x, JBCookies con la opción «dominio/subdominio» de la cookie, el texto en es-ES renderizado en el panel (el sitio de pruebas solo tiene en-GB; las cadenas es-ES las comprueba `tests/24`), y el caso de un visitante con las cookies bloqueadas.
 
+## 11. Textos es-ES completos (0.6.20)
+
+Entorno: el Joomla 6.1.4 de las secciones anteriores, **sin** el paquete oficial de idioma español (la red externa estaba bloqueada). Se crearon dos esqueletos `es-ES` (solo `langmetadata.xml`, uno en `language/` y otro en `administrator/language/`), se instaló el paquete 0.6.20 con `02-instalar-engage.sh` (el instalador copió los `.ini` es-ES de Engage a esas carpetas) y `08-idioma-es.sh` puso es-ES como idioma del sitio y de la administración (restaurado a en-GB al terminar). Las cadenas de Joomla que no son de Engage salen en inglés (no hay paquete oficial): no se evalúan.
+
+| Bloque | Resultado |
+|---|---|
+| `lib/idioma-es-joomla.php`: analizador y clase `Language` de Joomla sobre cada `.ini` es-ES instalado (21 archivos con claves, 438 claves) | 22 PASA / 0 FALLA |
+| `lib/idioma-es-http.php`: lista de comentarios, Opciones del componente, Plantillas de email, lista de plugins, formularios de Akismet, Emails, Gravatar, Registro de acciones y Usuario, formulario del módulo «Últimos comentarios», artículo público (invitado) y un correo real capturado | 46 PASA / 0 FALLA |
+| Regresión `03-sembrar-y-probar.sh` (batería completa en en-GB) | 73 PASA / 0 FALLA / 0 NO PROBADA |
+| Registro de errores de PHP (`error_reporting=-1`) durante todo | vacío |
+
+Qué demuestra cada comprobación de pantalla: HTTP 200, ninguna clave `COM_ENGAGE_` / `MOD_ENGAGE_` / `PLG_*_ENGAGE` visible fuera de `<script>` y de `<code>` (dos descripciones citan a propósito una clave de idioma), varias cadenas españolas esperadas y **ninguna** cadena larga inglesa de Engage (Joomla carga en-GB de respaldo: una clave sin traducir se vería en inglés, no como clave; por eso se busca también el inglés). El correo (asunto, texto plano y HTML) sale en español y sin frases inglesas.
+
+NO PROBADO: el paquete oficial de idioma es-ES de Joomla (no se pudo descargar; los textos propios de Joomla no se evalúan), la ayuda de la consola (`engage:cleanspam --help`) en es-ES, las pantallas de edición de una plantilla de email concreta ni la edición/lectura de un comentario concreto en el panel, y un idioma de sitio mixto con varios idiomas de contenido.
+
 ## 9. Estado del paquete
 
 Hash del ZIP al cierre de esta tanda y coincidencia con `updates/pkgengage.xml`: ver `docs/PUBLICAR-RELEASE.md` y comprobar con `php build/build.php` (reproducible). No se ha publicado ninguna release: la URL de descarga de `updates/pkgengage.xml` no existirá hasta que el propietario suba **ese mismo ZIP** a la release `v3.4.2.1`.
