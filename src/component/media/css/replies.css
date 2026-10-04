@@ -68,3 +68,66 @@ section.akengage-outer-container ul.akengage-comment-list ul.akengage-reply-styl
 		--akengage-reply-indent-size: 1.25rem;
 	}
 }
+
+/*
+ * Avatar on narrow screens (0.6.28, component option mobile_avatar). The avatar container keeps Bootstrap's original
+ * "d-none d-sm-block" (hidden below 576 px); the option only adds a class to the outer container, and these rules
+ * override it when needed. Without the class (classic + "auto") nothing here applies and the page is exactly the original.
+ *
+ *   section.akengage-mobile-avatar--show   avatar visible on mobile, reduced to --eg-avatar-movil (default 40px), with the
+ *                                          name, icons and date on its right and the moderation buttons below.
+ *                                          Also added by the server for "auto" with the modern, minimal and dark themes.
+ *   section.akengage-mobile-avatar--hide   avatar hidden on mobile with any theme.
+ *
+ * To change the size from your template's custom CSS:   :root { --eg-avatar-movil: 44px; }
+ * Only the picture that was already in the page is shown: no extra image is requested and Gravatar is not contacted.
+ */
+@media (max-width: 575.98px) {
+	section.akengage-outer-container.akengage-mobile-avatar--show footer.akengage-comment-properties {
+		align-items: flex-start !important;
+	}
+
+	section.akengage-outer-container.akengage-mobile-avatar--show footer.akengage-comment-properties .akengage-commenter-avatar-container {
+		display: block !important;
+		flex: 0 0 var(--eg-avatar-movil, 40px) !important;
+		width: var(--eg-avatar-movil, 40px) !important;
+		max-width: var(--eg-avatar-movil, 40px) !important;
+	}
+
+	section.akengage-outer-container.akengage-mobile-avatar--show footer.akengage-comment-properties .akengage-commenter-avatar {
+		display: block;
+		width: 100% !important;
+		height: auto !important;
+		max-width: none !important;
+		max-height: none !important;
+		aspect-ratio: 1 / 1;
+		object-fit: cover;
+	}
+
+	section.akengage-outer-container.akengage-mobile-avatar--show footer.akengage-comment-properties .akengange-comment-head {
+		flex: 1 1 0 !important;
+		width: auto !important;
+		min-width: 0;
+	}
+
+	/* Moderation buttons under the date, on their own line */
+	section.akengage-outer-container.akengage-mobile-avatar--show footer.akengage-comment-properties .akengage-comment-actions {
+		flex: 1 0 100%;
+	}
+
+	section.akengage-outer-container:is(.akengage-mobile-avatar--show, .akengage-mobile-avatar--hide) footer.akengage-comment-properties .akengage-comment-actions {
+		flex-wrap: wrap;
+	}
+
+	section.akengage-outer-container.akengage-mobile-avatar--hide footer.akengage-comment-properties .akengage-commenter-avatar-container {
+		display: none !important;
+	}
+
+	/* Names and e-mails without spaces break instead of pushing the header out of the screen */
+	section.akengage-outer-container:is(.akengage-mobile-avatar--show, .akengage-mobile-avatar--hide) footer.akengage-comment-properties .akengange-commenter-name [itemprop="name"],
+	section.akengage-outer-container:is(.akengage-mobile-avatar--show, .akengage-mobile-avatar--hide) footer.akengage-comment-properties .akengange-commenter-name > div {
+		min-width: 0;
+		max-width: 100%;
+		overflow-wrap: anywhere;
+	}
+}

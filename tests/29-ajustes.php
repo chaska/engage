@@ -59,6 +59,7 @@ t_ok($v('com_engage', 'default_publish', '0') === '0' && $v('com_engage', 'defau
 foreach (['2', '', ' 1', '1 ', 'on', 'true', '01', '-1', '1.0', '١'] as $x) { t_ok($bad('com_engage', 'default_publish', $x), "interruptor rechaza '" . addcslashes($x, "\0") . "'"); }
 t_ok($v('com_engage', 'reply_indent', 'large') === 'large' && $bad('com_engage', 'reply_indent', 'huge') && $bad('com_engage', 'reply_indent', 'LARGE') && $bad('com_engage', 'reply_indent', 'none '), 'lista: solo valores declarados, sensible a mayusculas y espacios');
 t_ok($v('com_engage', 'theme', 'dark') === 'dark' && $bad('com_engage', 'theme', '../../x') && $bad('com_engage', 'theme', 'classic" onmouseover="x'), 'tema: lista cerrada');
+t_ok($v('com_engage', 'mobile_avatar', 'show') === 'show' && $v('com_engage', 'mobile_avatar', 'auto') === 'auto' && $bad('com_engage', 'mobile_avatar', 'SHOW') && $bad('com_engage', 'mobile_avatar', 'none') && $bad('com_engage', 'mobile_avatar', 'hide" onmouseover="x') && $bad('com_engage', 'mobile_avatar', ['show']), 'mobile_avatar (avatar en movil): lista cerrada auto/show/hide');
 t_ok($v('com_engage', 'default_limit', '') === '' && $v('com_engage', 'default_limit', '20') === '20' && $bad('com_engage', 'default_limit', '21'), 'default_limit: vacio = usar global, 20 valido, 21 no');
 t_ok($v('com_engage', 'max_level', '6') === '6' && $bad('com_engage', 'max_level', '7') && $bad('com_engage', 'max_level', '0') && $bad('com_engage', 'max_level', '3.5') && $bad('com_engage', 'max_level', 'tres'), 'max_level: 1..6, entero');
 t_ok($v('com_engage', 'comments_close_after', '3650') === '3650' && $bad('com_engage', 'comments_close_after', '3651') && $bad('com_engage', 'comments_close_after', '-1') && $v('com_engage', 'comments_close_after', '0') === '0', 'comments_close_after: 0..3650');
@@ -216,7 +217,7 @@ t_ok(str_contains($vista, "'url'   => Route::_('index.php?option=com_engage&task
 t_ok(str_contains($vista, 'COM_ENGAGE_SET_CLASSIC') && str_contains($tpl, 'classicUrl') && str_contains($vista, 'com_config&view=component&component=com_engage'), 'enlace "Opciones clasicas" a la pantalla de Joomla (respaldo)');
 $panel = $lf("$c/backend/tmpl/controlpanel/default.php");
 t_ok(str_contains($panel, "'index.php?option=com_engage&view=settings'") && str_contains($panel, "&section=permissions") && str_contains($panel, "'&section=' . rawurlencode"), 'el panel enlaza a la pantalla de opciones y cada aviso del semaforo abre su categoria');
-t_ok(PanelData::FORK_VERSION === '0.6.27', 'PanelData::FORK_VERSION = 0.6.27');
+t_ok(PanelData::FORK_VERSION === '0.6.28', 'PanelData::FORK_VERSION = 0.6.28');
 
 echo "G) Contraste de la vista previa (colores propios de cada tema de comentarios)\n";
 $lum = function (string $h): float { $h = ltrim($h, '#'); $c = [hexdec(substr($h, 0, 2)), hexdec(substr($h, 2, 2)), hexdec(substr($h, 4, 2))]; foreach ($c as &$v) { $v /= 255; $v = $v <= .03928 ? $v / 12.92 : (($v + .055) / 1.055) ** 2.4; } return .2126 * $c[0] + .7152 * $c[1] + .0722 * $c[2]; };

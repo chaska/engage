@@ -338,6 +338,19 @@
             <option value="minimal">COM_ENGAGE_CONFIG_THEME_MINIMAL</option>
             <option value="dark">COM_ENGAGE_CONFIG_THEME_DARK</option>
         </field>
+
+        <field
+                name="mobile_avatar"
+                type="list"
+                label="COM_ENGAGE_CONFIG_MOBILE_AVATAR_LABEL"
+                description="COM_ENGAGE_CONFIG_MOBILE_AVATAR_DESC"
+                default="auto"
+                validate="options"
+        >
+            <option value="auto">COM_ENGAGE_CONFIG_MOBILE_AVATAR_AUTO</option>
+            <option value="show">COM_ENGAGE_CONFIG_MOBILE_AVATAR_SHOW</option>
+            <option value="hide">COM_ENGAGE_CONFIG_MOBILE_AVATAR_HIDE</option>
+        </field>
     </fieldset>
 
     <fieldset

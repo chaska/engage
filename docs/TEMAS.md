@@ -36,6 +36,21 @@ Hilo de tres niveles (invitado, página clara, 1100 px). Se generan con `tests/j
   - **Fondo suave** (`soft`): `replies.css` (más específico) quita la barra lateral de las respuestas publicadas y les pone el fondo `--eg-fondo-respuesta` del tema, siempre **opaco** y con su texto fijado, para que siga leyéndose. Las respuestas sin publicar o de spam conservan su barra.
   - **Ninguna** (`none`): sin barra en las respuestas publicadas; queda la tarjeta con su borde fino.
 
+## Avatar en móvil (0.6.28)
+
+Opción **Componentes > Engage > Opciones > Apariencia > «Avatar en móvil»** (`mobile_avatar`; en las opciones modernas, categoría Diseño, justo debajo del tema). Controla el avatar por debajo de 576 px de ancho (móvil y escritorio estrechado). El Engage original lo ocultaba en pantallas estrechas con las clases de Bootstrap `d-none d-sm-block`.
+
+| Valor | Efecto por debajo de 576 px |
+|---|---|
+| `auto` (**por defecto**) | Decide el tema. **Clásico** conserva el comportamiento original (avatar oculto; el HTML y el CSS son idénticos a los de antes). **Moderno, Minimalista y Oscuro** muestran el avatar reducido. |
+| `show` | Avatar visible con cualquier tema, también con Clásico. |
+| `hide` | Avatar oculto con cualquier tema. |
+
+- Con el avatar visible en móvil: queda a la izquierda (40 px; 36 px en Minimalista; variable `--eg-avatar-movil`), con el nombre, los iconos y la fecha a su derecha y los botones de moderación debajo, sin desbordar. Si no hay foto de Gravatar aceptada se ve la silueta local de siempre.
+- Cómo funciona: la plantilla no cambia el HTML del avatar (conserva `d-none d-sm-block`); solo añade al contenedor la clase `akengage-mobile-avatar--show` o `akengage-mobile-avatar--hide` (valor de lista blanca, escapado), y `replies.css` la usa para sobrescribir la regla de Bootstrap. Con Clásico y `auto` no se añade ninguna clase. Sin estilos en línea ni JavaScript. No se piden más imágenes ni se contacta con Gravatar por esta opción.
+- Tamaño propio desde el CSS de su plantilla: `:root { --eg-avatar-movil: 44px; }`.
+- Desde 576 px la opción no cambia nada. Tras cambiarla, vacíe la caché de página.
+
 ## Modo oscuro del dispositivo
 
 - **Clásico** conserva su comportamiento original: con «Cargar CSS personalizado» activado, `comments.css` lleva un bloque `@media (prefers-color-scheme: dark)` que oscurece los comentarios cuando el dispositivo del visitante está en modo oscuro, aunque el resto de la web siga clara. Si eso le pasa y no lo quiere, elija el tema Moderno o Minimalista (se quedan claros) o desactive «Cargar CSS personalizado».
@@ -104,6 +119,7 @@ Valores por defecto de cada tema:
 | `--eg-radio-cita` | redondeo de la etiqueta de cita | `999px` | `0` | `8px` |
 | `--eg-radio-aviso` | redondeo del aviso de Gravatar (caja de varias líneas) | `14px` | `0` | `10px` |
 | `--eg-radio-avatar` | redondeo del avatar | `50%` | `2px` | `50%` |
+| `--eg-avatar-movil` | tamaño del avatar por debajo de 576 px (opción «Avatar en móvil») | `40px` | `36px` | `40px` |
 | `--eg-radio-campo` | redondeo de campos y código | `8px` | `2px` | `8px` |
 | `--eg-sombra` | sombra de la tarjeta | `0 1px 2px rgba(15, 23, 42, .06), 0 8px 24px rgba(15, 23, 42, .06)` | `none` | `0 2px 10px rgba(0, 0, 0, .35)` |
 | `--eg-sombra-hover` | sombra al pasar el ratón | `0 2px 4px rgba(15, 23, 42, .08), 0 14px 32px rgba(15, 23, 42, .10)` | `none` | `0 4px 16px rgba(0, 0, 0, .45)` |

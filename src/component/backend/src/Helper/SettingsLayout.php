@@ -27,7 +27,7 @@ final class SettingsLayout
 
 		return [
 			['id' => 'design', 'icon' => 'palette', 'tone' => 'violet', 'items' => [
-				[$c, 'theme', 'cards'], [$c, 'max_level'], [$c, 'reply_show_quote'], [$c, 'reply_indent'], [$c, 'reply_style'],
+				[$c, 'theme', 'cards'], [$c, 'mobile_avatar'], [$c, 'max_level'], [$c, 'reply_show_quote'], [$c, 'reply_indent'], [$c, 'reply_style'],
 				[$c, 'comments_ordering'], [$c, 'comments_show'], [$c, 'comments_show_featured'], [$c, 'comments_show_category'], [$c, 'comments_show_article'],
 			]],
 			['id' => 'moderation', 'icon' => 'check', 'tone' => 'green', 'items' => [
