@@ -10,7 +10,7 @@ Antes, el plugin `engage/gravatar` escribía en el HTML `https://www.gravatar.co
 
 | Valor | Qué hace el servidor | Qué ve el visitante |
 |---|---|---|
-| `ask` (**por defecto**) | Sirve un avatar genérico local (`/media/com_engage/images/avatar-generico.svg`). La URL de Gravatar va solo en el atributo `data-engage-gravatar` de la imagen. | Avatar genérico + un aviso sobre los comentarios con el botón «Mostrar fotos de Gravatar (esto envía tu IP a gravatar.com)». Al aceptar, el navegador (no el servidor) carga las fotos. |
+| `ask` (**por defecto**) | Sirve un avatar genérico local (`/media/com_engage/images/avatar-generico.svg`). La URL de Gravatar va solo en el atributo `data-engage-gravatar` de la imagen. | Avatar genérico + un aviso sobre los comentarios con el botón «Mostrar fotos de Gravatar (esto envía su IP a gravatar.com)». Al aceptar, el navegador (no el servidor) carga las fotos. |
 | `off` | Avatar genérico local. No hay ninguna mención ni URL de Gravatar en el HTML y no se carga el JavaScript. | Avatar genérico; nunca se contacta con Gravatar. |
 | `always` | Comportamiento anterior: `src="https://www.gravatar.com/avatar/..."` directo. | Fotos desde el principio. Úselo solo si su política de privacidad y su base jurídica ya cubren esa transmisión. |
 

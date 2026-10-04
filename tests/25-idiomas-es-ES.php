@@ -144,4 +144,66 @@ foreach (glob($src . '/{component/backend,component/frontend,modules/site/*,plug
 foreach (['Advanzado', 'usarios', 'Plugind', 'Comentarioss', 'eligje', 'qeu ', 'Descendiente', 'No hay ideas', 'Una idea'] as $err) {
 	t_ok(!str_contains($todo, $err), "errata «{$err}» ausente de los es-ES");
 }
+
+// 0.6.22: trato de USTED, terminología acordada por Chas (comentador, Data Compliance, sanitizar).
+// Formas de tuteo que no pueden aparecer en ningún es-ES (tras quitar HTML, código, URLs y marcadores).
+$tuteoSiempre = ['tú', 'tu', 'tus', 'ti', 'te', 'contigo', 'tuyo', 'tuya', 'tuyos', 'tuyas', 'vosotros', 'vuestro', 'vuestra',
+	'puedes', 'tienes', 'quieres', 'eres', 'estás', 'sabes', 'necesitas', 'debes', 'deberías', 'podrías', 'prefieres', 'deseas', 'quieras', 'necesites', 'hayas'];
+// Imperativos de tú (o formas ambiguas con ellos) al INICIO de una cadena, frase o elemento de lista.
+$tuteoInicial = ['pulsa', 'haz', 'elige', 'escoge', 'selecciona', 'escribe', 'indica', 'usa', 'utiliza', 'introduce', 'configura', 'asegúrate',
+	'recuerda', 'ten', 'deja', 'pon', 'prueba', 'comprueba', 'consulta', 'marca', 'desmarca', 'activa', 'desactiva', 'añade', 'crea', 'inicia',
+	'accede', 'revisa', 'verifica', 'cambia', 'rellena', 'copia', 'pega', 'abre', 'cierra', 'entra', 'sigue', 've', 'mira', 'instala',
+	'restablece', 'elimina', 'borra', 'pide', 'notifica', 'muestra', 'permite', 'controla', 'registra', 'envía', 'asegura', 'carga', 'recibe', 'define', 'guarda', 'espera'];
+// Lista blanca de excepciones justificadas: clave => palabras permitidas (nombres propios, citas o formas que no son tuteo).
+// Solo contiene excepciones con motivo escrito. Añada aquí «CLAVE => [palabra]» solo con motivo escrito.
+$tuteoBlanca = [
+	// «Marca visual…» es un sustantivo (la marca), no el imperativo «marca».
+	'COM_ENGAGE_CONFIG_REPLY_STYLE_LABEL' => ['marca'],
+];
+$prohibidas = ['comentador', 'comentadora', 'comentadores', 'comentarista', 'comentaristas'];
+$todoIni = [];
+$ficherosEs = [];
+foreach ($ficheros as $en) {
+	$es = str_replace('/language/en-GB/', '/language/es-ES/', $en);
+	if (is_file($es)) { $ficherosEs[] = $es; }
+}
+$malTuteo = [];
+$malTerm = [];
+foreach ($ficherosEs as $es) {
+	$r = leerIni($es);
+	if (isset($r['error'])) { continue; }
+	$nf = substr($es, strlen($src) + 1);
+	foreach ($r['claves'] as $i => $k) {
+		$v = $r['valores'][$i];
+		$perm = $tuteoBlanca[$k] ?? [];
+		$t = soloTexto($v);
+		$t = preg_replace('#</?(p|li|ul|ol|br|strong|em|div|span|a|small|sup)\b[^>]*>#i', "\n", $t);
+		$t = preg_replace('#\\\\n#', "\n", $t);
+		if (preg_match_all('/(?<![\p{L}\p{N}_])(' . implode('|', $tuteoSiempre) . ')(?![\p{L}\p{N}_])/iu', $t, $mm)) {
+			$x = array_diff(array_map('mb_strtolower', $mm[1]), $perm);
+			if ($x) { $malTuteo[] = "$k [" . implode(',', array_unique($x)) . ']'; }
+		}
+		if (preg_match_all('/(?:^|[.:;!?¿¡)]\s+|\n\s*)(' . implode('|', $tuteoInicial) . ')(?![\p{L}\p{N}_])/iu', $t, $mm)) {
+			$x = array_diff(array_map('mb_strtolower', $mm[1]), $perm);
+			if ($x) { $malTuteo[] = "$k [inicio: " . implode(',', array_unique($x)) . ']'; }
+		}
+		foreach ($prohibidas as $w) {
+			if (stripos($v, $w) !== false) { $malTerm[] = "$k [$w]"; }
+		}
+		if (preg_match('/limpiad|limpiar|limpiará|limpia\b/iu', $v) && $k !== 'COM_ENGAGE_CLI_CLEANSPAM_HEAD') { $malTerm[] = "$k [limpiar/limpiado]"; }
+		if (stripos($v, 'consentimiento de datos') !== false) { $malTerm[] = "$k [consentimiento de datos]"; }
+	}
+}
+t_ok($malTuteo === [], 'ninguna cadena es-ES con formas de tuteo' . ($malTuteo ? ' -> ' . implode('; ', array_slice($malTuteo, 0, 8)) : ''));
+t_ok($malTerm === [], 'terminología acordada: sin «comentador/comentarista», «Consentimiento de datos» ni «limpiar/limpiados» (salvo «Limpiar spam» del CLI)' . ($malTerm ? ' -> ' . implode('; ', array_slice($malTerm, 0, 8)) : ''));
+// Cadenas concretas decididas por Chas
+$leido = [];
+foreach ($ficherosEs as $es) { $r = leerIni($es); if (!isset($r['error'])) { foreach ($r['claves'] as $i => $k) { $leido[$k] = $r['valores'][$i]; } } }
+t_ok(($leido['COM_ENGAGE_GRAVATAR_BTN_ACCEPT'] ?? '') === 'Mostrar fotos de Gravatar (esto envía su IP a gravatar.com)', 'botón de Gravatar con «su IP»');
+t_ok(($leido['COM_ENGAGE_COMMENTS_FORM_EDIT_NAME_LABEL'] ?? '') === 'Nombre de quien comenta', '«Nombre de quien comenta»');
+t_ok(str_starts_with($leido['PLG_DATACOMPLIANCE_ENGAGE'] ?? '', 'Cumplimiento de datos'), 'Data Compliance se traduce «Cumplimiento de datos»');
+t_ok(str_contains($leido['PLG_DATACOMPLIANCE_ENGAGE_DOMAINNAMEACTIONS_1'] ?? '', 'sanitizados'), '«sanitizados» en la acción de baja de datos');
+// Autoprueba de la lista de patrones: detecta tuteo conocido
+t_ok(preg_match('/(?<![\p{L}\p{N}_])(' . implode('|', $tuteoSiempre) . ')(?![\p{L}\p{N}_])/iu', 'esto envía tu IP') === 1, 'autoprueba: el patrón detecta «tu IP»');
+t_ok(preg_match('/(?:^|[.:;!?¿¡)]\s+|\n\s*)(' . implode('|', $tuteoInicial) . ')(?![\p{L}\p{N}_])/iu', "Hola. Pulsa el botón") === 1, 'autoprueba: el patrón detecta «Pulsa» inicial');
 t_fin();
