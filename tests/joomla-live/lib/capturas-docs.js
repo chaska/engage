@@ -69,6 +69,8 @@ function sqlq(s) { return `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "''
     }
     if (process.env.DOCS_CONFIG === '1') {
         await grab('config-claro.png', 'index.php?option=com_engage&view=settings', 'light', 1000);
+        // 0.6.26: "Privacidad y Gravatar" con las etiquetas largas de Modo y Clasificacion (antes se rompia la fila)
+        await grab('config-gravatar.png', 'index.php?option=com_engage&view=settings&section=privacy', 'light', 1400);
     }
     await b.close();
     sql(`UPDATE jos_extensions SET params=${sqlq(prevLang)} WHERE element='com_languages'`);

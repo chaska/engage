@@ -28,6 +28,27 @@ $opt = static function (string $label): string {
 	return $t;
 };
 
+/**
+ * 0.6.26: un control segmentado con opciones largas (mas de 4, mas de 40 caracteres en total o alguna de mas de 24) no cabe junto a la etiqueta:
+ * la fila pasa a pila (etiqueta y ayuda arriba, control debajo a todo el ancho). Es un criterio del servidor: no depende de JS.
+ */
+$isWide = static function (string $ctl, array $options) use ($opt): bool {
+	if ($ctl !== 'segmented') {
+		return false;
+	}
+
+	$total = 0;
+	$max   = 0;
+
+	foreach ($options as $ol) {
+		$len   = mb_strlen($opt((string) $ol));
+		$total += $len;
+		$max   = max($max, $len);
+	}
+
+	return count($options) > 4 || $total > 40 || $max > 24;
+};
+
 /** Ayuda breve: texto plano (sin HTML), de hasta 200 caracteres; el resto, en "Mas informacion". */
 $plain = static function (string $html): string {
 	$t = str_replace(['</p>', '<br>', '<br/>', '<br />', '</li>'], ' ', $html);
@@ -161,7 +182,7 @@ echo I::sprite();
 									$options = ['' => 'JGLOBAL_USE_GLOBAL'] + $options;
 								}
 								?>
-								<div class="eg-row eg-row--<?= $e($ctl) ?>" data-eg-row data-scope="<?= $e($def['scope']) ?>" data-key="<?= $e($def['key']) ?>"
+								<div class="eg-row eg-row--<?= $e($ctl) ?><?= $e($isWide($ctl, $options) ? ' eg-row--wide' : '') ?>" data-eg-row data-scope="<?= $e($def['scope']) ?>" data-key="<?= $e($def['key']) ?>"
 									 data-control="<?= $e($ctl) ?>" data-value="<?= $e($value) ?>" data-eg-showon="<?= $e($def['showon']) ?>">
 									<div class="eg-row__text">
 										<?php if (in_array($ctl, ['text', 'number', 'textarea', 'select'], true)) : ?>
