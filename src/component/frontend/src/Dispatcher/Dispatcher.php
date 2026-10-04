@@ -33,6 +33,9 @@ class Dispatcher extends AdminDispatcher
 			$this->commonMediaKeys[] = 'style:com_engage.comments';
 		}
 
+		// 0.6.21: indentation and look of the replies (options reply_indent / reply_style). Always loaded, in both modes.
+		$this->commonMediaKeys[] = 'style:com_engage.replies';
+
 		parent::onBeforeDispatch();
 	}
 

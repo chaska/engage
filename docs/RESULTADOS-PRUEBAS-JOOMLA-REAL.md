@@ -259,6 +259,36 @@ Qué demuestra cada comprobación de pantalla: HTTP 200, ninguna clave `COM_ENGA
 
 NO PROBADO: el paquete oficial de idioma es-ES de Joomla (no se pudo descargar; los textos propios de Joomla no se evalúan), la ayuda de la consola (`engage:cleanspam --help`) en es-ES, las pantallas de edición de una plantilla de email concreta ni la edición/lectura de un comentario concreto en el panel, y un idioma de sitio mixto con varios idiomas de contenido.
 
+## 12. Respuestas: posición, sangría y cita (0.6.21)
+
+Entorno: Joomla 6.1.4 de las secciones anteriores (Cassiopeia), Chromium headless 1194 con Playwright. `tests/joomla-live/09-respuestas.sh`; salida completa en `$WORK/resultados-respuestas*.json`.
+
+**Antes del arreglo** (`09-respuestas.sh --mostrar`, 0.6.20), hilo A(raíz) B->A C->B D->C F->A E(raíz) H->E enviado por el flujo del formulario, orden servido (n = nivel de anidación en el HTML, ninguna cita en ningún caso):
+
+| Orden / max_level | Orden servido |
+|---|---|
+| asc / 1 | A B C D F E H (todo n1: plano; todas las respuestas guardadas con parent_id 0) |
+| asc / 2 | A B C D F (n2) E H(n2) |
+| asc / 3 | A B(n2) C(n3) D(n3) F(n2) E H(n2) |
+| asc / 6 | A B(n2) C(n3) D(n4) F(n2) E H(n2) |
+| desc / 1 | H E F D C B A (plano, la última respuesta enviada sale la PRIMERA y sin cita) |
+| desc / 2 | E H(n2) A F D C B (n2) |
+| desc / 3 | E H(n2) A F(n2) B(n2) D(n3) C(n3) |
+| desc / 6 | E H(n2) A F(n2) B(n2) C(n3) D(n4) |
+
+Conclusión: con `max_level` >= 2 el servidor ya agrupa y anida; con `max_level` = 1 todo es plano por diseño. Midiendo en Chromium con el CSS de Cassiopeia bloqueado (plantilla Bootstrap sin sangría anidada, como Helix), raíz, respuesta y nieta quedan a la misma X: 8, 8, 8 px.
+
+**Después**:
+
+| Bloque | Resultado |
+|---|---|
+| HTTP (`lib/respuestas-http.php`): 8 combinaciones x (padre guardado, agrupación, orden entre hermanos, cita con ancla), escapado (nombre enviado y nombre hostil guardado en la BD), padre despublicado, padre borrado, opción apagada | 37 PASA / 0 FALLA |
+| Chromium (`lib/respuestas-navegador.js`): sangría 0 / 12 / 20 / 36 px según opción, variable del usuario 50 px, 400 px de ancho, «Cargar CSS propio» (20 px, sin duplicar), 3 marcas visuales, cita apagada, clic en Responder -> envío -> posición | 17 PASA / 0 FALLA |
+| Regresión `03` / `05` / `06` / `07` (con JBCookies) / `08` | 73/0 / 4/0 (+27+22) / 10/0 / 3 de 3 / 46/0 |
+| `php tests/run.php` | todas pasan (`26-respuestas.php`: 35 comprobaciones) |
+
+NO PROBADO: Helix Ultimate real (simulado), Firefox/Safari, la pestaña «Respuestas» y su `showon` pintados en el panel, el módulo `engage_latest` renderizado, y el `max_level` real del sitio de Chas.
+
 ## 9. Estado del paquete
 
 Hash del ZIP al cierre de esta tanda y coincidencia con `updates/pkgengage.xml`: ver `docs/PUBLICAR-RELEASE.md` y comprobar con `php build/build.php` (reproducible). No se ha publicado ninguna release: la URL de descarga de `updates/pkgengage.xml` no existirá hasta que el propietario suba **ese mismo ZIP** a la release `v3.4.2.1`.

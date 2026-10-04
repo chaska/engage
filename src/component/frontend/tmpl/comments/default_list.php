@@ -45,7 +45,7 @@ $parentNames[$comment->depth] = $user->name;
 if ($comment->depth > $previousLevel):
 	?>
 	<?php for ($level = $previousLevel + 1; $level <= $comment->depth; $level++): ?>
-	<ul class="akengage-comment-list akengage-comment-list--level<?= $level ?> list-unstyled">
+	<ul class="akengage-comment-list akengage-comment-list--level<?= $level ?> akengage-reply-indent--<?= $this->escape($this->replyIndent) ?> akengage-reply-style--<?= $this->escape($this->replyStyle) ?> list-unstyled">
 <?php endfor; ?>
 <?php // Shallower level comment. Outdent with </ul> tags
 elseif ($comment->depth < $previousLevel): ?>
@@ -267,6 +267,31 @@ $bsCommentStateClass =  ($comment->enabled == 1) ? 'secondary' : (($comment->ena
 		</div>
 		<?php endif ?>
 
+
+		<?php $replyTo = $this->getReplyToInfo($comment); // 0.6.21: "In reply to <name>" note, linked to the parent comment ?>
+		<?php if ($replyTo !== null): ?>
+		<p class="akengage-comment-replyto small text-muted mb-1">
+			<span class="fa fa-reply" aria-hidden="true"></span>
+			<?php if ($replyTo['id'] > 0 && $replyTo['name'] !== ''):
+				if ($replyTo['samePage'])
+				{
+					$replyToHref = '#akengage-comment-' . (int) $replyTo['id'];
+				}
+				else
+				{
+					$replyToUri = clone Uri::getInstance();
+					$replyToUri->setFragment(sprintf('akengage-comment-%u', $replyTo['id']));
+					$replyToUri->setVar('akengage_cid', (int) $replyTo['id']);
+					$replyToHref = $replyToUri->toString();
+				}
+				?>
+				<?= Text::_('COM_ENGAGE_COMMENTS_FORM_INREPLYTO_LABEL') ?>
+				<a href="<?= htmlspecialchars($replyToHref, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" class="akengage-comment-replyto-link"><?= htmlspecialchars($replyTo['name'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></a>
+			<?php else: ?>
+				<?= Text::_('COM_ENGAGE_COMMENTS_INREPLYTO_GENERIC') ?>
+			<?php endif; ?>
+		</p>
+		<?php endif; ?>
 
 		<div class="akengage-comment-body" itemprop="text">
 			<?= HTMLHelper::_('engage.processCommentTextForDisplay', $comment->body) ?>

@@ -273,6 +273,54 @@
     </fieldset>
 
     <fieldset
+            name="replies"
+            label="COM_ENGAGE_CONFIG_REPLIES_FIELDSET_LABEL"
+            description="COM_ENGAGE_CONFIG_REPLIES_FIELDSET_DESC"
+    >
+        <field
+                name="reply_show_quote"
+                type="radio"
+                layout="joomla.form.field.radio.switcher"
+                label="COM_ENGAGE_CONFIG_REPLY_SHOW_QUOTE_LABEL"
+                description="COM_ENGAGE_CONFIG_REPLY_SHOW_QUOTE_DESC"
+                default="1"
+                showon="max_level!:1"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+                name="reply_indent"
+                type="list"
+                label="COM_ENGAGE_CONFIG_REPLY_INDENT_LABEL"
+                description="COM_ENGAGE_CONFIG_REPLY_INDENT_DESC"
+                default="medium"
+                validate="options"
+                showon="max_level!:1"
+        >
+            <option value="none">COM_ENGAGE_CONFIG_REPLY_INDENT_NONE</option>
+            <option value="small">COM_ENGAGE_CONFIG_REPLY_INDENT_SMALL</option>
+            <option value="medium">COM_ENGAGE_CONFIG_REPLY_INDENT_MEDIUM</option>
+            <option value="large">COM_ENGAGE_CONFIG_REPLY_INDENT_LARGE</option>
+        </field>
+
+        <field
+                name="reply_style"
+                type="list"
+                label="COM_ENGAGE_CONFIG_REPLY_STYLE_LABEL"
+                description="COM_ENGAGE_CONFIG_REPLY_STYLE_DESC"
+                default="line"
+                validate="options"
+                showon="max_level!:1"
+        >
+            <option value="line">COM_ENGAGE_CONFIG_REPLY_STYLE_LINE</option>
+            <option value="soft">COM_ENGAGE_CONFIG_REPLY_STYLE_SOFT</option>
+            <option value="none">COM_ENGAGE_CONFIG_REPLY_STYLE_NONE</option>
+        </field>
+    </fieldset>
+
+    <fieldset
             name="filtering"
             label="COM_ENGAGE_CONFIG_FILTERING_FIELDSET_LABEL"
             description="COM_ENGAGE_CONFIG_FILTERING_FIELDSET_DESC"

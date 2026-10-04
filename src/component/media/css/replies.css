@@ -1,0 +1,70 @@
+/*!
+ * @package   AkeebaEngage
+ * @copyright Copyright (c)2020-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+ * @license   GNU General Public License version 3, or later
+ *
+ * Indentation and look of the replies (0.6.21). Loaded on every page that lists comments, with or without the
+ * "Load custom CSS" option. Bootstrap's "list-unstyled" removes the left padding of every list, so on templates that
+ * do not indent nested lists themselves (e.g. Helix Ultimate) a reply looked like a top level comment.
+ *
+ * The component options "Indentation of replies" (reply_indent) and "Visual mark of replies" (reply_style) only choose
+ * which of these classes the lists carry:
+ *
+ *   ul.akengage-reply-indent--none | small | medium | large      indentation of each nesting level
+ *   ul.akengage-reply-style--line | soft | none                  mark of the replies (line = original look)
+ *
+ * To override from your template's custom CSS (e.g. media/templates/site/cassiopeia/css/user.css), set the variable
+ * --akengage-reply-indent, which wins over the option:   :root { --akengage-reply-indent: 3rem; }
+ * The soft background colour is --akengage-reply-bg.
+ */
+ul.akengage-comment-list {
+	--akengage-reply-indent-size: 1.25rem;
+}
+
+ul.akengage-comment-list.akengage-reply-indent--none {
+	--akengage-reply-indent-size: 0;
+}
+
+ul.akengage-comment-list.akengage-reply-indent--small {
+	--akengage-reply-indent-size: .75rem;
+}
+
+ul.akengage-comment-list.akengage-reply-indent--medium {
+	--akengage-reply-indent-size: 1.25rem;
+}
+
+ul.akengage-comment-list.akengage-reply-indent--large {
+	--akengage-reply-indent-size: 2.25rem;
+}
+
+/* Only nested lists (replies) are indented. */
+section.akengage-outer-container ul.akengage-comment-list ul.akengage-comment-list {
+	padding-left: var(--akengage-reply-indent, var(--akengage-reply-indent-size, 1.25rem));
+}
+
+/* Replies: soft background instead of the side line (published comments only; unpublished and spam keep their line). */
+section.akengage-outer-container ul.akengage-comment-list ul.akengage-reply-style--soft article.akengage-comment--primary {
+	background-color: var(--akengage-reply-bg, rgba(127, 127, 127, .09));
+	border-left-width: 0 !important;
+	padding-top: .25rem;
+	padding-right: .5rem;
+}
+
+/* Replies: no mark at all. */
+section.akengage-outer-container ul.akengage-comment-list ul.akengage-reply-style--none article.akengage-comment--primary {
+	border-left-width: 0 !important;
+}
+
+@media (max-width: 575.98px) {
+	ul.akengage-comment-list.akengage-reply-indent--small {
+		--akengage-reply-indent-size: .5rem;
+	}
+
+	ul.akengage-comment-list.akengage-reply-indent--medium {
+		--akengage-reply-indent-size: .75rem;
+	}
+
+	ul.akengage-comment-list.akengage-reply-indent--large {
+		--akengage-reply-indent-size: 1.25rem;
+	}
+}

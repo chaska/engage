@@ -91,7 +91,7 @@ section.akengage-outer-container {
         margin-top: 1em;
 
         & ul.akengage-comment-list {
-          margin-left: 2em;
+          margin-left: 0; // 0.6.21: the indentation of replies comes from replies.css (option reply_indent)
         }
 
         article[class^=akengage-comment] {
