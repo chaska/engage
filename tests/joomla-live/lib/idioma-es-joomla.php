@@ -14,7 +14,7 @@ require JPATH_BASE . '/includes/framework.php';
 use Joomla\CMS\Language\Language;
 use Joomla\CMS\Language\LanguageHelper;
 
-$blanca = ['akeeba engage', 'html purifier', 'composer', 'identicon', 'monsterid', 'wavatar', 'retro', 'robohash', 'spam', 'john doe', 'john.doe@example.com'];
+$blanca = ['akeeba engage', 'html purifier', 'composer', 'identicon', 'monsterid', 'wavatar', 'retro', 'robohash', 'spam', 'john doe', 'john.doe@example.com', 'nicholas k. dionysopoulos / akeeba ltd'];
 $RES = [];
 function r(string $d, bool $ok, string $ev = ''): void
 {

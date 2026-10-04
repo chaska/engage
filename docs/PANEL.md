@@ -1,4 +1,4 @@
-# Panel de control de Engage (0.6.24)
+# Panel de control y opciones modernas de Engage (0.6.24 y 0.6.25)
 
 Desde la 0.6.24, al pulsar **Akeeba Engage** en el menú de administración de Joomla se abre un **panel de control** en lugar de caer directamente en la lista de comentarios. Los comentarios, las plantillas de email y las opciones siguen donde estaban y funcionan igual.
 
@@ -59,3 +59,49 @@ Comprobado en un Joomla 6.1.4 real, actualizando desde el paquete 3.4.2 original
 ## Archivos
 
 `backend/src/Controller/ControlpanelController.php`, `backend/src/View/Controlpanel/HtmlView.php`, `backend/tmpl/controlpanel/default.php`, `backend/src/Helper/Panel{Data,Health,Chart,Icons}.php`, `media/css/panel.css`, `media/js/panel.js`, `media/js/panel-theme.js`, cadenas `COM_ENGAGE_PANEL_*` en `com_engage.ini` y `COM_ENGAGE_MENU_*` en `com_engage.sys.ini` (en-GB y es-ES). `PanelHealth` y `PanelChart` son funciones puras (probadas con datos simulados); `PanelData` solo lee de la base de datos, con el constructor de consultas de Joomla y parámetros enlazados.
+
+---
+
+# Opciones modernas (0.6.25)
+
+La pantalla **Opciones** (menú de Engage > Opciones, o la tarjeta «Opciones» del panel) es una alternativa a la pantalla de opciones de Joomla: categorías a la izquierda, a la derecha filas «etiqueta + control» con una ayuda breve debajo, y **cada cambio se guarda al instante**, sin pulsar «Guardar y cerrar». La pantalla clásica sigue disponible con el botón **Opciones clásicas** (barra de herramientas y cabecera), y siempre es la que tiene todos los campos.
+
+![Opciones en el diseño Claro](img/config-claro.png)
+
+## Categorías y controles
+
+| Categoría | Qué contiene |
+|---|---|
+| **Diseño** | Vista previa en vivo de un hilo (cambia al elegir sangría, cita y marca de las respuestas y el tema), tema visual con **tarjetas de vista previa** (Clásico, Moderno, Minimalista, Oscuro), nivel máximo de anidación, cita «En respuesta a», sangría, marca visual, orden y dónde mostrar el resumen de comentarios |
+| **Moderación** | Publicación inmediata o con aprobación, comentarios abiertos o cerrados, cierre automático, longitud mínima y máxima, elementos por página |
+| **Protección contra spam** | CAPTCHA (los plugins de captcha activados) y a quién se exige, aceptación de condiciones y su texto, y Akismet (clave, a quién se comprueba, descartar spam evidente) |
+| **Notificaciones** | Aviso al autor del contenido y a quienes participan; correo a los gestores (plugin de correo) |
+| **Privacidad y Gravatar** | Modo de Gravatar (preguntar, apagado, siempre), aviso, origen del consentimiento (aviso de Engage o JBCookies) y grupo de JBCookies, enlace al perfil, calificación e imagen por defecto |
+| **Seguridad del HTML** | Modo de filtrado, uso del filtrado de Joomla, lista de etiquetas permitidas de HTML Purifier, modo de inclusión |
+| **Avanzado** | Solución de plantillas de correo, URL de búsqueda de IP, antigüedad del spam, CSS personalizado y otros |
+| **Permisos** | Enlace a la pantalla de permisos de Joomla |
+
+Cada ajuste usa el control que le corresponde por su definición en `config.xml` (o en el manifiesto del plugin): **interruptor** (`role="switch"`) para sí/no, **control segmentado** (`role="radiogroup"`, con flechas) para listas cortas y enteros de pocos valores, **selector** para listas largas, **campo numérico** o **de texto** con validación, y **área de texto** para la lista de etiquetas. Las dependencias (`showon`) de `config.xml` se respetan: lo que no aplica se oculta. Etiquetas y ayudas son las cadenas que ya existían (la ayuda se acorta a una frase y el resto queda en «Más información»). En móvil las categorías pasan a una tira horizontal de pestañas.
+
+Los tres diseños (Claro, Medio, Oscuro, Automático) son los mismos del panel y se eligen con el mismo selector.
+
+## Cómo se guarda (y qué se vigila)
+
+Cada cambio envía por `fetch` un `POST` a `index.php?option=com_engage&task=settings.save&format=json` con `scope`, `key`, `value` y el **token CSRF de Joomla**. Se muestra un aviso discreto («Guardado»; en rojo si algo falla), la fila indica «Guardando…/Guardado», y **si el servidor lo rechaza o no responde, el control vuelve al valor anterior** y se avisa.
+
+En el servidor (`SettingsController::save`, `SettingsService`, `SettingsSchema`, `SettingsStorage`):
+
+1. Solo `POST`, con token válido (si no, 405/403).
+2. **Ámbito**: lista cerrada (`com_engage` y los plugins de Engage `gravatar`, `akismet` y `email`). Cualquier otro componente o plugin se rechaza.
+3. **Permiso**: `core.admin` o `core.options` del componente (los mismos que la pantalla clásica) y, para los plugins de Engage, además `core.manage` y `core.edit` de `com_plugins`. Se comprueba **antes** de mirar clave o valor.
+4. **Clave**: solo las declaradas en `config.xml` o en el manifiesto del plugin (el esquema se lee de esos ficheros en cada petición). Los campos de permisos (`rules`), de módulo (`login_module`) y de archivo (`custom_default`) no se aceptan: siguen en las opciones clásicas.
+5. **Valor**: validado con la definición del propio campo (opciones permitidas de las listas, rango y paso de los enteros, longitud, caracteres permitidos), con reglas extra para `iplookup` (URL `http(s)` con un único `%s`), la lista de HTML Purifier (solo caracteres de su sintaxis), la clave de Akismet y el grupo de JBCookies; los campos de texto pasan además por el filtro de Joomla indicado en el campo (`safehtml` para el texto de las condiciones). Se rechazan arrays, objetos, NUL, caracteres de control, UTF-8 inválido y cadenas por encima del límite del campo (de 64 a 4000 caracteres según el campo).
+6. **Escritura**: se leen los parámetros actuales de la base de datos, se cambia **solo esa clave** y se guarda con `Table Extension` de Joomla (sin tablas nuevas); se vuelve a leer para comprobarlo y se limpia la caché del sistema. Repetir el mismo valor no escribe nada (idempotente).
+7. **Respuestas genéricas**: 403 (sin permiso o token), 422 (ámbito, clave o valor no válidos, sin decir cuál), 500 (no se pudo guardar). Cabeceras `no-store` y `nosniff`; el cuerpo nunca repite lo recibido.
+8. **Registro de acciones**: si el plugin de registro de Engage está activado se anota «el usuario X cambió el ajuste Y (ámbito)» en el Registro de acciones de Joomla, **sin el valor** (puede ser una clave de API).
+
+Nada de esto puede tocar permisos, parámetros de otras extensiones ni escalar privilegios: lo que no está en la lista cerrada de ámbitos y claves no se escribe.
+
+## Pruebas
+
+`tests/29-ajustes.php` (239 comprobaciones; esquema leído de los manifiestos reales, validación por tipo, servicio con permisos/almacén simulados, seguridad estática) y `tests/joomla-live/12-ajustes.sh` (navegador y HTTP reales sobre Joomla 6.1.4; ver `tests/joomla-live/LEEME.md`).

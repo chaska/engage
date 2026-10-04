@@ -134,6 +134,26 @@
 		},
 
 		{
+			"name": "com_engage.settings",
+			"description": "Modern options screen (.eg-admin): rows, switches, segmented controls",
+			"type": "style",
+			"uri": "com_engage/settings.css"
+		},
+
+		{
+			"name": "com_engage.settings",
+			"description": "Modern options screen: instant saving with fetch and CSRF token",
+			"type": "script",
+			"uri": "com_engage/settings.js",
+			"dependencies": [
+				"core"
+			],
+			"attributes": {
+				"defer": true
+			}
+		},
+
+		{
 			"name": "com_engage.backend",
 			"type": "preset",
 			"dependencies": [
