@@ -28,6 +28,7 @@ use Joomla\CMS\Pagination\Pagination;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\User;
+use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
 
 class HtmlView extends BaseHtmlView
@@ -82,6 +83,31 @@ class HtmlView extends BaseHtmlView
 	 * @since 1.0.0
 	 */
 	public $maxLevel = 3;
+
+	/**
+	 * Show an "In reply to <name>" note, linked to the parent comment, on every reply (component option reply_show_quote).
+	 *
+	 * @var   bool
+	 * @since 0.6.21
+	 */
+	public $showInReplyTo = true;
+
+	/**
+	 * Indentation of each nesting level: none, small, medium (default) or large (component option reply_indent).
+	 * Only whitelisted values are ever stored here, because it ends up in a CSS class name.
+	 *
+	 * @var   string
+	 * @since 0.6.21
+	 */
+	public $replyIndent = 'medium';
+
+	/**
+	 * Visual mark of the replies: line (default), soft or none (component option reply_style). Whitelisted.
+	 *
+	 * @var   string
+	 * @since 0.6.21
+	 */
+	public $replyStyle = 'line';
 
 	/**
 	 * Currently logged in user's permissions
@@ -175,6 +201,15 @@ class HtmlView extends BaseHtmlView
 	 */
 	private $pagination;
 
+	/**
+	 * Display names of the parent comments needed for the "In reply to" notes. Keys: 'same' (parents listed on this
+	 * page) and 'other' (parents on another page of the pagination), each an array of comment ID => display name.
+	 *
+	 * @var   array
+	 * @since 0.6.21
+	 */
+	private $replyToNames = ['same' => [], 'other' => []];
+
 	/** @inheritDoc */
 	public function display($tpl = null)
 	{
@@ -233,6 +268,14 @@ class HtmlView extends BaseHtmlView
 		// Populate properties based on component parameters
 		$params         = ComponentHelper::getParams('com_engage');
 		$this->maxLevel = $params->get('max_level', 3);
+
+		// Look of the replies (0.6.21). "In reply to" notes are enabled by default; reply_show_quote = 0 turns them off.
+		$this->showInReplyTo = ((int) $params->get('reply_show_quote', 1)) === 1;
+		$replyIndent         = (string) $params->get('reply_indent', 'medium');
+		$replyStyle          = (string) $params->get('reply_style', 'line');
+		$this->replyIndent   = in_array($replyIndent, ['none', 'small', 'medium', 'large'], true) ? $replyIndent : 'medium';
+		$this->replyStyle    = in_array($replyStyle, ['line', 'soft', 'none'], true) ? $replyStyle : 'line';
+		$this->replyToNames  = $this->showInReplyTo ? $this->loadReplyToNames() : ['same' => [], 'other' => []];
 
 		// Page parameters
 		/** @var SiteApplication $app */
@@ -312,6 +355,124 @@ class HtmlView extends BaseHtmlView
 		parent::display($tpl);
 	}
 
+
+	/**
+	 * Information for the "In reply to" note of a comment.
+	 *
+	 * Returns null when the comment is not a reply (or the notes are turned off). The name is NOT escaped: escape it on
+	 * output. If the parent comment is not available to the current user (unpublished, deleted, other content item)
+	 * the name is empty and no link is given, so a name is never leaked.
+	 *
+	 * @param   object  $comment  A comment as returned by the model
+	 *
+	 * @return  array|null  [id => int (0 = unknown), name => string, samePage => bool]
+	 * @since   0.6.21
+	 */
+	public function getReplyToInfo(object $comment): ?array
+	{
+		$parentId = (int) ($comment->parent_id ?? 0);
+
+		if (!$this->showInReplyTo || $parentId <= 0)
+		{
+			return null;
+		}
+
+		if (($this->replyToNames['same'][$parentId] ?? '') !== '')
+		{
+			return ['id' => $parentId, 'name' => $this->replyToNames['same'][$parentId], 'samePage' => true];
+		}
+
+		if (($this->replyToNames['other'][$parentId] ?? '') !== '')
+		{
+			return ['id' => $parentId, 'name' => $this->replyToNames['other'][$parentId], 'samePage' => false];
+		}
+
+		return ['id' => 0, 'name' => '', 'samePage' => false];
+	}
+
+	/**
+	 * Public display name of the author of a comment (same rule as the comments list template).
+	 *
+	 * @param   object  $comment
+	 *
+	 * @return  string
+	 * @since   0.6.21
+	 */
+	private function getAuthorName(object $comment): string
+	{
+		if (!empty($comment->name) || empty($comment->created_by))
+		{
+			return (string) ($comment->name ?? '');
+		}
+
+		$user = UserFetcher::getUser((int) $comment->created_by);
+
+		return $user ? (string) $user->name : '';
+	}
+
+	/**
+	 * Collect the display names of the parents of the comments being displayed.
+	 *
+	 * Parents listed on this page come from the page itself. Parents on another page of the pagination are fetched with
+	 * one query that is limited to this content item and, unless the user can moderate, to published comments.
+	 *
+	 * @return  array
+	 * @since   0.6.21
+	 */
+	private function loadReplyToNames(): array
+	{
+		$ret = ['same' => [], 'other' => []];
+
+		foreach ($this->items as $comment)
+		{
+			$ret['same'][(int) $comment->id] = $this->getAuthorName($comment);
+		}
+
+		$missing = [];
+
+		foreach ($this->items as $comment)
+		{
+			$parentId = (int) ($comment->parent_id ?? 0);
+
+			if ($parentId > 0 && !isset($ret['same'][$parentId]))
+			{
+				$missing[$parentId] = $parentId;
+			}
+		}
+
+		if (empty($missing))
+		{
+			return $ret;
+		}
+
+		try
+		{
+			$db      = $this->getModel()->getDatabase();
+			$assetId = (int) $this->assetId;
+			$query   = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true))
+				->select($db->quoteName(['id', 'name', 'created_by']))
+				->from($db->quoteName('#__engage_comments'))
+				->whereIn($db->quoteName('id'), array_values($missing), ParameterType::INTEGER)
+				->where($db->quoteName('asset_id') . ' = :asset_id')
+				->bind(':asset_id', $assetId, ParameterType::INTEGER);
+
+			if (!$this->perms['state'])
+			{
+				$query->where($db->quoteName('enabled') . ' = 1');
+			}
+
+			foreach ($db->setQuery($query)->loadObjectList() ?: [] as $row)
+			{
+				$ret['other'][(int) $row->id] = $this->getAuthorName($row);
+			}
+		}
+		catch (Exception $e)
+		{
+			// Without the parent's name the note falls back to the generic text.
+		}
+
+		return $ret;
+	}
 
 	/**
 	 * Make sure the comment's parent information is cached in $parentIds and $parentNames.
