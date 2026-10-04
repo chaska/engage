@@ -49,7 +49,7 @@ function sqlq(s) { return `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "''
     await p.fill('#mod-login-username', 'admintest'); await p.fill('#mod-login-password', PASS);
     await Promise.all([p.waitForNavigation(), p.press('#mod-login-password', 'Enter')]);
     const tmp = fs.mkdtempSync('/tmp/capdocs-');
-    const grab = async (name, url, tema, alto) => {
+    const grab = async (name, url, tema, alto, kb = 190) => {
         await p.goto(`${BASE}/administrator/${url}`, {waitUntil: 'networkidle'});
         await p.evaluate(t => { try { localStorage.setItem('eg-admin-theme', t); } catch (e) {} }, tema);
         await p.reload({waitUntil: 'networkidle'});
@@ -58,7 +58,7 @@ function sqlq(s) { return `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "''
         const bb = await (await p.$('#eg-admin')).boundingBox();
         const raw = `${tmp}/${name}`;
         await p.screenshot({path: raw, fullPage: true, clip: {x: bb.x, y: bb.y, width: bb.width, height: Math.min(alto, bb.height)}});
-        execFileSync('php', [path.join(__dirname, 'optimizar-png.php'), raw, path.join(OUT, name)], {stdio: 'inherit'});
+        execFileSync('php', [path.join(__dirname, 'optimizar-png.php'), raw, path.join(OUT, name), String(kb)], {stdio: 'inherit'});
     };
     fs.mkdirSync(OUT, {recursive: true});
     const panel = process.env.DOCS_ONLY !== 'config';
@@ -71,6 +71,8 @@ function sqlq(s) { return `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "''
         await grab('config-claro.png', 'index.php?option=com_engage&view=settings', 'light', 1000);
         // 0.6.26: "Privacidad y Gravatar" con las etiquetas largas de Modo y Clasificacion (antes se rompia la fila)
         await grab('config-gravatar.png', 'index.php?option=com_engage&view=settings&section=privacy', 'light', 1400);
+        // 0.6.27: "Diseno" con los segmentados cortos (nivel maximo 1 a 6, sangria) en una sola fila y de igual anchura
+        await grab('config-segmentados.png', 'index.php?option=com_engage&view=settings&section=design', 'light', 1500, 148);
     }
     await b.close();
     sql(`UPDATE jos_extensions SET params=${sqlq(prevLang)} WHERE element='com_languages'`);

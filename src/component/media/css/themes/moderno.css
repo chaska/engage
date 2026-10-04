@@ -57,6 +57,7 @@
 	--eg-radio: 16px;  /* redondeo de la tarjeta */
 	--eg-radio-boton: 999px;  /* redondeo de los botones */
 	--eg-radio-cita: 999px;  /* redondeo de la etiqueta de cita */
+	--eg-radio-aviso: 14px;  /* redondeo del aviso de Gravatar (caja de varias líneas: nunca el de píldora) */
 	--eg-radio-avatar: 50%;  /* redondeo del avatar */
 	--eg-radio-campo: 8px;  /* redondeo de campos y código */
 	--eg-sombra: 0 1px 2px rgba(15, 23, 42, .06), 0 8px 24px rgba(15, 23, 42, .06);  /* sombra de la tarjeta */
@@ -368,10 +369,18 @@ section.akengage-outer-container.akengage-theme--modern .akengage-gravatar-notic
 	color: var(--eg-texto) !important;
 	border: 1px solid var(--eg-borde) !important;
 	border-left: var(--eg-barra-ancho) solid var(--eg-acento) !important;
-	border-radius: var(--eg-radio-cita);
+	border-radius: var(--eg-radio-aviso);
+	padding: .75rem 1rem;
+	min-width: 0;
+	max-width: 100%;
+	overflow-wrap: anywhere;
 }
+section.akengage-outer-container.akengage-theme--modern .akengage-gravatar-notice p { margin-bottom: .5rem; overflow-wrap: anywhere; }
 section.akengage-outer-container.akengage-theme--modern .akengage-gravatar-notice :where(div, span, p, small, strong) { color: var(--eg-texto) !important; }
 section.akengage-outer-container.akengage-theme--modern .akengage-gravatar-notice .btn-link {
+	white-space: normal;
+	text-align: left;
+	overflow-wrap: anywhere;
 	background-color: transparent !important;
 	color: var(--eg-enlace) !important;
 	border: 0 !important;
@@ -380,10 +389,14 @@ section.akengage-outer-container.akengage-theme--modern .akengage-gravatar-notic
 section.akengage-outer-container.akengage-theme--modern .akengage-gravatar-notice .btn-link:hover,
 section.akengage-outer-container.akengage-theme--modern .akengage-gravatar-notice .btn-link:focus-visible { color: var(--eg-enlace-hover) !important; background-color: transparent !important; }
 section.akengage-outer-container.akengage-theme--modern .akengage-gravatar-notice .btn-primary {
+	border-radius: var(--eg-radio-aviso);
+	white-space: normal;
+	max-width: 100%;
+	text-align: center;
+	overflow-wrap: anywhere;
 	background-color: var(--eg-enlace) !important;
 	color: var(--eg-sobre-boton) !important;
 	border: 1px solid var(--eg-enlace) !important;
-	border-radius: var(--eg-radio-boton);
 }
 section.akengage-outer-container.akengage-theme--modern .akengage-gravatar-notice .btn-primary:hover,
 section.akengage-outer-container.akengage-theme--modern .akengage-gravatar-notice .btn-primary:focus-visible {
@@ -391,6 +404,31 @@ section.akengage-outer-container.akengage-theme--modern .akengage-gravatar-notic
 	border-color: var(--eg-enlace-hover) !important;
 	color: var(--eg-sobre-boton-hover) !important;
 }
+
+/* Iconos del nombre (moderador, usuario, invitado): dibujados con máscara SVG propia, no con la fuente Font Awesome de la plantilla (0.6.27).
+   Así se ven siempre, también en móvil y en plantillas que no cargan Font Awesome o la cargan tarde. Heredan el color del tema (currentColor). */
+section.akengage-outer-container.akengage-theme--modern .akengage-commenter-ismoderator,
+section.akengage-outer-container.akengage-theme--modern .akengage-commenter-isuser,
+section.akengage-outer-container.akengage-theme--modern .akengage-commenter-isguest {
+	display: inline-block;
+	flex: none;
+	width: 1.1em;
+	height: 1em;
+	vertical-align: -.125em;
+	background-color: currentColor;
+	-webkit-mask: var(--eg-icono) center / contain no-repeat;
+	mask: var(--eg-icono) center / contain no-repeat;
+}
+section.akengage-outer-container.akengage-theme--modern .akengage-commenter-ismoderator::before,
+section.akengage-outer-container.akengage-theme--modern .akengage-commenter-isuser::before,
+section.akengage-outer-container.akengage-theme--modern .akengage-commenter-isguest::before { content: none !important; }
+section.akengage-outer-container.akengage-theme--modern .akengage-commenter-ismoderator { --eg-icono: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1.8l3.1 6.6 7.2.9-5.3 5 1.4 7.1L12 17.8l-6.4 3.6L7 14.3 1.7 9.3l7.2-.9z'/%3E%3C/svg%3E"); }
+section.akengage-outer-container.akengage-theme--modern .akengage-commenter-isuser { --eg-icono: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='7' r='5'/%3E%3Cpath d='M2.5 22c0-5.2 4.2-9 9.5-9s9.500 3.800 9.500 9z'/%3E%3C/svg%3E"); }
+section.akengage-outer-container.akengage-theme--modern .akengage-commenter-isguest { --eg-icono: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='8' cy='8' r='4'/%3E%3Cpath d='M0.500 21c0-4.500 3.400-7.500 7.500-7.500s7.500 3 7.500 7.500z'/%3E%3Ccircle cx='17.500' cy='7' r='3.200'/%3E%3Cpath d='M16.500 12.500c4 0 7 2.600 7 6.500h-5.500c0-2.700-.8-4.800-1.500-6.500z'/%3E%3C/svg%3E"); }
+/* Correo y nombre de usuario largos (sin espacios): se parten en vez de ensanchar la fila y empujar los iconos fuera de la cabecera en móvil */
+section.akengage-outer-container.akengage-theme--modern .akengange-commenter-name > div { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+section.akengage-outer-container.akengage-theme--modern .akengage-commenter-email,
+section.akengage-outer-container.akengage-theme--modern .akengage-commenter-username { overflow-wrap: anywhere; }
 
 /* Móvil */
 @media (max-width: 575.98px) {

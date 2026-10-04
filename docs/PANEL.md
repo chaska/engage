@@ -108,6 +108,20 @@ Nada de esto puede tocar permisos, parámetros de otras extensiones ni escalar p
 
 ## Filas con controles anchos (0.6.26)
 
-La fila «etiqueta + control» es ahora una fila flexible con salto de línea: la columna de texto pide como mínimo 16 rem y, si el control no cabe a su lado, baja a la línea siguiente (a la izquierda). Los controles segmentados con opciones largas (más de 4 opciones, más de 40 caracteres en total o alguna de más de 24; p. ej. «Modo de Gravatar» y «Clasificación») pasan siempre a pila: etiqueta y ayuda arriba y el control debajo a todo el ancho, con las opciones repartidas y envueltas en varias líneas. Es CSS y un criterio del servidor (clase `eg-row--wide`); no depende de JavaScript. Los interruptores, selectores, números y segmentados cortos no cambian.
+La fila «etiqueta + control» es ahora una fila flexible con salto de línea: la columna de texto pide como mínimo 16 rem y, si el control no cabe a su lado, baja a la línea siguiente (a la izquierda). Los controles segmentados con opciones largas (más de 40 caracteres en total o alguna de más de 24; desde la 0.6.27 ya no cuenta el número de opciones; p. ej. «Modo de Gravatar» y «Clasificación») pasan siempre a pila: etiqueta y ayuda arriba y el control debajo a todo el ancho, con las opciones repartidas y envueltas en varias líneas. Es CSS y un criterio del servidor (clase `eg-row--wide`); no depende de JavaScript. Los interruptores, selectores, números y segmentados cortos no cambian.
 
 ![Privacidad y Gravatar](img/config-gravatar.png)
+
+## Controles segmentados por ancho real (0.6.27)
+
+El apilado ya no depende del número de opciones sino del ancho real del texto (clase del servidor en cada fila):
+
+- **Cortos** (`eg-row--short`: suma de etiquetas de hasta 32 caracteres y ninguna de más de 12; p. ej. «Nivel máximo de anidación» 1 a 6, «Sangría», «Orden», Mostrar/Ocultar): control compacto de ancho propio, segmentos de **igual anchura** y **siempre en una sola fila**. Va a la derecha, en la misma línea que la etiqueta, si cabe; si no, debajo y a la izquierda. En pantallas muy estrechas reduce el relleno y, como último recurso, se desplaza en horizontal (no se parte).
+- **Medios**: igual anchura; en pantallas estrechas pasan a una rejilla regular a todo el ancho (nunca 4+2 estirado).
+- **Largos** (`eg-row--wide`): pila a todo el ancho con rejilla regular de columnas iguales.
+
+**Ayudas acortadas**: el texto de ayuda de una fila se acorta en el servidor a 200 caracteres (termina en «…»); no es un recorte por CSS (`line-clamp`). El texto completo está siempre en «Más información», un `<details>` nativo con `<summary>`: se abre con Tab + Intro/Espacio y lo anuncian los lectores de pantalla como expandido o contraído.
+
+![Opciones de Diseño con los segmentados cortos](img/config-segmentados.png)
+
+Prueba: `tests/joomla-live/14-opciones-segmentados.sh`.

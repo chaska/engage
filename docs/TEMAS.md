@@ -102,6 +102,7 @@ Valores por defecto de cada tema:
 | `--eg-radio` | redondeo de la tarjeta | `16px` | `0` | `12px` |
 | `--eg-radio-boton` | redondeo de los botones | `999px` | `2px` | `8px` |
 | `--eg-radio-cita` | redondeo de la etiqueta de cita | `999px` | `0` | `8px` |
+| `--eg-radio-aviso` | redondeo del aviso de Gravatar (caja de varias líneas) | `14px` | `0` | `10px` |
 | `--eg-radio-avatar` | redondeo del avatar | `50%` | `2px` | `50%` |
 | `--eg-radio-campo` | redondeo de campos y código | `8px` | `2px` | `8px` |
 | `--eg-sombra` | sombra de la tarjeta | `0 1px 2px rgba(15, 23, 42, .06), 0 8px 24px rgba(15, 23, 42, .06)` | `none` | `0 2px 10px rgba(0, 0, 0, .35)` |
