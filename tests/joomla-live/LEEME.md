@@ -17,6 +17,8 @@ bash 02-instalar-engage.sh              # genera dist/ si falta e instala el paq
 bash 03-sembrar-y-probar.sh             # crea categorias/articulos con los modelos de Joomla y ejecuta pruebas.php (sale 1 si algo FALLA)
 bash 05-gravatar.sh                     # (0.6.17) Gravatar con consentimiento: HTTP + Chromium/Playwright (sin red externa) + cache de pagina; necesita Playwright y /opt/pw-browsers/chromium (PW_MODULE, CHROMIUM)
 
+bash 06-rel-ugc.sh                      # (0.6.18) rel="nofollow ugc noreferrer" en los enlaces de los comentarios (HTML servido)
+
 # Prueba de actualizacion 3.4.2 -> paquete del fork, en un segundo Joomla (puerto 8081, BD joomla_upg)
 SITE_DIR=site2 DB_NAME=joomla_upg PORT=8081 IDS_FILE=ids2.json bash 01-montar-joomla.sh
 bash 04-actualizacion.sh
@@ -30,6 +32,7 @@ Variables (todas con valor por defecto, ver `config.sh`): `WORK`, `JOOMLA_VERSIO
 |---|---|
 | `pruebas.php` | Batería de ~70 comprobaciones (F-xx funcionales, PS-xx de `docs/PRUEBAS-SEGURIDAD-JOOMLA6.md`, CP-06). Escribe `$WORK/resultados.json` |
 | `05-gravatar.sh`, `lib/gravatar-http.php`, `lib/gravatar-navegador.js` | Consentimiento previo de Gravatar (0.6.17): HTML en los 3 modos (curl) y navegador real con las peticiones a gravatar.com interceptadas (antes/despues del clic, persistencia, revocar, API, almacenamiento bloqueado, cache de pagina). Resultados en la seccion 7 de `docs/RESULTADOS-PRUEBAS-JOOMLA-REAL.md` |
+| `06-rel-ugc.sh`, `lib/rel-ugc-http.php` | 0.6.18: inserta comentarios con enlaces en el articulo publico y comprueba el `rel` del HTML servido. Seccion 8 de `docs/RESULTADOS-PRUEBAS-JOOMLA-REAL.md` |
 | `04-actualizacion.sh` | Instala el 3.4.2 original, crea datos y ajustes reales, instala encima el paquete del fork y compara tablas, ajustes, ficheros y update site |
 | `lib/empaquetar-upstream.php` | Reconstruye `pkg_engage-3.4.2.zip` desde `upstream/3.4.2-instalado` (copia temporal; `upstream/` no se toca) |
 | `lib/seed.php` | Crea categorías y artículos con los modelos reales de Joomla (idempotente) |
