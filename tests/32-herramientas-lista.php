@@ -178,10 +178,10 @@ class RecQuery extends \Joomla\Database\DatabaseQuery
 }
 class RecDb extends FakeDb
 {
-	public $queries = []; public $rows = [];
+	public $queries = []; public $rows = []; public $rows2 = null; // 0.8.1: filas de la 2a consulta (lista normal visible), si se indican
 	public function createQuery() { return new RecQuery(); }
 	public function qn($n, $as = null) { return $this->quoteName($n, $as); }
-	public function setQuery($q) { $this->queries[] = $q; return new class($this->rows) { public function __construct(private array $rows) {} public function loadAssocList($key = null) { $o = []; foreach ($this->rows as $r) { $o[$r[$key ?? 'id']] = $r; } return $o; } public function loadObjectList($key = null) { return []; } }; }
+	public function setQuery($q) { $this->queries[] = $q; return new class((count($this->queries) >= 2 && $this->rows2 !== null) ? $this->rows2 : $this->rows) { public function __construct(private array $rows) {} public function loadAssocList($key = null) { $o = []; foreach ($this->rows as $r) { $o[$r[$key ?? 'id']] = $r; } return $o; } public function loadObjectList($key = null) { return []; } }; }
 }
 require_once "$c/backend/src/Model/CommentsModel.php";
 $rc = new ReflectionClass(\Akeeba\Component\Engage\Administrator\Model\CommentsModel::class);
@@ -269,9 +269,21 @@ $mm = $mk(['filter.asset_id' => 104], [$row(1, 0, 'x')]); $tree($mm);
 t_ok(count($mm->db->queries[0]->selects) === 2, 'sin modo la consulta de IDs sigue seleccionando solo id y parent_id');
 // favoritos: lista plana
 $rowsFav = [$row(9, 4, '2026-10-09 10:00:00'), $row(3, 0, '2026-10-03 10:00:00'), $row(5, 1, '2026-10-05 10:00:00')];
-$m = $mk(['filter.favorite_user' => 42, 'filter.asset_id' => 104, 'list.sortmode' => 'newest'], $rowsFav);
-t_ok($plano($tree($m)) === '9:1,3:1,5:1' && $m->getTreeAwareCount() === 3, 'favoritos: lista plana, todos en el primer nivel (aunque su padre no este en la lista), en el orden pedido');
-t_ok($plano($tree($mk(['filter.favorite_user' => 42, 'filter.asset_id' => 104], $rowsFav), 1, 1)) === '3:1', 'favoritos con paginacion');
+// 0.8.1: la 2a consulta es la lista normal (sin el JOIN de favoritos): una respuesta solo se ve si TODA su cadena de padres esta en ella
+$visFav = [$row(4, 0, '2026-10-04 10:00:00'), $row(1, 0, '2026-10-01 10:00:00'), $row(3, 0, '2026-10-03 10:00:00'), $row(5, 1, '2026-10-05 10:00:00'), $row(9, 4, '2026-10-09 10:00:00')];
+$m = $mk(['filter.favorite_user' => 42, 'filter.asset_id' => 104, 'list.sortmode' => 'newest'], $rowsFav); $m->db->rows2 = $visFav;
+t_ok($plano($tree($m)) === '9:1,3:1,5:1' && $m->getTreeAwareCount() === 3 && $m->getTotal() === 3, 'favoritos: lista plana, todos en el primer nivel (con el padre visible en la lista normal), en el orden pedido; getTotal() = lo que se muestra');
+$m = $mk(['filter.favorite_user' => 42, 'filter.asset_id' => 104], $rowsFav); $m->db->rows2 = $visFav;
+t_ok($plano($tree($m, 1, 1)) === '3:1', 'favoritos con paginacion');
+// 0.8.1: padre sin publicar/spam (no esta en la lista normal), o abuelo sin publicar: la respuesta favorita NO se lista ni se cuenta
+$m = $mk(['filter.favorite_user' => 42, 'filter.asset_id' => 104], [$row(9, 4, 'x'), $row(3, 0, 'x'), $row(5, 1, 'x'), $row(7, 5, 'x')]);
+$m->db->rows2 = [$row(1, 0, 'x'), $row(3, 0, 'x'), $row(5, 1, 'x'), $row(7, 5, 'x'), $row(9, 4, 'x')]; // el 4 (padre del 9) no esta
+t_ok($plano($tree($m)) === '3:1,5:1,7:1' && $m->getTreeAwareCount() === 3 && $m->getTotal() === 3, 'favoritos 0.8.1: la respuesta cuyo padre no es visible en la lista normal queda fuera (y no cuenta en el total)');
+$m = $mk(['filter.favorite_user' => 42, 'filter.asset_id' => 104], [$row(7, 5, 'x')]);
+$m->db->rows2 = [$row(7, 5, 'x'), $row(5, 1, 'x')]; // el 5 esta pero su padre (el 1) no: cadena rota
+t_ok($tree($m) === [] && $m->getTreeAwareCount() === 0, 'favoritos 0.8.1: tampoco si el que falta es un abuelo (se recorre toda la cadena)');
+$m = $mk(['filter.favorite_user' => 42, 'filter.asset_id' => 104], [$row(3, 0, 'x')]); $m->db->rows2 = [];
+t_ok($plano($tree($m)) === '3:1' && count($m->db->queries) === 1, 'favoritos 0.8.1: sin respuestas en la lista no hay segunda consulta (cuesta lo mismo que antes)');
 // rendimiento del arbol en PHP (5000 comentarios, 25% respuestas)
 $big = [];
 for ($i = 1; $i <= 5000; $i++) { $big[] = ['id' => $i, 'parent_id' => ($i % 4 === 0) ? $i - 1 : null, 'created' => sprintf('2026-01-%02d 10:%02d:00', 1 + $i % 28, $i % 60)]; }
@@ -330,10 +342,10 @@ t_ok(str_contains($tplD, 'hidden') && str_contains($tplD, 'data-engage-fav-toggl
 t_ok(!preg_match('/\bstyle\s*=/i', $tplD) && !preg_match('/\bon[a-z]+\s*=/i', $tplD), 'la barra no lleva estilos en linea ni manejadores onclick');
 t_ok(substr_count($tplL, 'style=') === 1 && str_contains($tplL, 'max-width: <?= (int) $maxAvatarWidth ?>px'), 'default_list.php no gana ningun estilo en linea (queda solo el ancho del avatar, que ya existia y es un entero)');
 t_ok(str_contains($tplD, 'akengage-sort-label-<?= (int) $this->assetId ?>') && !str_contains($tplD, 'id="akengage-sort-label"'), 'el id de la etiqueta del grupo es unico por contenido (varias secciones en una misma pagina)');
-t_ok(str_contains($view, 'CommentTools::safeRelative(Uri::getInstance()') && str_contains($view, '$this->contentAuthorId = null;'), 'la vista sanea la URL relativa de la peticion y no arrastra el autor de un articulo anterior (la vista puede reutilizarse)');
+t_ok(str_contains($view, 'CommentTools::relativeUrl(Uri::getInstance()') && str_contains($view, '$this->contentAuthorId = null;'), 'la vista sanea la URL relativa de la peticion y no arrastra el autor de un articulo anterior (la vista puede reutilizarse)');
 t_ok(str_contains($tplD, '$this->escape($this->sortUrl(') && str_contains($tplD, '$this->escape($this->favoritesUrl('), 'las URL de la barra salen escapadas');
 t_ok(str_contains($view, 'htmlspecialchars($url') || str_contains($view, '$e($url)'), 'el enlace del boton Copiar sale escapado');
-t_ok(str_contains($view, 'CommentTools::permalink('), 'el enlace permanente se construye en el servidor con CommentTools::permalink (validado)');
+t_ok(str_contains($view, 'CommentTools::permalinkRelative('), 'el enlace permanente se construye en el servidor con CommentTools::permalinkRelative (relativo y validado)');
 t_ok(!str_contains($view, 'getVar(\'akengage_sort\'') && !str_contains($view, "input->get('akengage_sort'"), 'la vista no lee el parametro de orden: lo valida el controlador');
 t_ok(str_contains($ctl, 'CommentTools::PARAM_SORT') && str_contains($ctl, "'raw'") && str_contains($ctl, 'CommentTools::resolve('), 'el controlador lee el crudo y lo pasa por resolve (lista cerrada)');
 t_ok(str_contains($ctl, "setState('filter.favorite_user', (int) \$identity->id)"), 'el usuario de los favoritos sale de la sesion (nunca de la peticion)');

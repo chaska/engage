@@ -394,10 +394,10 @@ preg_match_all('/<button type="button" class="akengage-copy-btn" data-engage-cop
 $okU = true; $evU = '';
 foreach ($cb as $m) {
 	$u = html_entity_decode($m[1]);
-	$esp = "$BASE/index.php?option=com_content&view=article&id={$ids['art_publico']}&catid={$ids['cat_publica']}&akengage_cid={$m[2]}#akengage-comment-{$m[2]}";
+	$esp = "/index.php?option=com_content&view=article&id={$ids['art_publico']}&catid={$ids['cat_publica']}&akengage_cid={$m[2]}#akengage-comment-{$m[2]}"; // 0.8.1: RELATIVA (el HTML puede estar en la cache)
 	if ($u !== $esp) { $okU = false; $evU = "$u != $esp"; break; }
 }
-r('T-90', 'un boton «Copiar enlace» por comentario publicado (' . count($cb) . ') con la URL absoluta de la pagina + akengage_cid + ancla', count($cb) === 9 && $okU, $evU ?: (string) count($cb));
+r('T-90', 'un boton «Copiar enlace» por comentario publicado (' . count($cb) . ') con la URL RELATIVA de la pagina (0.8.1) + akengage_cid + ancla', count($cb) === 9 && $okU, $evU ?: (string) count($cb));
 r('T-91', 'el boton lleva aria-label, title, dos iconos svg aria-hidden, viene oculto (hidden) y no hay boton en el sin publicar ni el spam', substr_count($hc, 'data-engage-copywrap hidden') === 9 && preg_match_all('/data-engage-copy="[^"]*"[^>]*aria-label="Copy the link to this comment" title="Copy the link to this comment"><svg[^>]*aria-hidden="true"/', $hc) === 9);
 $hm2 = $get($MG)['body'];
 r('T-92', 'el moderador ve los sin publicar y el spam pero SIN boton de copiar en ellos', preg_match('/id="akengage-comment-' . $c9 . '".*?<\/article>/s', $hm2, $a9) && !str_contains($a9[0], 'akengage-copy-btn') && preg_match('/id="akengage-comment-' . $c10 . '".*?<\/article>/s', $hm2, $a10) && !str_contains($a10[0], 'akengage-copy-btn'));
@@ -409,15 +409,15 @@ preg_match_all('/data-engage-copy="([^"]*)"/', $hf, $cf);
 r('T-94', 'en la lista de favoritos el enlace copiado tampoco lleva el filtro personal', count($cf[1]) === 4 && !array_filter($cf[1], fn($u) => preg_match('/akengage_(sort|fav|limitstart)=/', html_entity_decode($u))));
 $hh = $G->req('GET', $PAGE, [], ['Host: evil.example:8080']);
 preg_match_all('/data-engage-copy="([^"]*)"/', $hh['body'], $ch);
-r('T-95', 'Host de la peticion distinto: el servidor lo refleja en el enlace (el JavaScript lo reconstruye con el origen real de la pagina; ver 19-tanda2 navegador)', $hh['code'] === 200 && count($ch[1]) === 9 && str_starts_with(html_entity_decode($ch[1][0]), 'http://evil.example:8080/'), $ch[1][0] ?? '');
+r('T-95', 'Host de la peticion distinto: el enlace es RELATIVO y no lleva el anfitrion (0.8.1; antes se reflejaba en el HTML y la cache lo compartia con todos)', $hh['code'] === 200 && count($ch[1]) === 9 && str_starts_with(html_entity_decode($ch[1][0]), '/') && !str_contains($hh['body'], 'data-engage-copy="http'), $ch[1][0] ?? '');
 $hosts = ['evil.example"onmouseover="alert(1)', "evil.example\"><script>alert(1)</script>", 'evil.example/../x', "evil.example'onfocus='x", 'user@evil.example', 'evil example', 'evil.example:99999', 'javascript:alert(1)//', '[::1]x', 'evil.example#x', 'evil.example?x'];
 $mal = [];
 foreach ($hosts as $hv) {
 	$resp = $G->req('GET', $PAGE, [], ["Host: $hv"]);
 	$b = $resp['body'];
-	if (preg_match('/"onmouseover="|"><script>alert|onfocus=\'x|<script>alert\(1\)/', $b) || preg_match('/data-engage-copy="[^"]*[<>\'\s][^"]*"/', $b) || preg_match('/data-engage-copy="(?!https?:\/\/)[^"]+"/', $b)) { $mal[] = substr($hv, 0, 30) . ':' . $resp['code']; }
+	if (preg_match('/"onmouseover="|"><script>alert|onfocus=\'x|<script>alert\(1\)/', $b) || preg_match('/data-engage-copy="[^"]*[<>\'\s][^"]*"/', $b) || preg_match('/data-engage-copy="(?!\/[^\/])[^"]+"/', $b)) { $mal[] = substr($hv, 0, 30) . ':' . $resp['code']; }
 }
-r('T-96', count($hosts) . ' cabeceras Host hostiles (comillas, etiquetas, userinfo, espacios, puertos raros, javascript:): ningun atributo roto, ningun esquema no web, ningun script inyectado', !$mal, implode(' | ', $mal));
+r('T-96', count($hosts) . ' cabeceras Host hostiles (comillas, etiquetas, userinfo, espacios, puertos raros, javascript:): ningun atributo roto, ningun esquema ni anfitrion en el enlace (relativo), ningun script inyectado', !$mal, implode(' | ', $mal));
 $setCom(['copy_link' => '0']);
 $hn = $get($R1)['body'];
 r('T-97', 'copy_link=0: sin botones, sin tools.js y sin opciones de script', !str_contains($hn, 'akengage-copy') && !str_contains($hn, 'tools.js') && !str_contains($hn, 'akeeba.Engage.Tools'));

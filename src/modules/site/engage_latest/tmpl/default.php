@@ -77,15 +77,15 @@ endif;
 				<div class="d-flex justify-content-between align-items-start">
 					<div class="h5">
 						<?php if ($link_title): ?>
-							<a href="<?= htmlspecialchars($commentsUri->toString(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
-								<?= htmlspecialchars($comment->article_title) ?>
+							<a href="<?= htmlspecialchars($commentsUri->toString(['path', 'query', 'fragment']), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
+								<?= htmlspecialchars((string) $comment->article_title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>
 							</a>
 						<?php else: ?>
-							<?= htmlspecialchars($comment->article_title) ?>
+							<?= htmlspecialchars((string) $comment->article_title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>
 						<?php endif; ?>
 					</div>
 					<?php if ($show_count): ?>
-					<span class="badge bg-primary rounded-pill"><?= Meta::getNumCommentsForAsset($comment->asset_id) ?></span>
+					<span class="badge bg-primary rounded-pill"><?= (int) Meta::getNumCommentsForAsset($comment->asset_id) ?></span>
 					<?php endif ?>
 				</div>
 			<?php endif; ?>
@@ -93,7 +93,7 @@ endif;
 				<?= Text::sprintf(
 					'MOD_ENGAGE_LATEST_LBL_COMMENTED_ON',
 					htmlspecialchars((string) $comment->user_name, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
-					htmlspecialchars($commentUri->toString(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+					htmlspecialchars($commentUri->toString(['path', 'query', 'fragment']), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
 					HTMLHelper::_('engage.date', Factory::getDate($comment->created))
 				) ?>
 			</div>

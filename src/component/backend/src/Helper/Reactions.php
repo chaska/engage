@@ -169,8 +169,8 @@ final class Reactions
 		{
 			$c = $this->store->comments([$id])[$id] ?? null;
 
-			// Inexistente, sin publicar o de un contenido que no puede ver: la misma respuesta
-			if ($c === null || (int) $c['enabled'] !== 1 || !($ctx['canViewAsset'])((int) $c['asset_id'])) { return self::fail(404, 'unavailable'); }
+			// Inexistente, sin publicar, con algun antecesor sin publicar (la lista normal oculta sus respuestas) o de un contenido que no puede ver: la misma respuesta
+			if ($c === null || (int) $c['enabled'] !== 1 || !($ctx['canViewAsset'])((int) $c['asset_id']) || !($this->visibleChain([$id => $c])[$id] ?? false)) { return self::fail(404, 'unavailable'); }
 
 			if ($t !== self::FAVORITE && self::isOwn($c, $uid, (string) ($ctx['userEmail'] ?? ''))) { return self::fail(403, 'denied'); }
 
@@ -252,9 +252,12 @@ final class Reactions
 			// antes de comprobar el permiso de cada uno (cada comprobacion cuesta varias consultas a la base de datos).
 			if (count(array_unique(array_map(static fn(array $c): int => (int) $c['asset_id'], $comments))) > self::MAX_ASSETS) { return self::fail(400, 'invalid'); }
 
+			// 0.8.1: una respuesta publicada cuyo padre (o algun antecesor) no lo esta tampoco se ve en la lista normal: aqui se omite igual
+			$chain = $this->visibleChain($comments);
+
 			foreach ($comments as $cid => $c)
 			{
-				if ((int) $c['enabled'] !== 1) { continue; }
+				if ((int) $c['enabled'] !== 1 || empty($chain[$cid])) { continue; }
 
 				$a = (int) $c['asset_id'];
 				$assets[$a] = $assets[$a] ?? (bool) ($ctx['canViewAsset'])($a);
@@ -297,6 +300,70 @@ final class Reactions
 			'who'     => $opts['who'],
 			'items'   => (object) $items,
 		]];
+	}
+
+	/** Profundidad maxima de la cadena de padres que se recorre (los comentarios anidan como mucho 6 niveles; el tope evita bucles en datos corruptos). */
+	private const MAX_CHAIN = 12;
+
+	/**
+	 * 0.8.1: ¿tiene cada comentario TODA su cadena de padres publicada? La lista normal oculta una respuesta cuyo padre esta sin publicar
+	 * o es spam; las reacciones y los favoritos deben seguir el mismo criterio (si no, un favorito leia respuestas que la lista no
+	 * muestra). Un comentario sin padre cuenta como visible; un padre inexistente, sin publicar o una cadena demasiado larga, no.
+	 *
+	 * @param   array<int,array>  $rows  comentarios ya leidos (id => fila con `enabled` y, si lo hay, `parent_id`)
+	 *
+	 * @return  array<int,bool>  id => cadena publicada
+	 */
+	private function visibleChain(array $rows): array
+	{
+		$known = [];
+
+		foreach ($rows as $id => $r) { $known[(int) $id] = $r; }
+
+		for ($depth = 0; $depth < self::MAX_CHAIN; $depth++)
+		{
+			$missing = [];
+
+			foreach ($known as $r)
+			{
+				$p = (int) ($r['parent_id'] ?? 0);
+
+				if ($p > 0 && !isset($known[$p])) { $missing[$p] = $p; }
+			}
+
+			if (!$missing) { break; }
+
+			$loaded = $this->store->comments(array_values($missing));
+
+			foreach ($missing as $p)
+			{
+				// Un padre que no existe se anota como «sin publicar»: la cadena queda cortada
+				$known[$p] = $loaded[$p] ?? ['id' => $p, 'enabled' => 0, 'parent_id' => 0];
+			}
+		}
+
+		$out = [];
+
+		foreach ($rows as $id => $r)
+		{
+			$ok  = true;
+			$cur = $r;
+
+			for ($i = 0; $i <= self::MAX_CHAIN; $i++)
+			{
+				$p = (int) ($cur['parent_id'] ?? 0);
+
+				if ($p <= 0) { break; }
+
+				if ($i === self::MAX_CHAIN || !isset($known[$p]) || (int) $known[$p]['enabled'] !== 1) { $ok = false; break; }
+
+				$cur = $known[$p];
+			}
+
+			$out[(int) $id] = $ok;
+		}
+
+		return $out;
 	}
 
 	/** @return array{like:bool,dislike:bool,favorite:bool}  Con los favoritos desactivados nunca se devuelve ninguno (ni el guardado antes). */

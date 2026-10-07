@@ -43,14 +43,14 @@ final class ReactionStore implements ReactionStoreInterface
 
 		$db = $this->db;
 		$q  = $this->q()
-			->select($db->quoteName(['id', 'asset_id', 'enabled', 'created_by', 'email']))
+			->select($db->quoteName(['id', 'asset_id', 'enabled', 'created_by', 'email', 'parent_id']))
 			->from($db->quoteName('#__engage_comments'))
 			->whereIn($db->quoteName('id'), $ids, ParameterType::INTEGER);
 		$out = [];
 
 		foreach ($db->setQuery($q)->loadAssocList() ?: [] as $r)
 		{
-			$out[(int) $r['id']] = ['id' => (int) $r['id'], 'asset_id' => (int) $r['asset_id'], 'enabled' => (int) $r['enabled'], 'created_by' => (int) $r['created_by'], 'email' => trim((string) ($r['email'] ?? ''))];
+			$out[(int) $r['id']] = ['id' => (int) $r['id'], 'asset_id' => (int) $r['asset_id'], 'enabled' => (int) $r['enabled'], 'created_by' => (int) $r['created_by'], 'email' => trim((string) ($r['email'] ?? '')), 'parent_id' => (int) ($r['parent_id'] ?? 0)];
 		}
 
 		return $out;

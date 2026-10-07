@@ -6,6 +6,7 @@
 #   Rendimiento: 5.000 comentarios y 20.000 reacciones, consulta con y sin «Mas valorados» y correccion del orden;
 #   HTML IDENTICO a la 0.7.1 con las herramientas apagadas (construye la 0.7.1 desde el commit COMMIT_071 con `git archive`, la instala, guarda la referencia,
 #     reinstala la version actual y compara byte a byte; si no hay git o el commit, se salta con aviso);
+#   0.8.1: ejecuta ademas 20-xss.sh (XSS reflejado y almacenado por la cache, Host hostil, crecimiento de la cache, favoritos con padre sin publicar);
 #   Navegador (Chromium): 5 variantes de tema x pagina clara/oscura x 390/768/1280, contraste, solapes, teclado, portapapeles real, aviso, insignias, cache.
 # Requisitos: 03-sembrar-y-probar.sh y el paquete actual instalado (02). Variables: PW_MODULE, CHROMIUM, OUT, CAPTURAS=1 (imagenes de docs/img), COMMIT_071.
 # Sale con 1 si algo FALLA y con 2 si no se pudo ejecutar el navegador (NO PROBADO). Contrasenas al azar en $WORK/tanda2pass.txt (no en el repo).
@@ -34,4 +35,5 @@ if [ -d "$PW" ] && [ -x "${CHROMIUM:-/opt/pw-browsers/chromium}" ]; then
 else
 	echo "NO PROBADO: falta Playwright o Chromium (PW_MODULE / CHROMIUM); no se ejecuto la parte del navegador"; rc=2
 fi
+echo "== 0.8.1: XSS reflejado/almacenado por la cache, Host, cache, favoritos con padre sin publicar, returnurl (20-xss.sh)"; bash "$AQUI/20-xss.sh"; r20=$?; [ $r20 -eq 1 ] && rc=1; [ $r20 -eq 2 ] && [ $rc -eq 0 ] && rc=2
 exit $rc

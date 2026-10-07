@@ -129,8 +129,8 @@ $i = 0;
 								}
 								catch (Exception $e)
 								{
-									echo $e->getMessage();
-									echo "<pre>" . $e->getTraceAsString() . "</pre>";
+									echo htmlspecialchars($e->getMessage(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+									echo "<pre>" . htmlspecialchars($e->getTraceAsString(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . "</pre>";
 									$parent = null;
 								}
 							}
@@ -182,7 +182,7 @@ $i = 0;
 													<?= Text::_('COM_ENGAGE_COMMENTS_FILTER_IP') ?>
 												</span>
 												<?php if (!empty($ipLookupUrl)): ?>
-													<a href="<?= $ipLookupUrl ?>" class="comEngageLinkExternal link-success text-decoration-none hasTooltip"
+													<a href="<?= htmlspecialchars((string) $ipLookupUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" class="comEngageLinkExternal link-success text-decoration-none hasTooltip"
 													   title="<?= Text::_('COM_ENGAGE_COMMENTS_FILTER_IP') ?>"
 													   target="_blank">
 														<?= $ip ?>
@@ -264,7 +264,7 @@ $i = 0;
 									<div class="small mb-1">
 										<strong><?= Text::_('COM_ENGAGE_COMMENT_FIELD_ASSET_ID') ?></strong>:
 										<?php if ($meta['type'] !== 'unknown'): ?>
-											<a href="<?= $meta['url'] ?>">
+											<a href="<?= htmlspecialchars((string) $meta['url'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
 												<?= $this->escape($meta['title']) ?>
 											</a>
 										<?php else: ?>
@@ -281,7 +281,7 @@ $i = 0;
 												<span aria-hidden="true" class="badge bg-info hasTooltip"
 													  title="<?= Text::plural('COM_ENGAGE_COMMENTS_LBL_NUMCOMMENTS', $numComments) ?>"
 												>
-													<?= $numComments ?>
+													<?= (int) $numComments ?>
 												</span>
 												<span class="visually-hidden">
 													<?= Text::plural('COM_ENGAGE_COMMENTS_LBL_NUMCOMMENTS', $numComments) ?>
@@ -307,7 +307,7 @@ $i = 0;
 										</div>
 										<?php if ($meta['type'] !== 'unknown'): ?>
 										<div class="engage-content-link">
-											<a href="<?= $meta['public_url'] ?>" target="_blank" class="hasTooltip"
+											<a href="<?= htmlspecialchars((string) $meta['public_url'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" target="_blank" rel="noopener" class="hasTooltip"
 											   title="<?= Text::_('COM_ENGAGE_COMMENTS_LBL_VIEWCONTENT_DESC') ?>">
 												<?= Text::_('COM_ENGAGE_COMMENTS_LBL_VIEWCONTENT') ?>
 											</a>

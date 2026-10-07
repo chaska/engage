@@ -25,7 +25,7 @@ use Throwable;
 final class PanelData
 {
 	/** Version del fork segun el CHANGELOG (la prueba tests/28 comprueba que coincide con su primera entrada). */
-	public const FORK_VERSION = '0.8.0';
+	public const FORK_VERSION = '0.8.1';
 
 	public const REPO_URL      = 'https://github.com/chaska/engage';
 	public const CHANGELOG_URL = 'https://github.com/chaska/engage/blob/main/CHANGELOG.md';
@@ -337,6 +337,8 @@ final class PanelData
 			'captcha_effective' => '',
 			'captcha_enabled'  => false,
 			'purifier_cache'   => null,
+			// 0.8.1: caché global de Joomla (0 = desactivada, 1 = conservadora, 2 = progresiva): sin el plugin Engage Cache el orden no funciona
+			'caching'          => (int) Factory::getApplication()->get('caching', 0),
 			'update_sites'     => [],
 			'can_edit_plugins' => $user->authorise('core.manage', 'com_plugins') && $user->authorise('core.edit', 'com_plugins'),
 			'can_options'      => $user->authorise('core.admin', 'com_engage') || $user->authorise('core.options', 'com_engage'),

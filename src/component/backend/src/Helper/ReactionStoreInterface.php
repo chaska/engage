@@ -17,7 +17,7 @@ interface ReactionStoreInterface
 	/**
 	 * @param   int[]  $ids
 	 *
-	 * @return array<int,array{id:int,asset_id:int,enabled:int,created_by:int,email:string}>  indexado por id; los inexistentes no
+	 * @return array<int,array{id:int,asset_id:int,enabled:int,created_by:int,email:string,parent_id?:int}>  indexado por id (0.8.1: `parent_id`, 0 = sin padre); los inexistentes no
 	 *         aparecen. `email` es el del comentarista de un comentario de INVITADO ('' si no lo tiene): 0.7.1, para saber si es «propio»
 	 *         por el email verificado de la sesion.
 	 */

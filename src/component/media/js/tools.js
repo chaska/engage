@@ -5,7 +5,7 @@
  *
  * Herramientas de la lista de comentarios (fork 0.8.0): boton «Copiar enlace». Sin dependencias.
  *
- * El servidor pinta cada boton con el enlace permanente YA validado (URL absoluta http/https en un atributo data-engage-copy). Este
+ * El servidor pinta cada boton con el enlace permanente YA validado (desde la 0.8.1 una RUTA relativa con su consulta validada y el ancla, en un atributo data-engage-copy: el HTML puede estar en la cache y no debe llevar el anfitrion de nadie). Este
  * script solo (1) muestra los botones si el navegador puede copiar, (2) copia ese enlace con la API Clipboard o, si no esta
  * disponible, con un area de texto temporal y execCommand("copy"), y (3) avisa con una region role="status" (aria-live), sin
  * alert() ni confirm().

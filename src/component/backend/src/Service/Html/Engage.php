@@ -122,7 +122,10 @@ final class Engage
 			$excerpt = substr($excerpt, 0, $maxCharacters);
 		}
 
-		$excerpt  .= $ellipsis;
+		// 0.8.1: the excerpt is plain text after strip_tags and goes out as HTML: whatever is left of "<" or "&" is escaped (entities
+		// that are already there are kept, no double encoding)
+		$excerpt = htmlspecialchars($excerpt, ENT_NOQUOTES | ENT_SUBSTITUTE, 'UTF-8', false);
+		$excerpt .= $ellipsis;
 
 		return nl2br($excerpt);
 	}

@@ -8,7 +8,7 @@ Engage es un sistema de comentarios para los artículos de Joomla. Este reposito
 
 ## Estado
 
-- **Versión del fork:** 0.8.0. **Versión del paquete:** 3.4.3 (mayor que la 3.4.2 original y que la 3.4.2.1 ya publicada, para que Joomla la trate como una actualización en el mismo sitio).
+- **Versión del fork:** 0.8.1. **Versión del paquete:** 3.4.3 (mayor que la 3.4.2 original y que la 3.4.2.1 ya publicada, para que Joomla la trate como una actualización en el mismo sitio).
 - **Requisitos:** Joomla 5.0 o superior (incluido Joomla 6), PHP 8.1 o superior, MySQL 8.0.13 / MariaDB 10.4. No admite PostgreSQL (el esquema es solo MySQL/MariaDB).
 - **Probado en:** Joomla 6.1.4 con PHP 8.3 y MariaDB 10.11, instalando el paquete limpio y **actualizando encima de una 3.4.2 original y del paquete 3.4.2.1 ya publicado, con datos de ejemplo** (comentarios, ajustes y permisos idénticos antes y después; la tabla de reacciones se crea sola). Resultados en [`docs/RESULTADOS-PRUEBAS-JOOMLA-REAL.md`](docs/RESULTADOS-PRUEBAS-JOOMLA-REAL.md).
 - **No probado:** Joomla 5.x, PHP 8.1/8.4/8.5, MySQL, otros navegadores distintos de Chromium y otros temas de administración distintos de Atum.

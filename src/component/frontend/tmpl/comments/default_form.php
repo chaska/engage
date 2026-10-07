@@ -13,6 +13,7 @@ defined('_JEXEC') or die();
  * This is called by default.php
  */
 
+use Akeeba\Component\Engage\Administrator\Helper\CommentTools;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -42,7 +43,7 @@ HTMLHelper::_('behavior.formvalidator');
 	style="<?= $badUx ? 'display: none;' : ''; ?>"
 	aria-label="<?= Text::_('COM_ENGAGE_COMMENTS_FORM_HEADER', true) ?>"
 >
-	<input type="hidden" name="returnurl" value="<?= base64_encode(Uri::getInstance()->toString(['scheme', 'user', 'pass', 'host', 'port', 'path', 'query', 'fragment'])) ?>">
+	<input type="hidden" name="returnurl" value="<?= htmlspecialchars(base64_encode(CommentTools::relativeUrl(Uri::getInstance()->toString(['path', 'query']))), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"><?php // 0.8.1: relative and validated: no Host and no unknown query parameters in HTML that the page cache shares ?>
 	<input type="hidden" name="view" value="">
 	<input type="hidden" name="id" value="">
 	<?= HTMLHelper::_('form.token') ?>
