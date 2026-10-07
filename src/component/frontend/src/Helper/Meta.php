@@ -23,7 +23,9 @@ use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\User;
 use Joomla\Database\DatabaseDriver;
 use Joomla\Database\DatabaseInterface;
+use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
+use Throwable;
 
 /**
  * Helper class to get information about articles and their comments
@@ -121,6 +123,26 @@ final class Meta
 	}
 
 	/**
+	 * Is the category of the content published? (0.7.1)
+	 *
+	 * Joomla's own article page serves an article only when its category has `published > 0` (published or archived; unpublished
+	 * and trashed categories answer 404) and the user has the category's access level. It looks at the article's OWN category only,
+	 * never at the ancestors, and so do we (checked against a real Joomla). NULL (not applicable: the asset has no category) counts
+	 * as published.
+	 *
+	 * @param   array  $meta  The result of getAssetAccessMeta()
+	 *
+	 * @return  bool
+	 * @since   0.7.1
+	 */
+	public static function isCategoryPublished(array $meta): bool
+	{
+		$value = $meta['category_published'] ?? null;
+
+		return ($value === null) || ((int) $value > 0);
+	}
+
+	/**
 	 * Returns the metadata of an asset.
 	 *
 	 * This method goes through the onAkeebaEngageGetAssetMeta plugin event, allowing different plugins to return
@@ -131,7 +153,8 @@ final class Meta
 	 * @param   bool  $loadParameters  Should I also load the asset's parameters?
 	 *
 	 * @return  array{type:string, title:string, category:string, author_name:string, author_email:string, url:string,
-	 *     public_url:string, published:bool, published_on:Date, access:int, parent_access:int, parameters:Registry}
+	 *     public_url:string, published:bool, published_on:Date, access:int, parent_access:int,
+	 *     category_published:int|null, parameters:Registry}
 	 * @since   1.0.0
 	 */
 	public static function getAssetAccessMeta(int $assetId = 0, bool $loadParameters = false): array
@@ -161,6 +184,8 @@ final class Meta
 			'published_on'  => clone Factory::getDate(),
 			'access'        => 0,
 			'parent_access' => null,
+			// 0.7.1: published state of the content's category (NULL = unknown / not applicable); see isAssetViewable()
+			'category_published' => null,
 			'parameters'    => new Registry(),
 		];
 
@@ -255,6 +280,7 @@ final class Meta
 	 * * The comment text is replaced with COM_ENGAGE_COMMENTS_LBL_DELETEDCOMMENT
 	 * * The name (for guest comments filed under the user's email) is replaced with COM_ENGAGE_COMMENTS_LBL_DELETEDUSER
 	 * * The email (for guest comments filed under the user's email) is replaced with deleted.<USER_ID>@<SITE_HOSTNAME>
+	 * * 0.7.1: the IP address is emptied and the user agent too, and, when converting to guest, created_by becomes 0
 	 * * All #__engage_unsubscribe records with that email address are removed
 	 *
 	 * This is similar to how other sites, e.g. Slashdot, treat user account deletion. If we were to completely delete a
@@ -276,73 +302,157 @@ final class Meta
 			return [];
 		}
 
-		if ($user->guest)
+		if ($user->guest || ((int) $user->id <= 0))
 		{
 			return [];
 		}
 
 		/** @var DatabaseDriver $db */
-		$db        = Factory::getContainer()->get(DatabaseInterface::class);
-		$cid       = [];
+		$db     = Factory::getContainer()->get(DatabaseInterface::class);
+		$userId = (int) $user->id;
+		$email  = (string) $user->email;
+		$body   = Text::_('COM_ENGAGE_COMMENTS_LBL_DELETEDCOMMENT');
+		$name   = Text::sprintf('COM_ENGAGE_COMMENTS_LBL_DELETEDUSER', $userId);
 
-		// Nuke comments directly attributed to the user ID
-		$q   = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true))
-			->select($db->qn('id'))
-			->from($db->qn('#__engage_comments'))
-			->where($db->qn('created_by') . ' = ' . $db->q($user->id));
-		$cid = $db->setQuery($q)->loadColumn() ?? [];
+		// Host for the pseudonymised email address (0.7.1: also when there is no HTTP host, e.g. the Joomla console)
+		$host = '';
 
-		$q = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true))
-			->update($db->qn('#__engage_comments'))
-			->set($db->qn('body') . ' = ' . $db->q(Text::_('COM_ENGAGE_COMMENTS_LBL_DELETEDCOMMENT')))
-			->where($db->qn('created_by') . ' = ' . $db->q($user->id));
-		$db->setQuery($q)->execute();
-
-		// Nuke comments attributed to the user's email address
-		$uri = Uri::getInstance();
-		$q   = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true))
-			->select($db->qn('id'))
-			->from($db->qn('#__engage_comments'))
-			->where($db->qn('email') . ' = ' . $db->q($user->email));
-		$cid = array_merge($cid, $db->setQuery($q)->loadColumn() ?? []);
-
-		$q = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true))
-			->update($db->qn('#__engage_comments'))
-			->set([
-				$db->qn('body') . ' = ' . $db->q(Text::_('COM_ENGAGE_COMMENTS_LBL_DELETEDCOMMENT')),
-				$db->qn('name') . ' = ' . $db->q(Text::sprintf('COM_ENGAGE_COMMENTS_LBL_DELETEDUSER', $user->id)),
-				$db->qn('email') . ' = ' . $db->q(sprintf('deleted.%u@%s', $user->id, $uri->getHost())),
-			])
-			->where($db->qn('email') . ' = ' . $db->q($user->email));
-		$db->setQuery($q)->execute();
-
-		/**
-		 * If converting the comments to guest comments (when the user record itself is deleted) we need to do some more
-		 * post processing for these comments.
-		 */
-		if ($convertToGuest && !empty($cid))
+		try
 		{
-			$q = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true))
-				->update($db->qn('#__engage_comments'))
-				->set([
-					$db->qn('body') . ' = ' . $db->q(Text::_('COM_ENGAGE_COMMENTS_LBL_DELETEDCOMMENT')),
-					$db->qn('name') . ' = ' . $db->q(Text::sprintf('COM_ENGAGE_COMMENTS_LBL_DELETEDUSER', $user->id)),
-					$db->qn('email') . ' = ' . $db->q(sprintf('deleted.%u@%s', $user->id, $uri->getHost())),
-				])
-				->where($db->qn('id') . ' IN(' . implode(
-						',',
-						array_filter(array_unique($cid), function ($id) {
-							return is_numeric($id) && ($id > 0);
-						})
-					) . ')');
-			$db->setQuery($q)->execute();
+			$host = (string) Uri::getInstance()->getHost();
+		}
+		catch (Throwable $e)
+		{
+			// Uri::getInstance() cannot parse the request URI under the Joomla console (cli/joomla.php with a fixed live_site)
 		}
 
-		// Remove #__engage_unsubscribe records
-		$q = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true))
-			->delete($db->qn('#__engage_unsubscribe'))
-			->where($db->qn('email') . ' = ' . $db->q($user->email));
-		$db->setQuery($q)->execute();
+		if ($host === '')
+		{
+			try
+			{
+				$host = (string) parse_url((string) Uri::root(), PHP_URL_HOST);
+			}
+			catch (Throwable $e)
+			{
+				$host = '';
+			}
+		}
+
+		$host = ($host !== '') ? $host : 'localhost';
+
+		$newQuery = static function () use ($db) {
+			return method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true);
+		};
+
+		/**
+		 * 0.7.1: everything happens in ONE transaction, so a failure half way leaves the comments as they were (the caller can
+		 * retry or report) instead of half pseudonymised. The IP address and the browser (user agent) are personal data too:
+		 * they are emptied together with the text (ip is nullable; user_agent is NOT NULL, so it becomes an empty string).
+		 */
+		$db->transactionStart();
+
+		try
+		{
+			// Comments directly attributed to the user ID
+			$q   = $newQuery()
+				->select($db->qn('id'))
+				->from($db->qn('#__engage_comments'))
+				->where($db->qn('created_by') . ' = :userid')
+				->bind(':userid', $userId, ParameterType::INTEGER);
+			$cid = $db->setQuery($q)->loadColumn() ?: [];
+
+			$q = $newQuery()
+				->update($db->qn('#__engage_comments'))
+				->set([
+					$db->qn('body') . ' = :body',
+					$db->qn('ip') . ' = NULL',
+					$db->qn('user_agent') . " = ''",
+				])
+				->where($db->qn('created_by') . ' = :userid')
+				->bind(':body', $body, ParameterType::STRING)
+				->bind(':userid', $userId, ParameterType::INTEGER);
+			$db->setQuery($q)->execute();
+
+			// Comments attributed to the user's email address (guest comments filed with it)
+			if ($email !== '')
+			{
+				$q   = $newQuery()
+					->select($db->qn('id'))
+					->from($db->qn('#__engage_comments'))
+					->where($db->qn('email') . ' = :email')
+					->bind(':email', $email, ParameterType::STRING);
+				$cid = array_merge($cid, $db->setQuery($q)->loadColumn() ?: []);
+
+				$deletedEmail = sprintf('deleted.%u@%s', $userId, $host);
+
+				$q = $newQuery()
+					->update($db->qn('#__engage_comments'))
+					->set([
+						$db->qn('body') . ' = :body',
+						$db->qn('name') . ' = :name',
+						$db->qn('email') . ' = :newemail',
+						$db->qn('ip') . ' = NULL',
+						$db->qn('user_agent') . " = ''",
+					])
+					->where($db->qn('email') . ' = :email')
+					->bind(':body', $body, ParameterType::STRING)
+					->bind(':name', $name, ParameterType::STRING)
+					->bind(':newemail', $deletedEmail, ParameterType::STRING)
+					->bind(':email', $email, ParameterType::STRING);
+				$db->setQuery($q)->execute();
+			}
+
+			$cid = array_values(array_unique(array_map('intval', array_filter($cid, function ($id) {
+				return is_numeric($id) && ($id > 0);
+			}))));
+
+			/**
+			 * If converting the comments to guest comments (when the user record itself is deleted) we need to do some more
+			 * post processing for these comments: name and email as above, and created_by = 0 (0.7.1), so that no user ID is
+			 * left that a future account could inherit (some database servers reuse the highest ID after a restart).
+			 */
+			if ($convertToGuest && !empty($cid))
+			{
+				$deletedEmail = sprintf('deleted.%u@%s', $userId, $host);
+
+				foreach (array_chunk($cid, 500) as $chunk)
+				{
+					$q = $newQuery()
+						->update($db->qn('#__engage_comments'))
+						->set([
+							$db->qn('body') . ' = :body',
+							$db->qn('name') . ' = :name',
+							$db->qn('email') . ' = :newemail',
+							$db->qn('created_by') . ' = 0',
+							$db->qn('ip') . ' = NULL',
+							$db->qn('user_agent') . " = ''",
+						])
+						->whereIn($db->qn('id'), $chunk, ParameterType::INTEGER)
+						->bind(':body', $body, ParameterType::STRING)
+						->bind(':name', $name, ParameterType::STRING)
+						->bind(':newemail', $deletedEmail, ParameterType::STRING);
+					$db->setQuery($q)->execute();
+				}
+			}
+
+			// Remove #__engage_unsubscribe records
+			if ($email !== '')
+			{
+				$q = $newQuery()
+					->delete($db->qn('#__engage_unsubscribe'))
+					->where($db->qn('email') . ' = :email')
+					->bind(':email', $email, ParameterType::STRING);
+				$db->setQuery($q)->execute();
+			}
+
+			$db->transactionCommit();
+		}
+		catch (Throwable $e)
+		{
+			$db->transactionRollback();
+
+			throw $e;
+		}
 
 		return $cid;
 	}

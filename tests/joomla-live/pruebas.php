@@ -39,6 +39,9 @@ function nComentarios(string $where = '1'): int { return (int) one("SELECT COUNT
 function param(array $kv): void
 {
 	$p = json_decode((string) one("SELECT params FROM jos_extensions WHERE element='com_engage' AND type='component'"), true) ?: [];
+	// 0.7.1: esta bateria mide el HTML de la 0.6.28 (el detector de XSS rechaza cualquier <svg>, y los botones de reaccion llevan iconos SVG propios): las reacciones
+	// se desactivan, como en las pruebas 09 a 16, salvo que una llamada pida otra cosa. Las reacciones tienen la suya (17).
+	if (!array_key_exists('reactions_enabled', $p) && !array_key_exists('reactions_enabled', $kv)) { $p['reactions_enabled'] = '0'; }
 	foreach ($kv as $k => $v) { if ($v === null) { unset($p[$k]); } else { $p[$k] = $v; } }
 	global $db;
 	$db->query("UPDATE jos_extensions SET params='" . $db->real_escape_string(json_encode($p)) . "' WHERE element='com_engage' AND type='component'");
@@ -490,8 +493,10 @@ $salida = (string) shell_exec('cd ' . escapeshellarg($SITE) . ' && php cli/jooml
 $salida2 = (string) shell_exec('cd ' . escapeshellarg($SITE) . ' && php cli/joomla.php engage:cleanspam abc xyz 2>&1');
 r('PS-41', 'CLI: engage:cleanspam aparece en `list`, se ejecuta y tolera argumentos no numericos', (strpos($lista, 'engage:cleanspam') !== false && strpos($salida, 'spam comments were permanently deleted') !== false && strpos($salida2, 'permanently deleted') !== false) ? 'PASA' : 'FALLA', strpos($lista, 'engage:cleanspam') === false ? 'no aparece en list' : snip(preg_replace('/\s+/', ' ', $salida2), 80));
 
-// PS-23 (parcial): borrar un usuario que comento. Observacion: el comentario se conserva con created_by apuntando a un ID que ya no existe
-// (no se anonimiza con el plugin de privacidad desactivado) y la pagina debe seguir mostrandose sin errores.
+// PS-23 (0.7.1: corregida). Borrar un usuario que comento con `user:delete` (User::delete real). Hasta la 0.7.0 esta prueba solo miraba que la pagina
+// siguiera en 200 y daba por buena una condicion invertida heredada de Akeeba Engage (el plugin user/engage salia siempre antes de seudonimizar):
+// el comentario se quedaba con el texto, el nombre, la IP y el navegador, y con created_by apuntando a una cuenta que ya no existia. Ahora se mira
+// la BASE DE DATOS: texto de borrado, nombre «Deleted Account N», email deleted.N@host, IP vacia, navegador vacio y created_by = 0.
 $cli = 'cd ' . escapeshellarg($SITE) . ' && php cli/joomla.php';
 shell_exec("$cli user:delete --username=borrame -n 2>&1");
 shell_exec("$cli user:add --username=borrame --name=Borrame --email=borrame@example.test --password=" . escapeshellarg($UP) . " --usergroup=Registered 2>&1");
@@ -500,11 +505,20 @@ if ($bor->login('borrame', $UP)) {
 	comentar($bor, 'art_publico', ['body' => 'comentario de usuario que se borrara']);
 	$uid = (int) one("SELECT id FROM jos_users WHERE username='borrame'");
 	$antes = (int) one("SELECT COUNT(*) FROM jos_engage_comments WHERE created_by=$uid");
+	$cid = (int) one("SELECT id FROM jos_engage_comments WHERE created_by=$uid ORDER BY id DESC LIMIT 1");
+	q("UPDATE jos_engage_comments SET ip='198.51.100.77', user_agent='UA-secreto-23' WHERE id=$cid");
 	shell_exec("$cli user:delete --username=borrame -n 2>&1");
 	$despues = (int) one("SELECT COUNT(*) FROM jos_engage_comments WHERE created_by=$uid");
+	$fila = q("SELECT body, name, email, ip, user_agent, created_by FROM jos_engage_comments WHERE id=$cid")->fetch_assoc() ?: [];
 	$pg = $inv->get(urlArt($A, $CP) . '&akengage_limit=100');
-	r('PS-23', 'Borrar un usuario con comentarios: la pagina sigue respondiendo 200 sin errores (el comentario queda con created_by huerfano, sin anonimizar)', $pg['code'] === 200 && $antes === 1 ? 'PASA' : 'FALLA', "comentarios antes=$antes despues=$despues (huerfanos), HTTP {$pg['code']}");
-	q("DELETE FROM jos_engage_comments WHERE created_by=$uid");
+	$bien = $antes === 1 && $despues === 0 && (int) one("SELECT COUNT(*) FROM jos_users WHERE id=$uid") === 0
+		&& in_array($fila['body'] ?? '', ['Comment removed due to account deletion', 'Se borr\u00f3 el comentario por la eliminaci\u00f3n de la cuenta'], true)
+		&& in_array($fila['name'] ?? '', ["Deleted Account $uid", "Cuenta $uid borrada"], true)
+		&& preg_match('/^deleted\.' . $uid . '@\S+$/', (string) ($fila['email'] ?? '')) === 1
+		&& array_key_exists('ip', $fila) && $fila['ip'] === null && ($fila['user_agent'] ?? 'x') === '' && (int) ($fila['created_by'] ?? 1) === 0
+		&& $pg['code'] === 200 && strpos($pg['body'], 'UA-secreto-23') === false && strpos($pg['body'], 'comentario de usuario que se borrara') === false;
+	r('PS-23', 'Borrar un usuario con comentarios (User::delete real): el comentario queda seudonimizado en la BASE DE DATOS (texto de borrado, «Deleted Account N», email deleted.N@host, IP y navegador vacios, created_by = 0) y la pagina sigue en 200 sin mostrar el texto original', $bien ? 'PASA' : 'FALLA', 'comentarios del usuario antes=' . $antes . ' despues=' . $despues . '; fila=' . snip(json_encode($fila, JSON_UNESCAPED_UNICODE), 220) . "; HTTP {$pg['code']}; texto original en la pagina=" . (strpos($pg['body'], 'comentario de usuario que se borrara') !== false ? 'SI' : 'no') . '; navegador en la pagina=' . (strpos($pg['body'], 'UA-secreto-23') !== false ? 'SI' : 'no'));
+	q("DELETE FROM jos_engage_comments WHERE id=$cid");
 } else { r('PS-23', 'Borrar un usuario con comentarios', 'NO PROBADA', 'no se pudo crear/entrar con el usuario temporal'); }
 
 // ======================== PS-29/PS-42 etc no automatizables aqui ========================

@@ -485,6 +485,12 @@ class CommentModel extends AdminCommentModel
 			throw new RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
 		}
 
+		// 0.7.1: ...and its category too (an unpublished or trashed category makes the page answer 404)
+		if (!Meta::isCategoryPublished($assetMeta))
+		{
+			throw new RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
+		}
+
 		// Make sure the user is allowed to view this asset and its parent
 		$access       = $assetMeta['access'];
 		$parentAccess = $assetMeta['parent_access'];

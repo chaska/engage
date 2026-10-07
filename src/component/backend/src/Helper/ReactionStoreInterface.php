@@ -17,7 +17,9 @@ interface ReactionStoreInterface
 	/**
 	 * @param   int[]  $ids
 	 *
-	 * @return array<int,array{id:int,asset_id:int,enabled:int,created_by:int}>  indexado por id; los inexistentes no aparecen
+	 * @return array<int,array{id:int,asset_id:int,enabled:int,created_by:int,email:string}>  indexado por id; los inexistentes no
+	 *         aparecen. `email` es el del comentarista de un comentario de INVITADO ('' si no lo tiene): 0.7.1, para saber si es «propio»
+	 *         por el email verificado de la sesion.
 	 */
 	public function comments(array $ids): array;
 
@@ -29,7 +31,8 @@ interface ReactionStoreInterface
 	public function userTypes(int $userId, array $commentIds): array;
 
 	/**
-	 * Contadores de me gusta y no me gusta (el favorito es privado y NO se cuenta aqui).
+	 * Contadores de me gusta y no me gusta (el favorito es privado y NO se cuenta aqui). 0.7.1: NO cuenta los me gusta / no me gusta que
+	 * el autor del comentario (created_by) se haya dado a si mismo (no se pueden hacer, pero pudo quedar uno antiguo).
 	 *
 	 * @param   int[]  $commentIds
 	 *
@@ -43,4 +46,13 @@ interface ReactionStoreInterface
 
 	/** Ejecuta $fn dentro de una transaccion (rollback si lanza). */
 	public function transaction(callable $fn): void;
+
+	/**
+	 * 0.7.1: bloquea la fila del comentario hasta el final de la transaccion (SELECT ... FOR UPDATE) para que las reacciones del MISMO
+	 * comentario se ejecuten una detras de otra, sea cual sea el nivel de aislamiento (en READ COMMITTED no hay bloqueos de hueco y
+	 * un me gusta y un no me gusta simultaneos podian quedar los dos). Se llama dentro de transaction().
+	 *
+	 * @return bool  false si el comentario ya no existe
+	 */
+	public function lockComment(int $commentId): bool;
 }

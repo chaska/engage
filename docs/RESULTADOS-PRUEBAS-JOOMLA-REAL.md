@@ -308,6 +308,24 @@ Incidencias de la tanda: la prueba 07 (JBCookies con caché de página) falló u
 
 NO PROBADO: Joomla 5.x, MySQL, otros navegadores, lectores de pantalla reales y la oferta de actualización desde el servidor de GitHub (la release v3.4.3 no existe).
 
+## 14. Revisión independiente de la 0.7.0: correcciones de la 0.7.1 (paquete 3.4.3 sin publicar)
+
+Joomla 6.1.4, PHP 8.3.6, MariaDB 10.11, Chromium headless. Cada fallo tiene una prueba que **falla antes y pasa después** (columna «Antes» = paquete de la 0.7.0 instalado; «Después» = 0.7.1).
+
+| Hallazgo | Prueba | Antes | Después |
+|---|---|---|---|
+| MEDIO-1: borrar la cuenta no seudonimizaba | `lib/borrado-usuario-cli.php` (`User::delete()` real; mira los comentarios en la BD) | 5 de 13 fallan (texto, nombre, email, IP y navegador intactos; `created_by` huérfano) | 13 de 13 pasan: texto de borrado, «Deleted Account N», `deleted.N@host`, IP y navegador vacíos, `created_by = 0`, invitado con el email del usuario, ajenos intactos, reacciones propias borradas y recibidas conservadas, cuenta no borrable (nada se toca), `success = false` (nada se toca), tabla inaccesible (la cuenta se borra igualmente) |
+| MEDIO-1 por la consola de Joomla | PS-23 de `pruebas.php` (`user:delete`) | comentario intacto | pasa (la prueba descubrió que `Uri::getInstance()` lanza en la consola: host `localhost` de reserva) |
+| MEDIO-2: ACL de categoría | `lib/reacciones-071-http.php` secciones K (invitado, Registered, Manager; 9 situaciones x [página, consulta, toggle]) | consulta y toggle devuelven datos con la categoría Special, Registered (invitado), sin publicar y en la papelera | consulta y toggle dan a cada persona lo mismo que la página: Special (solo Manager), Registered (Registered y Manager), sin publicar y papelera (nadie, ni el Manager), archivada (todos); categoría padre sin publicar, en la papelera o «Special»: Joomla sirve la página y Engage también |
+| BAJO-1: comentario propio por email | secciones P | 200 al dar me gusta a un comentario de invitado con el email propio; el me gusta previo sobrevive al cambio de dueño y cuenta | 403; `own = true`; el me gusta previo se elimina al iniciar sesión (el favorito se conserva); un resto no se muestra ni se cuenta |
+| BAJO-2: `toggle` y `counts.dislike` | secciones D | revelaba el número (1) con la opción desactivada | 0 |
+| BAJO-3: amplificación en `state` | secciones R | 11 y 12 contenidos distintos aceptados; 260 consultas seguidas sin límite | 10 contenidos sí, 11 y 12 no (400 genérico); 240 consultas por minuto y 429 después; otro usuario no se ve afectado |
+| Carrera me gusta / no me gusta | `lib/reacciones-concurrencia.php`, 200 rondas x (8 + 8 peticiones) con el aislamiento global forzado | `READ COMMITTED`: 2 respuestas 500; `REPEATABLE READ`: 217; `SERIALIZABLE`: 511 (de 3 200 por nivel; interbloqueos). Estados dobles por HTTP: 0 (no se reprodujo). Modelo con dos conexiones: 2 filas | 0 respuestas 500 de 9 600 y 0 estados dobles; el modelo del algoritmo nuevo deja 1 fila (la segunda transacción espera) |
+
+Resto de la tanda: `tests/31-reacciones-071.php` 75 comprobaciones, `tests/30-reacciones.php` 260, `php tests/run.php` todo en verde, `php -l` de `src/` sin errores, `php build/verificar.php`; `17-reacciones.sh`: HTTP 127, RGPD 12, borrado 13, categorías y límites 48, Chromium 387 (30 combinaciones, 0 errores de JavaScript, 0 peticiones externas); regresión `03` (73), `05` (22+4), `07` (39+3; JC-01 falló una vez y pasó al repetirlo, como en la 0.7.0), `08`, `09`, `10` (247), `11` (61), `12-ajustes` (74), `12-opciones-maquetacion` (552 filas), `13` (15), `14` (192 medidas), `15` (16 + 56), `16` (132 páginas); actualización desde la 3.4.2 original y desde el paquete 3.4.2.1 publicado (SHA-256 `a1891a7c…2958`): tabla de reacciones creada, esquema `3.0.2-20220107` a `3.4.3-20261007`, tablas de comentarios, permisos y plantillas de correo idénticos, 16 comprobaciones web en cada una.
+
+NO PROBADO: Akeeba Data Compliance real (la exportación y el borrado de reacciones de `datacompliance/engage` solo se comprueban de forma estática), MySQL (solo MariaDB), Joomla 5.x, un estado doble real por HTTP con la 0.7.0, proxy inverso real delante del limitador por IP.
+
 ## 9. Estado del paquete
 
 Hash del ZIP al cierre de esta tanda y coincidencia con `updates/pkgengage.xml`: ver `docs/PUBLICAR-RELEASE.md` y comprobar con `php build/build.php` (reproducible). No se ha publicado ninguna release: la URL de descarga de `updates/pkgengage.xml` no existirá hasta que el propietario suba **ese mismo ZIP** a la release `v3.4.2.1`.

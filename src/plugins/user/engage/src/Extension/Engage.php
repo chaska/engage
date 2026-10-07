@@ -15,6 +15,7 @@ use Exception;
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\User\User;
 use Joomla\CMS\User\UserFactoryInterface;
@@ -24,6 +25,7 @@ use Joomla\Event\DispatcherInterface;
 use Joomla\Event\Event;
 use Joomla\Event\SubscriberInterface;
 use Joomla\Utilities\ArrayHelper;
+use Throwable;
 
 class Engage extends CMSPlugin implements SubscriberInterface
 {
@@ -127,20 +129,8 @@ class Engage extends CMSPlugin implements SubscriberInterface
 			return;
 		}
 
-		// 0.7.0: the reactions made by the user (likes, dislikes, favorites) are deleted with the account when Joomla deleted it
-		// (never throws). This runs before the checks below, which belong to the comment pseudonymisation.
-		if ($success)
-		{
-			\Akeeba\Component\Engage\Administrator\Helper\ReactionStore::deleteForUser($this->getDatabase(), (int) $userId);
-		}
-
-		// Make sure we've seen this user ID before
-		if (array_key_exists($userId, $this->usersToRemove))
-		{
-			return;
-		}
-
-		// If Joomla reported failure to remove the user we don't remove the comments.
+		// 0.7.1: if Joomla reported failure to remove the user the account still exists: neither the comments nor the reactions
+		// are touched (and the cached user object is forgotten).
 		if (!$success)
 		{
 			unset($this->usersToRemove[$userId]);
@@ -148,13 +138,40 @@ class Engage extends CMSPlugin implements SubscriberInterface
 			return;
 		}
 
-		// Remove the comments and uncache the user object.
-		$this->getApplication()->getLanguage()->load('com_engage', JPATH_ADMINISTRATOR);
-		$this->getApplication()->getLanguage()->load('com_engage', JPATH_SITE);
+		// 0.7.0: the reactions made by the user (likes, dislikes, favorites) are deleted with the account when Joomla deleted it
+		// (never throws).
+		\Akeeba\Component\Engage\Administrator\Helper\ReactionStore::deleteForUser($this->getDatabase(), (int) $userId);
 
-		Meta::pseudonymiseUserComments($this->usersToRemove[$userId], true);
+		// 0.7.1: make sure we've seen this user ID before (onUserBeforeDelete cached the user object). The condition was inverted
+		// since the original Akeeba Engage ("if the key EXISTS, return"), so the comments were never pseudonymised.
+		if (!array_key_exists($userId, $this->usersToRemove))
+		{
+			return;
+		}
 
+		$userObject = $this->usersToRemove[$userId];
 		unset($this->usersToRemove[$userId]);
+
+		// Pseudonymise the comments. The account is already deleted: a failure here must never reach whoever deleted it
+		// (it is logged), and it must not stop other plugins from handling the event.
+		try
+		{
+			$this->getApplication()->getLanguage()->load('com_engage', JPATH_ADMINISTRATOR);
+			$this->getApplication()->getLanguage()->load('com_engage', JPATH_SITE);
+
+			Meta::pseudonymiseUserComments($userObject, true);
+		}
+		catch (Throwable $e)
+		{
+			try
+			{
+				Log::add('Akeeba Engage: could not pseudonymise the comments of deleted user #' . (int) $userId . ': ' . $e->getMessage(), Log::ERROR, 'com_engage');
+			}
+			catch (Throwable $e2)
+			{
+				// Nothing else we can do
+			}
+		}
 	}
 
 	/**
@@ -189,16 +206,24 @@ class Engage extends CMSPlugin implements SubscriberInterface
 			return;
 		}
 
-		// Get and verify the user object
-		$userObject = UserFetcher::getUser($userId);
-
-		if ($userObject->id != $userId)
+		// Get and verify the user object. 0.7.1: this runs BEFORE Joomla deletes the account, so it must never throw (an
+		// exception here would stop the account from being deleted).
+		try
 		{
-			return;
-		}
+			$userObject = UserFetcher::getUser($userId);
 
-		// Cache the user object
-		$this->usersToRemove[$userId] = clone $userObject;
+			if ($userObject->id != $userId)
+			{
+				return;
+			}
+
+			// Cache the user object
+			$this->usersToRemove[$userId] = clone $userObject;
+		}
+		catch (Throwable $e)
+		{
+			unset($this->usersToRemove[$userId]);
+		}
 	}
 
 	/**
@@ -254,6 +279,27 @@ class Engage extends CMSPlugin implements SubscriberInterface
 
 		// Run a simple update query to let the user own the comments
 		$db = $this->getDatabase();
+
+		/**
+		 * 0.7.1: a comment cannot be liked or disliked by its own author (the server refuses it), so the likes / dislikes that this user
+		 * gave BEFORE the comment became theirs are deleted along with the change of owner (the favourite, which is private, stays).
+		 * Without this a guest comment carrying the user's email turned into "own" at login with the previous like still in place.
+		 */
+		try
+		{
+			$idsQuery = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true))
+				->select($db->qn('id'))
+				->from($db->qn('#__engage_comments'))
+				->where($db->qn('email') . ' = ' . $db->q($user->email))
+				->where($db->qn('created_by') . ' = 0');
+			$ownIds = $db->setQuery($idsQuery)->loadColumn() ?: [];
+
+			\Akeeba\Component\Engage\Administrator\Helper\ReactionStore::deleteOwnLikes($db, (int) $user->id, $ownIds);
+		}
+		catch (Throwable $e)
+		{
+			// No problem if this fails: the server also ignores them (state) and does not count them
+		}
 
 		$query = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true))
 			->update($db->qn('#__engage_comments'))

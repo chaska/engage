@@ -263,6 +263,7 @@ class Engage extends CMSPlugin implements SubscriberInterface
 				'published_on'  => $publishUp,
 				'access'        => $row->access ?? 0,
 				'parent_access' => $row->category_access,
+				'category_published' => $row->category_published,
 				'parameters'    => $row->parameters,
 			],
 		]));
@@ -619,6 +620,8 @@ class Engage extends CMSPlugin implements SubscriberInterface
 			'category_title'  => $row->category_title ?? '',
 			'category_alias'  => $row->category_alias ?? 0,
 			'category_access' => $row->category_access ?? $row->access,
+			// 0.7.1: NULL when unknown (article without a category row); Joomla serves a category only when published > 0 (1 or 2)
+			'category_published' => isset($row->category_published) ? (int) $row->category_published : null,
 			'author_name'     => !empty($row->created_by_alias) ? $row->created_by_alias : $authorUser->name,
 			'author_email'    => $authorUser->email,
 			'parameters'      => $loadParameters ? $this->getParametersForArticle($row) : new Registry(),
@@ -1255,10 +1258,23 @@ HTML;
 		$db = $this->getDatabase();
 		/** @var DatabaseQuery $query */
 		$query = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true));
+		/**
+		 * 0.7.1: join the article's category, exactly like Joomla's own com_content ArticleModel does. Before this the row only had
+		 * the columns of #__content, so `category_access` fell back to the ARTICLE's access level and nobody ever looked at whether
+		 * the category was published: content in a restricted (e.g. Special) or unpublished / trashed category was treated as visible
+		 * (comments could be read and reacted to although the page itself answers 403 / 404).
+		 */
 		$query
-			->select('*')
-			->from($db->qn('#__content'))
-			->where($db->qn('asset_id') . ' = ' . $db->q($assetId));
+			->select([
+				$db->qn('a') . '.*',
+				$db->qn('c.access', 'category_access'),
+				$db->qn('c.title', 'category_title'),
+				$db->qn('c.alias', 'category_alias'),
+				$db->qn('c.published', 'category_published'),
+			])
+			->from($db->qn('#__content', 'a'))
+			->join('LEFT', $db->qn('#__categories', 'c'), $db->qn('c.id') . ' = ' . $db->qn('a.catid'))
+			->where($db->qn('a.asset_id') . ' = ' . $db->q($assetId));
 
 		try
 		{
