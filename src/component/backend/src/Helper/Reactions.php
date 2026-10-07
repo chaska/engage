@@ -35,9 +35,15 @@ final class Reactions
 	/** Identificadores que se aceptan en una consulta. */
 	public const MAX_IDS = 100;
 
+	/** Contenidos DISTINTOS (articulos) a los que pueden pertenecer los comentarios de una misma consulta (0.7.1). La pagina real pide los de UNO. */
+	public const MAX_ASSETS = 10;
+
 	/** Reacciones por usuario y ventana. */
 	public const RATE_LIMIT  = 60;
 	public const RATE_WINDOW = 60;
+
+	/** Consultas (state) por persona (usuario con sesion, o IP si es invitado) y ventana (0.7.1): una visita de pagina hace una. */
+	public const READ_LIMIT = 240;
 
 	public const WHO = ['registered', 'commenters'];
 
@@ -109,6 +115,25 @@ final class Reactions
 		return (count($out) > self::MAX_IDS) ? null : array_values($out);
 	}
 
+	/**
+	 * ¿Es «propio» el comentario del usuario de la sesion? (0.7.1) Lo es si lo escribio con su cuenta (created_by) O si es un comentario de
+	 * INVITADO (created_by vacio) con el email de la cuenta con sesion: ese es el criterio con el que el plugin user/engage se lo asigna al
+	 * iniciar sesion (ownComments), asi que el servidor lo aplica igual desde ya. El email se compara sin distinguir mayusculas.
+	 *
+	 * @param   array{created_by:int,email?:string}  $comment
+	 */
+	public static function isOwn(array $comment, int $userId, string $userEmail): bool
+	{
+		if ($userId <= 0) { return false; }
+
+		if ((int) $comment['created_by'] === $userId) { return true; }
+
+		$email = trim((string) ($comment['email'] ?? ''));
+		$mine  = trim($userEmail);
+
+		return (int) $comment['created_by'] <= 0 && $email !== '' && $mine !== '' && strcasecmp($email, $mine) === 0;
+	}
+
 	/** Tipo a partir de su nombre ("like", "dislike", "favorite"). 0 = no valido. */
 	public static function parseType($v): int
 	{
@@ -147,9 +172,15 @@ final class Reactions
 			// Inexistente, sin publicar o de un contenido que no puede ver: la misma respuesta
 			if ($c === null || (int) $c['enabled'] !== 1 || !($ctx['canViewAsset'])((int) $c['asset_id'])) { return self::fail(404, 'unavailable'); }
 
-			if ($t !== self::FAVORITE && (int) $c['created_by'] === $uid) { return self::fail(403, 'denied'); }
+			if ($t !== self::FAVORITE && self::isOwn($c, $uid, (string) ($ctx['userEmail'] ?? ''))) { return self::fail(403, 'denied'); }
 
-			$this->store->transaction(function () use ($id, $uid, $t, $ctx): void {
+			$gone = false;
+
+			$this->store->transaction(function () use ($id, $uid, $t, $ctx, &$gone): void {
+				// 0.7.1: reacciones del mismo comentario, una detras de otra. Sin esto, con READ COMMITTED (sin bloqueos de hueco) un me gusta
+				// y un no me gusta simultaneos del mismo usuario no se veian y quedaban los dos.
+				if (!$this->store->lockComment($id)) { $gone = true; return; }
+
 				$has = in_array($t, $this->store->userTypes($uid, [$id])[$id] ?? [], true);
 
 				if ($has)
@@ -165,8 +196,13 @@ final class Reactions
 				$this->store->add($id, $uid, $t, (string) $ctx['now']);
 			});
 
+			if ($gone) { return self::fail(404, 'unavailable'); }
+
 			$mine   = $this->store->userTypes($uid, [$id])[$id] ?? [];
 			$counts = $this->store->counts([$id])[$id] ?? [];
+
+			// 0.7.1: en el comentario propio no se devuelve ningun me gusta / no me gusta activo
+			if (self::isOwn($c, $uid, (string) ($ctx['userEmail'] ?? ''))) { $mine = array_values(array_diff($mine, [self::LIKE, self::DISLIKE])); }
 		}
 		catch (Throwable $e)
 		{
@@ -177,7 +213,8 @@ final class Reactions
 			'ok'     => true,
 			'id'     => $id,
 			'mine'   => self::mine($mine, $opts['favorites']),
-			'counts' => ['like' => (int) ($counts[self::LIKE] ?? 0), 'dislike' => (int) ($counts[self::DISLIKE] ?? 0)],
+			// 0.7.1: con «No me gusta» desactivado tampoco se revela su contador (igual que en state)
+			'counts' => ['like' => (int) ($counts[self::LIKE] ?? 0), 'dislike' => $opts['dislike'] ? (int) ($counts[self::DISLIKE] ?? 0) : 0],
 		]];
 	}
 
@@ -199,13 +236,21 @@ final class Reactions
 
 		if ($ids === null) { return self::fail(400, 'invalid'); }
 
-		$uid = (int) ($ctx['userId'] ?? 0);
+		// 0.7.1: limite de frecuencia de las consultas (por usuario o por IP). Una peticion invalida de arriba no gasta cupo.
+		if (isset($ctx['allowRead']) && !($ctx['allowRead'])()) { return self::fail(429, 'rate'); }
+
+		$uid   = (int) ($ctx['userId'] ?? 0);
+		$email = (string) ($ctx['userEmail'] ?? '');
 
 		try
 		{
 			$comments = $this->store->comments($ids);
 			$visible  = [];
 			$assets   = [];
+
+			// 0.7.1: la pagina real pide comentarios de UN contenido. Una consulta que mezcla mas de MAX_ASSETS se rechaza entera y barata,
+			// antes de comprobar el permiso de cada uno (cada comprobacion cuesta varias consultas a la base de datos).
+			if (count(array_unique(array_map(static fn(array $c): int => (int) $c['asset_id'], $comments))) > self::MAX_ASSETS) { return self::fail(400, 'invalid'); }
 
 			foreach ($comments as $cid => $c)
 			{
@@ -233,8 +278,12 @@ final class Reactions
 
 			if ($uid > 0)
 			{
-				$item['mine'] = self::mine($mine[$cid] ?? [], $opts['favorites']);
-				$item['own']  = ((int) $comments[$cid]['created_by'] === $uid);
+				$own = self::isOwn($comments[$cid], $uid, $email);
+
+				// 0.7.1: en el comentario propio no hay me gusta / no me gusta activos (un resto antiguo no se muestra); el favorito si
+				$types        = $own ? array_values(array_diff($mine[$cid] ?? [], [self::LIKE, self::DISLIKE])) : ($mine[$cid] ?? []);
+				$item['mine'] = self::mine($types, $opts['favorites']);
+				$item['own']  = $own;
 			}
 
 			$items[(string) $cid] = $item;

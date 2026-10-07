@@ -57,11 +57,14 @@ namespace {
 	/** Almacen en memoria: comentarios y reacciones. */
 	class MemStore implements ReactionStoreInterface
 	{
-		public $comments = [];   // id => [id, asset_id, enabled, created_by]
+		public $comments = [];   // id => [id, asset_id, enabled, created_by, email]
+		public $emails = [];     // 0.7.1: usuario => email de su cuenta (para contar sin las reacciones propias por email)
+		public $log = [];        // 0.7.1: orden de las operaciones: begin, lock:N, add:..., remove:..., commit / rollback
+		public $goneOnLock = false;
 		public $rows = [];       // "c:u:t" => created
 		public $writes = 0;
 		public $failAdd = false;
-		public function comment(int $id, int $asset = 1, int $enabled = 1, int $author = 99): void { $this->comments[$id] = ['id' => $id, 'asset_id' => $asset, 'enabled' => $enabled, 'created_by' => $author]; }
+		public function comment(int $id, int $asset = 1, int $enabled = 1, int $author = 99, string $email = ''): void { $this->comments[$id] = ['id' => $id, 'asset_id' => $asset, 'enabled' => $enabled, 'created_by' => $author, 'email' => $email]; }
 		public function comments(array $ids): array { $o = []; foreach ($ids as $i) { if (isset($this->comments[$i])) { $o[$i] = $this->comments[$i]; } } return $o; }
 		public function userTypes(int $userId, array $commentIds): array
 		{
@@ -72,12 +75,21 @@ namespace {
 		public function counts(array $commentIds): array
 		{
 			$o = [];
-			foreach ($this->rows as $k => $_) { [$c, $u, $t] = array_map('intval', explode(':', $k)); if (in_array($c, $commentIds, true) && in_array($t, [1, 2], true)) { $o[$c][$t] = ($o[$c][$t] ?? 0) + 1; } }
+			foreach ($this->rows as $k => $_)
+			{
+				[$c, $u, $t] = array_map('intval', explode(':', $k));
+				if (!in_array($c, $commentIds, true) || !in_array($t, [1, 2], true) || !isset($this->comments[$c])) { continue; }
+				$cm = $this->comments[$c];
+				// 0.7.1: sin las reacciones que el autor se dio a su propio comentario (created_by, o email de la cuenta en un comentario de invitado)
+				if ($u === (int) $cm['created_by'] || ((int) $cm['created_by'] <= 0 && $cm['email'] !== '' && isset($this->emails[$u]) && strcasecmp($cm['email'], $this->emails[$u]) === 0)) { continue; }
+				$o[$c][$t] = ($o[$c][$t] ?? 0) + 1;
+			}
 			return $o;
 		}
-		public function add(int $commentId, int $userId, int $type, string $created): void { if ($this->failAdd) { throw new \RuntimeException('x'); } $this->writes++; $this->rows["$commentId:$userId:$type"] = $created; }
-		public function remove(int $commentId, int $userId, int $type): void { $this->writes++; unset($this->rows["$commentId:$userId:$type"]); }
-		public function transaction(callable $fn): void { $snap = $this->rows; try { $fn(); } catch (\Throwable $e) { $this->rows = $snap; throw $e; } }
+		public function add(int $commentId, int $userId, int $type, string $created): void { if ($this->failAdd) { throw new \RuntimeException('x'); } $this->writes++; $this->log[] = "add:$commentId:$userId:$type"; $this->rows["$commentId:$userId:$type"] = $created; }
+		public function remove(int $commentId, int $userId, int $type): void { $this->writes++; $this->log[] = "remove:$commentId:$userId:$type"; unset($this->rows["$commentId:$userId:$type"]); }
+		public function transaction(callable $fn): void { $snap = $this->rows; $this->log[] = 'begin'; try { $fn(); $this->log[] = 'commit'; } catch (\Throwable $e) { $this->rows = $snap; $this->log[] = 'rollback'; throw $e; } }
+		public function lockComment(int $commentId): bool { $this->log[] = 'lock:' . $commentId; return !$this->goneOnLock && isset($this->comments[$commentId]); }
 		public function has(int $c, int $u, int $t): bool { return isset($this->rows["$c:$u:$t"]); }
 	}
 }

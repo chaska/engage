@@ -40,7 +40,17 @@ final class ReactionRateLimiter
 	/** true = se permite (y se cuenta); false = limite superado. */
 	public function allow(int $userId): bool
 	{
-		$key = 'u' . max(0, $userId);
+		return $this->allowKey('u' . max(0, $userId));
+	}
+
+	/**
+	 * Igual que allow() con una clave propia (0.7.1: las consultas cuentan por usuario, 's<id>', o por IP, 'i<hash>', en otra cubeta).
+	 * Solo se aceptan claves cortas de letras y cifras.
+	 */
+	public function allowKey(string $key): bool
+	{
+		if (!preg_match('/^[a-z][a-z0-9]{0,40}$/D', $key)) { return true; }
+
 		$now = ($this->clock)();
 
 		try

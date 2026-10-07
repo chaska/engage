@@ -27,9 +27,11 @@ namespace Akeeba\Component\Engage\Site\Helper {
 	class Meta
 	{
 		public static function getAssetAccessMeta($id, $p = false) {
-			$ok = in_array((int) $id, [10, 20], true);
-			return ['published' => $ok, 'access' => null, 'parent_access' => null, 'parameters' => new \stdClass()];
+			$ok = in_array((int) $id, [10, 20, 30, 40], true);
+			// 0.7.1: asset 30 = articulo publicado en una categoria SIN publicar (0); asset 40 = en una categoria ARCHIVADA (2)
+			return ['published' => $ok, 'access' => null, 'parent_access' => null, 'category_published' => ['30' => 0, '40' => 2][(string) $id] ?? 1, 'parameters' => new \stdClass()];
 		}
+		public static function isCategoryPublished(array $meta): bool { $v = $meta['category_published'] ?? null; return $v === null || (int) $v > 0; }
 		public static function areCommentsClosed($id) { return false; }
 	}
 }
@@ -99,6 +101,10 @@ namespace {
 	}
 	[$r] = v(['asset_id' => '20'] + $base);
 	t_ok(is_array($r) && $r['asset_id'] === 20, 'asset_id de otro contenido visible y publicado: se acepta (se valida acceso)');
+	[$r] = v(['asset_id' => '30'] + $base);
+	t_ok($r === false, '0.7.1: contenido publicado en una categoria SIN PUBLICAR: no se puede comentar');
+	[$r] = v(['asset_id' => '40'] + $base);
+	t_ok(is_array($r) && $r['asset_id'] === 40, '0.7.1: categoria ARCHIVADA: se sigue pudiendo (la pagina de Joomla la sirve)');
 
 	echo "B) Comentario existente (edición)\n";
 	[$r] = v(['id' => '7', 'asset_id' => '20', 'parent_id' => '4', 'body' => 'x']);

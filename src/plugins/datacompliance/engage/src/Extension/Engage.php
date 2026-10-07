@@ -10,6 +10,7 @@ namespace Akeeba\Plugin\Datacompliance\Engage\Extension;
 defined('_JEXEC') or die;
 
 use Akeeba\Component\DataCompliance\Administrator\Helper\Export;
+use Akeeba\Component\Engage\Administrator\Helper\ReactionStore;
 use Akeeba\Component\Engage\Administrator\Helper\UserFetcher;
 use Akeeba\Component\Engage\Site\Helper\Meta;
 use Akeeba\DataCompliance\Admin\Helper\Export as OldExport;
@@ -110,6 +111,10 @@ class Engage extends CMSPlugin implements SubscriberInterface
 
 		$ret['engage']['id'] = Meta::pseudonymiseUserComments($user);
 
+		// 0.7.1: the reactions made by the user (likes, dislikes, favourites; only the user ID, comment ID, type and date) are deleted
+		// too, exactly like the privacy plugin does. It never throws. The audit result is left as it was (it only lists comment IDs).
+		ReactionStore::deleteForUser($this->getDatabase(), (int) $userID);
+
 		$event->setArgument('result', array_merge($result, [$ret]));
 	}
 
@@ -119,6 +124,7 @@ class Engage extends CMSPlugin implements SubscriberInterface
 	 *
 	 * This plugin exports the following tables / models:
 	 * - #__engage_comments
+	 * - #__engage_reactions (0.7.1)
 	 *
 	 * @param   Event  $event  The event we are handling
 	 *
@@ -182,6 +188,25 @@ class Engage extends CMSPlugin implements SubscriberInterface
 			unset($record);
 		}
 
+		// 0.7.1: #__engage_reactions made by the user (comment ID, type as text and date; nothing about other people)
+		$domain = $export->addChild('domain');
+		$domain->addAttribute('name', 'engage_reactions');
+		$domain->addAttribute('description', 'Comment reactions (likes, dislikes, favorites), via Akeeba Engage');
+
+		foreach (ReactionStore::exportForUser($db, (int) $userID) as $reaction)
+		{
+			$record = (object) $reaction;
+
+			if (class_exists(Export::class))
+			{
+				Export::adoptChild($domain, Export::exportItemFromObject($record));
+			}
+			elseif (class_exists(OldExport::class))
+			{
+				OldExport::adoptChild($domain, OldExport::exportItemFromObject($record));
+			}
+		}
+
 		$event->setArgument('result', array_merge($result, [$export]));
 	}
 
@@ -199,6 +224,7 @@ class Engage extends CMSPlugin implements SubscriberInterface
 		$event->setArgument('result', array_merge($event->getArgument('result', []), [
 			[
 				Text::_('PLG_DATACOMPLIANCE_ENGAGE_DOMAINNAMEACTIONS_1'),
+				Text::_('PLG_DATACOMPLIANCE_ENGAGE_DOMAINNAMEACTIONS_2'),
 			],
 		]));
 	}

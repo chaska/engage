@@ -43,14 +43,14 @@ final class ReactionStore implements ReactionStoreInterface
 
 		$db = $this->db;
 		$q  = $this->q()
-			->select($db->quoteName(['id', 'asset_id', 'enabled', 'created_by']))
+			->select($db->quoteName(['id', 'asset_id', 'enabled', 'created_by', 'email']))
 			->from($db->quoteName('#__engage_comments'))
 			->whereIn($db->quoteName('id'), $ids, ParameterType::INTEGER);
 		$out = [];
 
 		foreach ($db->setQuery($q)->loadAssocList() ?: [] as $r)
 		{
-			$out[(int) $r['id']] = ['id' => (int) $r['id'], 'asset_id' => (int) $r['asset_id'], 'enabled' => (int) $r['enabled'], 'created_by' => (int) $r['created_by']];
+			$out[(int) $r['id']] = ['id' => (int) $r['id'], 'asset_id' => (int) $r['asset_id'], 'enabled' => (int) $r['enabled'], 'created_by' => (int) $r['created_by'], 'email' => trim((string) ($r['email'] ?? ''))];
 		}
 
 		return $out;
@@ -89,12 +89,18 @@ final class ReactionStore implements ReactionStoreInterface
 
 		$db    = $this->db;
 		$types = [Reactions::LIKE, Reactions::DISLIKE];
+		// 0.7.1: the joins leave out the reactions that the author of the comment gave to his own comment: by created_by, or (guest
+		// comment, created_by empty) by the email of the account that reacted, the same criterion as Reactions::isOwn()
 		$q     = $this->q()
-			->select([$db->quoteName('comment_id'), $db->quoteName('type'), 'COUNT(*) AS ' . $db->quoteName('n')])
-			->from($db->quoteName(self::TABLE))
-			->whereIn($db->quoteName('comment_id'), $commentIds, ParameterType::INTEGER)
-			->whereIn($db->quoteName('type'), $types, ParameterType::INTEGER)
-			->group([$db->quoteName('comment_id'), $db->quoteName('type')]);
+			->select([$db->quoteName('r.comment_id'), $db->quoteName('r.type'), 'COUNT(*) AS ' . $db->quoteName('n')])
+			->from($db->quoteName(self::TABLE, 'r'))
+			->join('INNER', $db->quoteName('#__engage_comments', 'c'), $db->quoteName('c.id') . ' = ' . $db->quoteName('r.comment_id'))
+			->join('LEFT', $db->quoteName('#__users', 'u'), $db->quoteName('u.id') . ' = ' . $db->quoteName('r.user_id'))
+			->whereIn($db->quoteName('r.comment_id'), $commentIds, ParameterType::INTEGER)
+			->whereIn($db->quoteName('r.type'), $types, ParameterType::INTEGER)
+			->where($db->quoteName('r.user_id') . ' <> IFNULL(' . $db->quoteName('c.created_by') . ', 0)')
+			->where('NOT (IFNULL(' . $db->quoteName('c.created_by') . ', 0) <= 0 AND IFNULL(' . $db->quoteName('c.email') . ", '') <> '' AND " . $db->quoteName('c.email') . ' = ' . $db->quoteName('u.email') . ')')
+			->group([$db->quoteName('r.comment_id'), $db->quoteName('r.type')]);
 		$out = [];
 
 		foreach ($db->setQuery($q)->loadAssocList() ?: [] as $r)
@@ -159,6 +165,49 @@ final class ReactionStore implements ReactionStoreInterface
 			$this->db->transactionRollback();
 
 			throw $e;
+		}
+	}
+
+	/** @inheritDoc */
+	public function lockComment(int $commentId): bool
+	{
+		$db = $this->db;
+
+		// MySQL/MariaDB no tienen forUpdate() en el constructor de consultas de Joomla; el id es un entero ya validado
+		$sql = 'SELECT ' . $db->quoteName('id') . ' FROM ' . $db->quoteName('#__engage_comments') . ' WHERE ' . $db->quoteName('id') . ' = ' . max(0, $commentId) . ' FOR UPDATE';
+
+		return (int) $db->setQuery($sql)->loadResult() === $commentId;
+	}
+
+	/**
+	 * 0.7.1: borra los me gusta y no me gusta que un usuario dio a comentarios que ahora son SUYOS (un comentario de invitado con su email pasa
+	 * a ser suyo al iniciar sesion): no se puede valorar el propio comentario. El favorito se conserva. Nunca lanza.
+	 *
+	 * @param   int[]  $commentIds
+	 */
+	public static function deleteOwnLikes(DatabaseInterface $db, int $userId, array $commentIds): void
+	{
+		$commentIds = self::ints($commentIds);
+
+		if ($userId <= 0 || !$commentIds) { return; }
+
+		try
+		{
+			$types = [Reactions::LIKE, Reactions::DISLIKE];
+
+			foreach (array_chunk($commentIds, 500) as $chunk)
+			{
+				$q = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true))
+					->delete($db->quoteName(self::TABLE))
+					->where($db->quoteName('user_id') . ' = :uid')
+					->whereIn($db->quoteName('comment_id'), $chunk, ParameterType::INTEGER)
+					->whereIn($db->quoteName('type'), $types, ParameterType::INTEGER)
+					->bind(':uid', $userId, ParameterType::INTEGER);
+				$db->setQuery($q)->execute();
+			}
+		}
+		catch (Throwable $e)
+		{
 		}
 	}
 

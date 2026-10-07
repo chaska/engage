@@ -90,8 +90,9 @@ class ReactionsController extends BaseController
 				$this->respond(405, ['ok' => false, 'error' => 'method']);
 			}
 
-			$ctx = $this->context();
-			$r   = $this->logic()->state($ctx, $this->input->get->get('ids', null, 'raw'));
+			$ctx              = $this->context();
+			$ctx['allowRead'] = $this->readLimiter((int) $ctx['userId']);
+			$r                = $this->logic()->state($ctx, $this->input->get->get('ids', null, 'raw'));
 			$b   = $r['body'];
 
 			// El token solo se entrega a quien tiene sesion y puede reaccionar (nunca en cache: ver respond())
@@ -134,7 +135,7 @@ class ReactionsController extends BaseController
 	/**
 	 * Usuario, opciones y permisos de la peticion.
 	 *
-	 * @return array{userId:int,canReact:bool,opts:array,canViewAsset:callable}
+	 * @return array{userId:int,userEmail:string,canReact:bool,opts:array,canViewAsset:callable}
 	 */
 	private function context(): array
 	{
@@ -146,6 +147,8 @@ class ReactionsController extends BaseController
 
 		return [
 			'userId'       => $uid,
+			// 0.7.1: email de la cuenta con sesion (el de la sesion de Joomla, no el de la peticion), para saber si un comentario de invitado es «propio»
+			'userEmail'    => ($uid > 0) ? (string) $user->email : '',
 			'canReact'     => $can,
 			'opts'         => $opts,
 			'canViewAsset' => static fn(int $assetId): bool => self::canView($user, $assetId),
@@ -168,6 +171,14 @@ class ReactionsController extends BaseController
 		}
 
 		if (empty($meta['published']) && !$user->authorise('core.edit.state', 'com_engage'))
+		{
+			return false;
+		}
+
+		// 0.7.1: the category must be published (or archived) for EVERYONE, moderators included: that is what Joomla's own
+		// article page does (it answers 404 for unpublished and trashed categories whoever asks). Only the article's own category
+		// is evaluated, like Joomla does.
+		if (!Meta::isCategoryPublished($meta))
 		{
 			return false;
 		}
@@ -230,6 +241,50 @@ class ReactionsController extends BaseController
 		$limiter = new ReactionRateLimiter($read, $write);
 
 		return static fn(int $uid): bool => $limiter->allow($uid);
+	}
+
+	/**
+	 * 0.7.1: limite de frecuencia de las CONSULTAS (state): 240 por minuto y persona. Para quien tiene sesion cuenta por usuario; para un
+	 * invitado, por IP (REMOTE_ADDR; detras de un proxy inverso sin configurar de Joomla todos comparten IP: el limite es generoso, una visita
+	 * de pagina hace una consulta). Usa la misma cache de Joomla que el limite de escritura, en otra cubeta; si falla, se permite.
+	 */
+	private function readLimiter(int $uid): callable
+	{
+		$cache = null;
+
+		try
+		{
+			$cache = Factory::getContainer()->get(CacheControllerFactoryInterface::class)->createCacheController('output', [
+				'defaultgroup' => 'com_engage_reactions',
+				'caching'      => true,
+				'lifetime'     => 2,
+			]);
+		}
+		catch (Throwable $e)
+		{
+			$cache = null;
+		}
+
+		if ($cache === null)
+		{
+			return static fn(): bool => true;
+		}
+
+		$limiter = new ReactionRateLimiter(
+			static function (string $k) use ($cache) {
+				$v = $cache->get('rl_' . $k, 'com_engage_reactions');
+
+				return is_string($v) ? json_decode($v, true) : null;
+			},
+			static function (string $k, array $v) use ($cache): void {
+				$cache->store(json_encode($v), 'rl_' . $k, 'com_engage_reactions');
+			},
+			Reactions::READ_LIMIT
+		);
+		$ip  = (string) $this->input->server->get('REMOTE_ADDR', '', 'raw');
+		$key = ($uid > 0) ? ('s' . $uid) : ('i' . substr(md5($ip), 0, 20));
+
+		return static fn(): bool => $limiter->allowKey($key);
 	}
 
 	private function respond(int $status, array $data): void
