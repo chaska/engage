@@ -49,7 +49,7 @@ $showUserId   = $showUserId && !empty($user_id);
 $showAvatar   = $showAvatar && !empty($email);
 
 $link = $showLink
-	? str_replace(['[USER_ID]', '[USERNAME]', '[NAME]', '[EMAIL]'], [$user_id, $username, $name, $email], $link)
+	? str_replace(['[USER_ID]', '[USERNAME]', '[NAME]', '[EMAIL]'], [(int) $user_id, rawurlencode((string) $username), rawurlencode((string) $name), rawurlencode((string) $email)], $link)
 	: '';
 
 $avatarUrl  = $showAvatar ? Avatar::getUserAvatar($user_id, $avatarSize, $email) : null;
@@ -58,24 +58,24 @@ $showAvatar = $showAvatar && !empty($avatarUrl);
 
 ?>
 <?php if ($showAvatar && !$showName && !$showUsername && !$showUserId && !$showEmail): ?>
-	<img src="<?= $avatarUrl ?>" alt="" width="<?= $avatarSize ?>" class="img-fluid rounded rounded-3">
+	<img src="<?= htmlspecialchars((string) $avatarUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" alt="" width="<?= (int) $avatarSize ?>" class="img-fluid rounded rounded-3">
 <?php else: ?>
 	<div class="d-flex">
 		<?php if ($showAvatar): ?>
 			<div class="pe-2 pb-1">
-				<img src="<?= $avatarUrl ?>" alt="" class="img-fluid rounded rounded-3">
+				<img src="<?= htmlspecialchars((string) $avatarUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" alt="" class="img-fluid rounded rounded-3">
 			</div>
 		<?php endif; ?>
 
 		<div>
 			<?php if ($showUsername): ?><strong>
 				<?php if ($showLink): ?>
-					<a href="<?= $link ?>"><?= $this->escape($name) ?></a>
+					<a href="<?= htmlspecialchars((string) $link, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"><?= $this->escape($name) ?></a>
 				<?php else: ?>
 					<?= $this->escape($name) ?>
 				<?php endif; ?>
 				</strong><?php endif; ?>
-			<?php if ($showUserId): ?><small class="text-muted fst-italic ps-1">[<?= $user_id ?>]</small><?php endif; ?>
+			<?php if ($showUserId): ?><small class="text-muted fst-italic ps-1">[<?= (int) $user_id ?>]</small><?php endif; ?>
 			<?php if (($showUsername || $showUserId) && ($showUsername || $showEmail)): ?><br /><?php endif; ?>
 			<?php if ($showUsername): ?>
 			<span class="text-success">

@@ -197,6 +197,23 @@ class CommentsModel extends ListModel
 	}
 
 	/**
+	 * Total of the list. 0.8.1: in the "only my favourites" list it is the number of favourites that the list SHOWS (the SQL count also
+	 * counted the replies of an unpublished or spam parent, which that list hides), so that the header and the pagination do not reveal them.
+	 *
+	 * @return  int
+	 * @since   0.8.1
+	 */
+	public function getTotal()
+	{
+		if ($this->favoriteUserId() > 0)
+		{
+			return $this->getTreeAwareCount();
+		}
+
+		return parent::getTotal();
+	}
+
+	/**
 	 * Get a slice of comment IDs with depth (level) information.
 	 *
 	 * The comment ID slice is aware of the tree nature of the comments.
@@ -249,6 +266,14 @@ class CommentsModel extends ListModel
 		}
 
 		$allIDs = $db->setQuery($query)->loadAssocList('id') ?? [];
+
+		// 0.8.1: the "only my favourites" list shows a reply only if the normal list shows it too, that is, if every ancestor is in the
+		// set that the normal list loads (same filters, without the favourites join): a published reply of an unpublished or spam
+		// parent stays hidden. Same rule as the orphan filter of the tree below.
+		if ($favorite && $allIDs)
+		{
+			$allIDs = $this->withVisibleAncestors($allIDs);
+		}
 
 		$this->treeAwareCount = 0;
 
@@ -304,6 +329,56 @@ class CommentsModel extends ListModel
 		}
 
 		return array_slice($flattened, $start, null, true);
+	}
+
+	/**
+	 * Of the favourite comments given, keeps those whose whole chain of parents is visible in the normal list of the same content
+	 * (same state filters as this model, favourites join removed). Order is kept.
+	 *
+	 * @param   array  $rows  id => [id, parent_id, ...] of the favourites (query order)
+	 *
+	 * @return  array
+	 * @since   0.8.1
+	 */
+	private function withVisibleAncestors(array $rows): array
+	{
+		$withParent = array_filter($rows, static fn(array $r): bool => !empty($r['parent_id']));
+
+		if (!$withParent)
+		{
+			return $rows;
+		}
+
+		$db  = $this->getDatabase();
+		$fav = $this->getState('filter.favorite_user');
+		$this->setState('filter.favorite_user', 0);
+
+		try
+		{
+			$visible = $db->setQuery($this->getListQuery()->clear('select')->clear('order')->select([$db->qn('c.id'), $db->qn('c.parent_id')]))->loadAssocList('id') ?? [];
+		}
+		finally
+		{
+			$this->setState('filter.favorite_user', $fav);
+		}
+
+		$ok = static function (array $row) use ($visible): bool {
+			$cur = $row;
+
+			for ($i = 0; $i < 50; $i++)
+			{
+				$p = (int) ($cur['parent_id'] ?? 0);
+
+				if ($p <= 0) { return true; }
+				if (!isset($visible[$p])) { return false; }
+
+				$cur = $visible[$p];
+			}
+
+			return false;
+		};
+
+		return array_filter($rows, $ok);
 	}
 
 	/**

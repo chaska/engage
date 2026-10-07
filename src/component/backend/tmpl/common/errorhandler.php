@@ -50,7 +50,7 @@ if (!$isFrontend)
 	<?php return true; endif; ?>
 <div class="card my-3">
 	<h1 class="card-header bg-danger text-white">
-		<?= $title ?> - An unhandled Exception has been detected
+		<?= htmlentities((string) $title) ?> - An unhandled Exception has been detected
 	</h1>
 	<div class="card-body">
 		<h3>
@@ -230,7 +230,7 @@ if (!$isFrontend)
 		<table class="table table-striped">
 			<?php foreach ($phpSettings as $k => $v): ?>
 				<tr>
-					<td><?= $k ?></td>
+					<td><?= htmlentities((string) $k) ?></td>
 					<td><?= htmlentities(print_r($v, true)) ?></td>
 				</tr>
 			<?php endforeach; ?>
@@ -280,7 +280,7 @@ if (!$isFrontend)
 				<tr>
 					<td>
 						<?= htmlentities($k) ?>
-						<?= !empty($v['message']) ? "[{$v['message']}]" : '' ?>
+						<?= !empty($v['message']) ? htmlentities("[{$v['message']}]") : '' ?>
 					</td>
 					<td>
 						<?php if ($v['writable']): ?>

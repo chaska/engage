@@ -176,7 +176,9 @@ final class PanelHealth
 		$joomlaCache = self::plugin($f, 'system/cache');
 		$engageCache = self::plugin($f, 'system/engagecache');
 
-		if (!$joomlaCache['enabled'])
+		// 0.8.1: la caché «de páginas» es el plugin Sistema - Caché, pero la caché global de Joomla (conservadora/progresiva) también guarda la página
+		// del artículo con los comentarios: sin el plugin Engage Cache el orden elegido se ignora, por eso también cuenta
+		if (!$joomlaCache['enabled'] && (int) ($f['caching'] ?? 0) <= 0)
 		{
 			return self::item('plugin_cache', self::OK, ['state' => 'nocache']);
 		}

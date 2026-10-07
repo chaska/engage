@@ -383,7 +383,8 @@ class HtmlView extends BaseHtmlView
 		$doc = $app->getDocument();
 
 		$baseUrl = Uri::getInstance(Route::_('index.php?option=com_engage'));
-		$baseUrl->setVar('returnurl', base64_encode(Uri::getInstance()->toString()));
+		// 0.8.1: relative and validated (no host, no unknown query parameters): this value ends up in HTML that the page cache shares
+		$baseUrl->setVar('returnurl', base64_encode(CommentTools::relativeUrl(Uri::getInstance()->toString(['path', 'query']))));
 		$baseUrl->setVar($app->getFormToken(), 1);
 
 		$baseUrl->setVar('id', '__ID__');
@@ -723,7 +724,16 @@ class HtmlView extends BaseHtmlView
 				return;
 			}
 
-			$canonical = CommentTools::cleanUrl(Uri::getInstance()->toString(['scheme', 'host', 'port', 'path', 'query']));
+			// 0.8.1: the origin is only the live_site configured in Joomla, never the Host header of the visitor (the page is shared through the
+			// cache); without a valid live_site no canonical is added (the path and the query are cleaned with a whitelist as well)
+			$origin = CommentTools::trustedOrigin((string) Factory::getApplication()->get('live_site', ''));
+
+			if ($origin === '')
+			{
+				return;
+			}
+
+			$canonical = $origin . CommentTools::cleanUrl(Uri::getInstance()->toString(['path', 'query']));
 
 			if (!CommentTools::isSafeAbsoluteUrl($canonical))
 			{
@@ -758,7 +768,7 @@ class HtmlView extends BaseHtmlView
 	private function toolsUrl(array $remove, array $add): string
 	{
 		// safeRelative: the path of the request is attacker-influenced (a path starting with // would be a link to another site)
-		return CommentTools::withQuery(CommentTools::safeRelative(Uri::getInstance()->toString(['path', 'query'])), $remove, $add, 'akengage-comments-section');
+		return CommentTools::withQuery(CommentTools::relativeUrl(Uri::getInstance()->toString(['path', 'query'])), $remove, $add, 'akengage-comments-section');
 	}
 
 	/** Link of one sort mode (back to the first page; the favourites filter, if active, is kept). */
@@ -785,12 +795,13 @@ class HtmlView extends BaseHtmlView
 	}
 
 	/**
-	 * Absolute permalink of a comment for the copy button, built here and validated (http/https, plain host, no user info, no
-	 * characters that can break out of an attribute). Empty when it cannot be built safely: then no button is drawn.
+	 * Permalink of a comment (date link, "view in thread", "in reply to" and the copy button), RELATIVE: path, whitelisted query,
+	 * `akengage_cid` and the anchor. 0.8.1: no scheme or host (the Host header of the first visitor used to end up in the cached
+	 * page) and no unknown query parameter. tools.js makes the copied link absolute with the real origin of the visitor.
 	 */
 	public function commentPermalink(int $commentId): string
 	{
-		return CommentTools::permalink(Uri::getInstance()->toString(['scheme', 'host', 'port', 'path', 'query']), $commentId);
+		return CommentTools::permalinkRelative(Uri::getInstance()->toString(['path', 'query']), $commentId);
 	}
 
 	/** Is the list currently the "only my favourites" one? */
@@ -909,7 +920,7 @@ class HtmlView extends BaseHtmlView
 	}
 
 	/**
-	 * HTML of the copy-link button of one comment (0.8.0): a button with an outline icon and the absolute permalink in a data
+	 * HTML of the copy-link button of one comment (0.8.0): a button with an outline icon and the relative permalink in a data
 	 * attribute. Hidden until tools.js confirms the browser can copy (without JavaScript it is not shown). Empty when the option is
 	 * off or the link cannot be validated.
 	 */

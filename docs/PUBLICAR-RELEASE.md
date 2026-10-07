@@ -2,7 +2,7 @@
 
 Copyright (c)2026 fork comunitario de Engage iniciado por ChasKa; GNU General Public License v3 o posterior.
 
-Estado actual: la release **v3.4.2.1 ya está publicada y es inmutable** (ZIP `pkg_engage-3.4.2.1.zip`, SHA-256 `a1891a7cd729ba3ac6585c0a9fea8ba70a0e8695dcd1a246b561aac1869b2958`): no se toca, no se vuelve a subir y su etiqueta no se mueve. La versión **3.4.3** (fork 0.7.1: reacciones a los comentarios, con las correcciones de la revisión de seguridad independiente) está preparada en el repositorio, pero **su ZIP y su release `v3.4.3` todavía no existen en GitHub**. Hasta que se publiquen (pasos de abajo), el servidor de actualizaciones de esta rama (`updates/pkgengage.xml`, versión 3.4.3) apunta a una descarga que daría error 404. Por eso **esta rama no debe fusionarse en `main` hasta que la release `v3.4.3` exista**: mientras `main` conserve el XML de la 3.4.2.1, ningún sitio ve una descarga inexistente. Joomla trata 3.4.3 como mayor que 3.4.2.1 (`version_compare`) y la ofrece como actualización sobre la publicada.
+Estado actual: la release **v3.4.2.1 ya está publicada y es inmutable** (ZIP `pkg_engage-3.4.2.1.zip`, SHA-256 `a1891a7cd729ba3ac6585c0a9fea8ba70a0e8695dcd1a246b561aac1869b2958`): no se toca, no se vuelve a subir y su etiqueta no se mueve. La versión **3.4.3** (fork 0.8.1: reacciones a los comentarios, ordenar, favoritos, copiar enlace e insignias, con las correcciones de las dos revisiones de seguridad independientes; **la 0.8.1 corrige un XSS reflejado heredado de Akeeba que afecta también a la 3.4.2 y a la 3.4.2.1 ya publicada**) está preparada en el repositorio, pero **su ZIP y su release `v3.4.3` todavía no existen en GitHub**. Hasta que se publiquen (pasos de abajo), el servidor de actualizaciones de esta rama (`updates/pkgengage.xml`, versión 3.4.3) apunta a una descarga que daría error 404. Por eso **esta rama no debe fusionarse en `main` hasta que la release `v3.4.3` exista**: mientras `main` conserve el XML de la 3.4.2.1, ningún sitio ve una descarga inexistente. Joomla trata 3.4.3 como mayor que 3.4.2.1 (`version_compare`) y la ofrece como actualización sobre la publicada.
 
 ## Aviso importante: las releases son inmutables
 
@@ -22,7 +22,7 @@ php build/build.php
 Al final muestra `SHA-256 <número largo>` y deja el ZIP en `dist/pkg_engage-3.4.3.zip`. El SHA-256 debe ser **idéntico** al que figura en `updates/pkgengage.xml` (línea `<sha256>`). El de la versión preparada (3.4.3) es:
 
 ```
-f4d0b20ab7776fcc0cc8f3b00ee3d896f031989e7eb485dd69cd0146855ad703
+31ca682c6d29f3ad009e78e528c1285dbb43d81a2f9dde7f94c3776339b99776
 ```
 
 Si no coincide, no subas el ZIP: avisa (puede deberse a otra versión de PHP o de zlib; el hash que cuenta es el del ZIP que se sube, y `updates/pkgengage.xml` tiene que llevar ese mismo).
@@ -33,7 +33,7 @@ Si no coincide, no subas el ZIP: avisa (puede deberse a otra versión de PHP o d
 2. Entra en https://github.com/chaska/engage y pulsa **Releases** (columna derecha) y luego **Draft a new release** (Crear una nueva release).
 3. En **Choose a tag** (Elegir etiqueta) escribe exactamente `v3.4.3` y pulsa **Create new tag: v3.4.3 on publish**.
 4. En **Target** (destino) deja seleccionada la rama `main`.
-5. **Release title**: `Engage 3.4.3 (fork comunitario)`. En la descripción puedes copiar las entradas 0.7.0 y 0.7.1 de `CHANGELOG.md`.
+5. **Release title**: `Engage 3.4.3 (fork comunitario)`. En la descripción puedes copiar las entradas 0.7.0, 0.7.1, 0.8.0 y 0.8.1 de `CHANGELOG.md` (destaque la corrección de seguridad de la 0.8.1).
 6. Arrastra el archivo `pkg_engage-3.4.3.zip` a la zona **Attach binaries** (adjuntar archivos). El nombre debe ser exactamente ese; no lo renombres ni subas otros ZIP con otro nombre.
 7. Deja marcado **Set as the latest release**. No marques "pre-release".
 8. Pulsa **Save draft**. Comprueba: etiqueta `v3.4.3`, destino `main`, un solo archivo adjunto con ese nombre.

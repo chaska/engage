@@ -42,7 +42,7 @@ $uri = Uri::getInstance($meta['public_url']);
 $uri->setFragment('akengage-comments-section');
 ?>
 <aside class="akenage-comments-counter--featured">
-	<a href="<?= $uri->toString() ?>">
+	<a href="<?= htmlspecialchars((string) $uri->toString(['path', 'query', 'fragment']), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"><?php // 0.8.1: relative (no host): the page cache shares this HTML among all visitors ?>
 		<data itemprop="commentCount" value="<?= $numComments ?>">
 			<?= Text::plural($headerKey, $numComments, htmlspecialchars((string) $row->title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) ?>
 		</data>

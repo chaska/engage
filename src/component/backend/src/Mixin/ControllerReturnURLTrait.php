@@ -76,9 +76,17 @@ trait ControllerReturnURLTrait
 			return null;
 		}
 
-		$returnUrl = \base64_decode($returnEncoded);
+		$returnUrl = (string) \base64_decode($returnEncoded);
 
-		if (!Uri::isInternal($returnUrl))
+		// 0.8.1: the forms print a RELATIVE return URL (`/path?query`, validated), because the page may be shared through the cache and an
+		// absolute one would carry the Host of whoever asked first. It is made absolute here with the host of THIS request.
+		if (preg_match('~^/(?![/\\\\])[\x21-\x7E]*$~D', $returnUrl) === 1)
+		{
+			$returnUrl = Uri::getInstance()->toString(['scheme', 'host', 'port']) . $returnUrl;
+		}
+
+		// Only http(s) (or no scheme at all): `javascript:index.php;...` would pass the path check of isInternal()
+		if (!in_array(strtolower((string) Uri::getInstance($returnUrl)->getScheme()), ['', 'http', 'https'], true) || !Uri::isInternal($returnUrl))
 		{
 			return null;
 		}

@@ -76,6 +76,11 @@ $extrae = function (string $html): string {
 
 	// Las opciones de script de moderacion (editURL, deleteURL...) son la URL en base64 con el token CSRF y la URL de retorno (que a su vez lleva un token): se decodifican y se normalizan
 	$all = preg_replace_callback('/"(akeeba\.Engage\.Comments\.[A-Za-z]+URL)":"([A-Za-z0-9+\/=_-]+)"/', fn($m) => '"' . $m[1] . '":"' . preg_replace('/[0-9a-f]{32}/', 'T', base64_decode($m[2]) . '|' . base64_decode((string) preg_replace('/^.*returnurl=([^&]+).*$/s', '$1', base64_decode($m[2])))) . '"', $all);
+	// 0.8.1: los enlaces de la fecha y de «en respuesta a» son relativos y escapados (antes: la URL absoluta de la peticion, sin escapar) y el returnurl del formulario
+	// tambien es relativo; se normalizan a la misma forma (sin anfitrion, con & sin escapar) para comparar el resto byte a byte
+	$all = preg_replace_callback('~href="([^"]*akengage_cid=[^"]*)"~', fn($m) => 'href="' . preg_replace('~^https?://[^/]+~', '', html_entity_decode($m[1])) . '"', $all);
+	$all = preg_replace_callback('~name="returnurl" value="([^"]*)"~', fn($m) => 'name="returnurl" value="' . preg_replace('~^https?://[^/]+~', '', base64_decode(html_entity_decode($m[1]))) . '"', $all);
+	$all = preg_replace(['~returnurl=[^&|"]+~', '~(?<=\\|)https?://[^/|"]+~'], ['returnurl=R', ''], $all);
 	// Ademas del token CSRF, el sufijo ?<hash> de los recursos cambia en cada instalacion (version de los medios de Joomla), no con el HTML de Engage
 	return preg_replace(['/name="[0-9a-f]{32}" value="1"/', '/"csrf\.token":"[0-9a-f]{32}"/', '/[?&]([0-9a-f]{32})=1/', '/(com_engage\/[A-Za-z0-9_\/.\-]+)\?[0-9a-f]{6}/'], ['name="T" value="1"', '"csrf.token":"T"', '', '$1?V'], $all);
 };

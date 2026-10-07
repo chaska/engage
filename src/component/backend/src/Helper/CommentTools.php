@@ -195,10 +195,126 @@ final class CommentTools
 		return $path . $query;
 	}
 
-	/** La URL sin ninguno de los parametros de este fork (orden, favoritos, paginacion propia, akengage_cid): la pagina «canonica». */
+	/**
+	 * 0.8.1: lista blanca de parametros de la consulta que pueden acabar en un enlace de la pagina. Todo lo demas (`x=...`, `p=...`,
+	 * lo que ponga el primer visitante) se descarta: la pagina que Joomla guarda en la cache la comparten todos los visitantes, y la
+	 * clave de esa cache solo mira unos pocos parametros. El valor de cada uno ademas debe tener la forma esperada.
+	 * Nombre => expresion que debe cumplir el valor YA decodificado.
+	 */
+	private const ALLOWED_PARAMS = [
+		'option'              => '/^com_[a-z0-9_]{1,40}$/Di',
+		'view'                => '/^[a-z0-9_.\-]{1,40}$/Di',
+		'layout'              => '/^[a-z0-9_.:\-]{1,40}$/Di',
+		'tmpl'                => '/^[a-z0-9_\-]{1,20}$/Di',
+		'id'                  => '/^[0-9]{1,10}(:[a-z0-9_\-]{0,100})?$/Di',
+		'catid'               => '/^[0-9]{1,10}(:[a-z0-9_\-]{0,100})?$/Di',
+		'Itemid'              => '/^[0-9]{1,10}$/D',
+		'lang'                => '/^[a-z]{2,3}(-[a-z0-9]{2,8})?$/Di',
+		'print'               => '/^[01]$/D',
+		'showall'             => '/^[01]$/D',
+		'start'               => '/^[0-9]{1,7}$/D',
+		'limitstart'          => '/^[0-9]{1,7}$/D',
+		'limit'               => '/^[0-9]{1,3}$/D',
+		'akengage_sort'       => '/^(newest|oldest|top)$/D',
+		'akengage_fav'        => '/^1$/D',
+		'akengage_limitstart' => '/^[0-9]{1,7}$/D',
+		'akengage_limit'      => '/^[0-9]{1,3}$/D',
+		'akengage_cid'        => '/^[0-9]{1,10}$/D',
+	];
+
+	/**
+	 * Parte de consulta (con o sin `?`) reducida a los parametros de la lista blanca con valor valido, recodificados. Un nombre
+	 * repetido solo cuenta la primera vez; los de matriz (`a[]=`) y cualquier otro se descartan.
+	 */
+	public static function sanitizeQuery(string $query): string
+	{
+		$query = ltrim($query, '?');
+		$keep  = [];
+
+		foreach (($query === '') ? [] : explode('&', $query) as $part)
+		{
+			if ($part === '')
+			{
+				continue;
+			}
+
+			$kv   = explode('=', $part, 2);
+			$name = rawurldecode(str_replace('+', ' ', $kv[0]));
+
+			if (!isset(self::ALLOWED_PARAMS[$name]) || isset($keep[$name]))
+			{
+				continue;
+			}
+
+			$value = rawurldecode(str_replace('+', ' ', $kv[1] ?? ''));
+
+			if (preg_match(self::ALLOWED_PARAMS[$name], $value) === 1)
+			{
+				$keep[$name] = rawurlencode($name) . '=' . rawurlencode($value);
+			}
+		}
+
+		return implode('&', $keep);
+	}
+
+	/**
+	 * URL RELATIVA segura para poner en HTML a partir de la ruta y la consulta de la peticion (`/ruta?a=b`): ruta con safeRelative()
+	 * y consulta con la lista blanca de sanitizeQuery(). Nunca lleva esquema ni anfitrion (nada de la cabecera Host acaba en HTML
+	 * que se pueda cachear) ni nada de la consulta que no se haya validado.
+	 */
+	public static function relativeUrl(string $pathAndQuery): string
+	{
+		$pos   = strpos($pathAndQuery, '#');
+		$clean = ($pos === false) ? $pathAndQuery : substr($pathAndQuery, 0, $pos);
+		$pos   = strpos($clean, '?');
+		$path  = self::safeRelative(($pos === false) ? $clean : substr($clean, 0, $pos));
+		$query = ($pos === false) ? '' : self::sanitizeQuery(substr($clean, $pos + 1));
+
+		return $path . ($query !== '' ? '?' . $query : '');
+	}
+
+	/** La URL (relativa o absoluta) sin ninguno de los parametros de este fork (orden, favoritos, paginacion propia, akengage_cid) y solo con la lista blanca. */
 	public static function cleanUrl(string $url): string
 	{
-		return self::withQuery($url, self::VOLATILE, [], '');
+		$url = self::withQuery($url, self::VOLATILE, [], '');
+
+		if (preg_match('~^https?://[^/?#]*~i', $url, $m))
+		{
+			return $m[0] . self::relativeUrl(substr($url, strlen($m[0])));
+		}
+
+		return self::relativeUrl($url);
+	}
+
+	/**
+	 * Origen (`https://host[:puerto]`) en el que se puede confiar para un enlace absoluto: SOLO el `live_site` que el administrador puso
+	 * en la configuracion de Joomla. Nunca se deriva de la cabecera Host. Cadena vacia si no hay uno valido.
+	 */
+	public static function trustedOrigin(string $liveSite): string
+	{
+		$liveSite = trim($liveSite);
+
+		if ($liveSite === '' || !self::isSafeAbsoluteUrl($liveSite) || !preg_match('~^(https?://[^/?#]+)~i', $liveSite, $m))
+		{
+			return '';
+		}
+
+		return $m[1];
+	}
+
+	/**
+	 * Enlace permanente RELATIVO a un comentario (ruta, consulta validada, `akengage_cid` y ancla `akengage-comment-<id>`) a partir de la
+	 * ruta y la consulta de la peticion. Sin esquema ni anfitrion: es lo que se imprime en el HTML (que Joomla puede guardar en la
+	 * cache para todos). tools.js lo vuelve absoluto con el origen real del visitante al copiarlo.
+	 */
+	public static function permalinkRelative(string $pathAndQuery, int $commentId): string
+	{
+		if ($commentId <= 0)
+		{
+			return '';
+		}
+
+		return self::withQuery(self::relativeUrl($pathAndQuery), self::VOLATILE, ['akengage_cid' => (string) $commentId], 'akengage-comment-' . $commentId);
 	}
 
 	/**
@@ -206,6 +322,8 @@ final class CommentTools
 	 * `akengage-comment-<id>`. Devuelve una cadena vacia si el resultado no es una URL web segura: esquema http o https, anfitrion
 	 * con solo letras, cifras, guiones y puntos (o IPv6 entre corchetes), puerto numerico, sin usuario ni contrasena, sin caracteres
 	 * de control, espacios, comillas ni angulos. Nunca devuelve algo que el navegador pueda interpretar como codigo.
+	 *
+	 * 0.8.1: la lista de comentarios ya no la usa (imprimia el anfitrion de la peticion en HTML cacheable): usa permalinkRelative().
 	 *
 	 * @param   string  $pageUrl    URL absoluta de la pagina actual
 	 * @param   int     $commentId

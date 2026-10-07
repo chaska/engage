@@ -139,7 +139,7 @@ $favView = $this->isFavoritesView();
 				<?php if (empty($profile)): ?>
 				<img src="<?= htmlspecialchars($avatar, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"<?= $avatarAttrs ?> alt="" class="akengage-commenter-avatar img-fluid rounded-3 shadow-sm" itemprop="image">
 				<?php else: ?>
-				<a href="<?= $profile ?>" class="akengage-commenter-profile" itemprop="url" rel="noopener">
+				<a href="<?= htmlspecialchars((string) $profile, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" class="akengage-commenter-profile" itemprop="url" rel="noopener">
 					<img src="<?= htmlspecialchars($avatar, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"<?= $avatarAttrs ?>
 							alt=""
 							class="akengage-commenter-avatar img-fluid rounded-3 shadow-sm" itemprop="image">
@@ -175,12 +175,8 @@ $favView = $this->isFavoritesView();
 				</div>
 				<div class="akengage-comment-info d-flex flex-row flex-wrap gap-2 align-items-center">
 					<div class="akengage-comment-permalink flex-grow-1">
-						<?php
-						$tempUri = clone Uri::getInstance();
-						$tempUri->setFragment(sprintf('akengage-comment-%u', $comment->id));
-						$tempUri->setVar('akengage_cid', $comment->id);
-						?>
-						<a href="<?= ($favView && ($ctxUrl = $this->commentPermalink((int) $comment->id)) !== '') ? htmlspecialchars($ctxUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : $tempUri->toString() ?>"
+						<?php // 0.8.1: relative and validated link, escaped for the attribute (it used to print the whole request URL as-is: reflected XSS) ?>
+						<a href="<?= htmlspecialchars($this->commentPermalink((int) $comment->id), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"
 								class="text-body text-decoration-none"
 						>
 							<?= $commentDate->format(Text::_('DATE_FORMAT_LC2'), true) ?>
@@ -251,13 +247,13 @@ $favView = $this->isFavoritesView();
 				<div>
 					<?php if (!empty($ipLookupURL)): ?>
 					<span class="akengage-comment-ip">
-						<a href="<?= $ipLookupURL ?>" target="_blank">
-							<?= Text::sprintf('COM_ENGAGE_COMMENTS_IP', $comment->ip ?? '???') ?>
+						<a href="<?= htmlspecialchars((string) $ipLookupURL, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">
+							<?= Text::sprintf('COM_ENGAGE_COMMENTS_IP', htmlspecialchars((string) ($comment->ip ?? '???'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) ?>
 						</a>
 					</span>
 					<?php else: ?>
 					<span class="akengage-comment-ip">
-						<?= Text::sprintf('COM_ENGAGE_COMMENTS_IP', $comment->ip ?? '???') ?>
+						<?= Text::sprintf('COM_ENGAGE_COMMENTS_IP', htmlspecialchars((string) ($comment->ip ?? '???'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) ?>
 					</span>
 					<?php endif; ?>
 				</div>
@@ -287,10 +283,8 @@ $favView = $this->isFavoritesView();
 				}
 				else
 				{
-					$replyToUri = clone Uri::getInstance();
-					$replyToUri->setFragment(sprintf('akengage-comment-%u', $replyTo['id']));
-					$replyToUri->setVar('akengage_cid', (int) $replyTo['id']);
-					$replyToHref = $replyToUri->toString();
+					// 0.8.1: relative and validated (the Host and the unknown query parameters of the request must not reach the page)
+					$replyToHref = $this->commentPermalink((int) $replyTo['id']);
 				}
 				?>
 				<?= Text::_('COM_ENGAGE_COMMENTS_FORM_INREPLYTO_LABEL') ?>
