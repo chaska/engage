@@ -19,6 +19,8 @@ final class ReactionIcons
 
 	private const THUMB = '<path d="M3 11h4v10H3z"/><path d="M7 11l4-8c1.7 0 2.8 1.3 2.5 3L13 10h6.2c1.2 0 2.1 1.1 1.9 2.3l-1.3 7c-.2 1.1-1.1 1.7-2.1 1.7H7z"/>';
 
+	private const THUMB_DOWN = '<path d="M3 13h4V3H3z"/><path d="M7 13l4 8c1.7 0 2.8-1.3 2.5-3L13 14h6.2c1.2 0 2.1-1.1 1.9-2.3l-1.3-7c-.2-1.1-1.1-1.7-2.1-1.7H7z"/>';
+
 	/** Cabecera de los iconos de la 0.8.0 (copiar enlace, insignias): la clase la fija la hoja de estilos, 1em en las insignias. */
 	private static function open(string $class): string
 	{
@@ -34,7 +36,9 @@ final class ReactionIcons
 				return self::OPEN . self::THUMB . '</svg>';
 
 			case 'dislike':
-				return self::OPEN . '<g transform="translate(0 24) scale(1 -1)">' . self::THUMB . '</g></svg>';
+				// Trazado propio (el pulgar reflejado en vertical), sin "transform": con "prefers-reduced-motion" la hoja de estilos
+				// anula las transformaciones y el icono salia como pulgar arriba en los moviles con animaciones reducidas.
+				return self::OPEN . self::THUMB_DOWN . '</svg>';
 
 			case 'favorite':
 				return self::OPEN . '<path d="M12 2.8l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.6l-5.8 3.1 1.1-6.5L2.6 9.6l6.5-.9z"/></svg>';
