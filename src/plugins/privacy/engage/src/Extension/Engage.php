@@ -9,6 +9,7 @@ namespace Akeeba\Plugin\Privacy\Engage\Extension;
 
 defined('_JEXEC') or die;
 
+use Akeeba\Component\Engage\Administrator\Helper\ReactionStore;
 use Akeeba\Component\Engage\Site\Helper\Meta;
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Component\ComponentHelper;
@@ -111,7 +112,15 @@ class Engage extends PrivacyPlugin implements SubscriberInterface
 			unset($record);
 		}
 
-		$ret = [$domain];
+		// 0.7.0: reactions made by the user (comment ID, type and date; nothing about other people)
+		$reactions = $this->createDomain('engage_reactions', 'Comment reactions (likes, dislikes, favorites), via Akeeba Engage');
+
+		foreach (ReactionStore::exportForUser($db, (int) $user->id) as $row)
+		{
+			$reactions->addItem($this->createItemFromArray($row, $row['id']));
+		}
+
+		$ret = [$domain, $reactions];
 
 		$event->setArgument('result', array_merge($result, [$ret]));
 	}
@@ -139,5 +148,8 @@ class Engage extends PrivacyPlugin implements SubscriberInterface
 		$language->load('com_engage', JPATH_SITE);
 
 		Meta::pseudonymiseUserComments($user);
+
+		// 0.7.0: delete the reactions made by the user
+		ReactionStore::deleteForUser($this->db, (int) $user->id);
 	}
 }

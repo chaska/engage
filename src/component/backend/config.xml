@@ -354,6 +354,63 @@
     </fieldset>
 
     <fieldset
+            name="reactions"
+            label="COM_ENGAGE_CONFIG_REACTIONS_FIELDSET_LABEL"
+            description="COM_ENGAGE_CONFIG_REACTIONS_FIELDSET_DESC"
+    >
+        <field
+                name="reactions_enabled"
+                type="radio"
+                layout="joomla.form.field.radio.switcher"
+                label="COM_ENGAGE_CONFIG_REACTIONS_ENABLED_LABEL"
+                description="COM_ENGAGE_CONFIG_REACTIONS_ENABLED_DESC"
+                default="1"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+                name="reactions_dislike"
+                type="radio"
+                layout="joomla.form.field.radio.switcher"
+                label="COM_ENGAGE_CONFIG_REACTIONS_DISLIKE_LABEL"
+                description="COM_ENGAGE_CONFIG_REACTIONS_DISLIKE_DESC"
+                default="1"
+                showon="reactions_enabled:1"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+                name="reactions_favorites"
+                type="radio"
+                layout="joomla.form.field.radio.switcher"
+                label="COM_ENGAGE_CONFIG_REACTIONS_FAVORITES_LABEL"
+                description="COM_ENGAGE_CONFIG_REACTIONS_FAVORITES_DESC"
+                default="1"
+                showon="reactions_enabled:1"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+                name="reactions_who"
+                type="list"
+                label="COM_ENGAGE_CONFIG_REACTIONS_WHO_LABEL"
+                description="COM_ENGAGE_CONFIG_REACTIONS_WHO_DESC"
+                default="registered"
+                validate="options"
+                showon="reactions_enabled:1"
+        >
+            <option value="registered">COM_ENGAGE_CONFIG_REACTIONS_WHO_REGISTERED</option>
+            <option value="commenters">COM_ENGAGE_CONFIG_REACTIONS_WHO_COMMENTERS</option>
+        </field>
+    </fieldset>
+
+    <fieldset
             name="filtering"
             label="COM_ENGAGE_CONFIG_FILTERING_FIELDSET_LABEL"
             description="COM_ENGAGE_CONFIG_FILTERING_FIELDSET_DESC"

@@ -302,8 +302,10 @@ $bsCommentStateClass =  ($comment->enabled == 1) ? 'secondary' : (($comment->ena
 			<?php endif; ?>
 		</div>
 
-		<?php if ($this->perms['create']): ?>
-			<div class="akengage-comment-reply">
+		<?php $showReactions = $this->reactions['enabled'] && ($comment->enabled == 1); // 0.7.0: reaction buttons, same line as Reply ?>
+		<?php if ($this->perms['create'] || $showReactions): ?>
+			<div class="akengage-comment-reply<?= $showReactions ? ' akengage-comment-reply--react' : '' ?>">
+				<?php if ($this->perms['create']): ?>
 				<?php // You can reply to $this->maxLevel - 1 level comments only. Replies to deeper nested comments are to the $this->maxLevel - 1 level parent. ?>
 				<button class="akengage-comment-reply-btn btn btn-sm btn-outline-primary mb-1"
 						data-akengageid="<?= ($comment->depth < $this->maxLevel) ? $comment->id : $parentIds[$this->maxLevel - 1] ?>"
@@ -311,6 +313,10 @@ $bsCommentStateClass =  ($comment->enabled == 1) ? 'secondary' : (($comment->ena
 				>
 					<?= Text::_('COM_ENGAGE_COMMENTS_BTN_REPLY') ?>
 				</button>
+				<?php endif; ?>
+				<?php if ($showReactions): ?>
+				<?= $this->reactionsHtml((int) $comment->id) ?>
+				<?php endif; ?>
 			</div>
 		<?php endif; ?>
 	</article>

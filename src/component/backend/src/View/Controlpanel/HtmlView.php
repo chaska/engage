@@ -33,6 +33,8 @@ class HtmlView extends BaseHtmlView
 	protected $chart = [];
 	/** @var array */
 	protected $latest = [];
+	/** @var array{likes:int,dislikes:int,top:array} */
+	protected $reactions = ['likes' => 0, 'dislikes' => 0, 'top' => []];
 	/** @var array */
 	protected $health = [];
 	/** @var string */
@@ -55,6 +57,7 @@ class HtmlView extends BaseHtmlView
 		$this->stats            = PanelData::stats($db);
 		$this->chart            = PanelChart::geometry($this->stats['series']);
 		$this->latest           = PanelData::latest($db, 6);
+		$this->reactions        = PanelData::reactions($db, 5);
 		$this->health           = PanelHealth::evaluate(PanelData::facts($db, $user));
 		$this->installedVersion = PanelData::installedVersion($db);
 

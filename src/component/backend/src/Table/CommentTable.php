@@ -7,6 +7,7 @@
 
 namespace Akeeba\Component\Engage\Administrator\Table;
 
+use Akeeba\Component\Engage\Administrator\Helper\ReactionStore;
 use Akeeba\Component\Engage\Administrator\Helper\UserFetcher;
 use Akeeba\Component\Engage\Administrator\Mixin\TableColumnAliasTrait;
 use Akeeba\Component\Engage\Administrator\Mixin\TableCreateModifyTrait;
@@ -122,6 +123,9 @@ class CommentTable extends AbstractTable
 		{
 			return;
 		}
+
+		// 0.7.0: the reactions of the deleted comment go with it (never throws)
+		ReactionStore::deleteForComments($this->_db, [$pk]);
 
 		// Get the child comments and delete them as well
 		$component = Factory::getApplication()->bootComponent('com_engage');

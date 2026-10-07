@@ -129,7 +129,7 @@ echo I::sprite();
 				<a class="eg-tile" href="#eg-about">
 					<span class="eg-icobox eg-icobox--slate"><?= I::icon('info') ?></span>
 					<span class="eg-tile__label"><?= $e(Text::_('COM_ENGAGE_PANEL_TILE_ABOUT')) ?></span>
-					<span class="eg-tile__hint"><?= $e(Text::sprintf('COM_ENGAGE_PANEL_TILE_ABOUT_HINT', $this->installedVersion ?: '3.4.2.1')) ?></span>
+					<span class="eg-tile__hint"><?= $e(Text::sprintf('COM_ENGAGE_PANEL_TILE_ABOUT_HINT', $this->installedVersion ?: '3.4.3')) ?></span>
 				</a>
 			</li>
 		</ul>
@@ -152,6 +152,8 @@ echo I::sprite();
 						['spam', 'COM_ENGAGE_PANEL_STAT_SPAM', $s['spam'], 'red'],
 						['last7', 'COM_ENGAGE_PANEL_STAT_LAST7', $s['last7'], 'violet'],
 						['last30', 'COM_ENGAGE_PANEL_STAT_LAST30', $s['last30'], 'slate'],
+						['likes', 'COM_ENGAGE_PANEL_STAT_LIKES', $this->reactions['likes'], 'green'],
+						['dislikes', 'COM_ENGAGE_PANEL_STAT_DISLIKES', $this->reactions['dislikes'], 'red'],
 					];
 					foreach ($cards as [$id, $key, $val, $tone]) : ?>
 						<div class="eg-stat eg-stat--<?= $e($tone) ?>">
@@ -315,6 +317,27 @@ echo I::sprite();
 					</ol>
 				<?php endif; ?>
 			</section>
+
+			<!-- Mas valorados (0.7.0) -->
+			<section class="eg-card" aria-labelledby="eg-h-rated">
+				<div class="eg-card__head">
+					<h2 class="eg-h2" id="eg-h-rated"><?= I::icon('heart') ?><?= $e(Text::_('COM_ENGAGE_PANEL_TOPRATED')) ?></h2>
+				</div>
+				<?php if (!$this->reactions['top']) : ?>
+					<p class="eg-empty"><?= $e(Text::_('COM_ENGAGE_PANEL_TOPRATED_EMPTY')) ?></p>
+				<?php else : ?>
+					<ol class="eg-top eg-top--rated">
+						<?php foreach ($this->reactions['top'] as $t) :
+							$who = $t['author'] !== '' ? $t['author'] : Text::_('COM_ENGAGE_PANEL_ANON');
+							?>
+							<li>
+								<a href="<?= $url($commentsUrl . '&filter[asset_id]=' . (int) $t['asset_id']) ?>" title="<?= $e($t['excerpt']) ?>"><?= $e($who) ?>: <?= $e($t['excerpt']) ?></a>
+								<span class="eg-count"><?= $e($n($t['score'])) ?><span class="eg-vh"> <?= $e(Text::sprintf('COM_ENGAGE_PANEL_TOPRATED_LIKES', $n($t['likes']))) ?>, <?= $e(Text::sprintf('COM_ENGAGE_PANEL_TOPRATED_DISLIKES', $n($t['dislikes']))) ?></span></span>
+							</li>
+						<?php endforeach; ?>
+					</ol>
+				<?php endif; ?>
+			</section>
 		</div>
 	</div>
 
@@ -324,7 +347,7 @@ echo I::sprite();
 			<h2 class="eg-h2" id="eg-h-about"><?= I::icon('info') ?><?= $e(Text::_('COM_ENGAGE_PANEL_ABOUT')) ?></h2>
 		</div>
 		<dl class="eg-about__facts">
-			<div><dt><?= $e(Text::_('COM_ENGAGE_PANEL_ABOUT_PACKAGE')) ?></dt><dd><?= $e($this->installedVersion ?: '3.4.2.1') ?></dd></div>
+			<div><dt><?= $e(Text::_('COM_ENGAGE_PANEL_ABOUT_PACKAGE')) ?></dt><dd><?= $e($this->installedVersion ?: '3.4.3') ?></dd></div>
 			<div><dt><?= $e(Text::_('COM_ENGAGE_PANEL_ABOUT_FORK')) ?></dt><dd><?= $e(PanelData::FORK_VERSION) ?></dd></div>
 			<div><dt><?= $e(Text::_('COM_ENGAGE_PANEL_ABOUT_LICENSE')) ?></dt><dd><?= $e(Text::_('COM_ENGAGE_PANEL_ABOUT_LICENSE_VALUE')) ?></dd></div>
 			<div><dt><?= $e(Text::_('COM_ENGAGE_PANEL_ABOUT_AUTHOR')) ?></dt><dd><?= $e(Text::_('COM_ENGAGE_PANEL_ABOUT_AUTHOR_VALUE')) ?></dd></div>

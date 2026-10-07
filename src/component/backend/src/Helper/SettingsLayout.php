@@ -33,6 +33,9 @@ final class SettingsLayout
 			['id' => 'moderation', 'icon' => 'check', 'tone' => 'green', 'items' => [
 				[$c, 'default_publish'], [$c, 'comments_enabled'], [$c, 'comments_close_after'], [$c, 'min_length'], [$c, 'max_length'], [$c, 'default_limit'],
 			]],
+			['id' => 'reactions', 'icon' => 'heart', 'tone' => 'red', 'items' => [
+				[$c, 'reactions_enabled'], [$c, 'reactions_dislike'], [$c, 'reactions_favorites'], [$c, 'reactions_who'],
+			]],
 			['id' => 'antispam', 'icon' => 'flag', 'tone' => 'red', 'items' => [
 				[$c, 'captcha'], [$c, 'captcha_for'], [$c, 'tos_accept'], [$c, 'tos_prompt'],
 				['plg_engage_akismet', 'key', '', 'akismet'], ['plg_engage_akismet', 'check', '', 'akismet'], ['plg_engage_akismet', 'discard_blatant', '', 'akismet'],

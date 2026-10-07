@@ -80,6 +80,9 @@
 	--eg-fuente-tam: inherit;  /* tamaño del texto del comentario */
 	--eg-interlineado: 1.7;  /* interlineado del comentario */
 	--eg-movimiento: background-color .15s ease, color .15s ease;  /* transiciones */
+	--eg-fav-fondo: #fff6cc;  /* fondo del cuerpo de un comentario favorito (amarillo suave; el texto del tema mantiene >= 4,5:1) */
+	--eg-fav-estrella: #facc15;  /* relleno de la estrella pulsada */
+	--eg-fav-estrella-borde: #854d0e;  /* contorno de la estrella pulsada */
 	--akengage-reply-bg: var(--eg-fondo-respuesta);
 }
 
@@ -458,3 +461,22 @@ section.akengage-outer-container.akengage-theme--minimal .akengage-comment-reply
 section.akengage-outer-container.akengage-theme--minimal .akengage-comment-body { padding-bottom: .2rem; }
 section.akengage-outer-container.akengage-theme--minimal .akengage-list-container .akengage-comment-actions button.btn,
 section.akengage-outer-container.akengage-theme--minimal .akengage-list-container .akengage-comment-reply button.btn { font-weight: 500; }
+
+/* Reacciones a los comentarios (0.7.0): botones de contorno que se rellenan al pulsarlos; favorito con cuerpo amarillo suave */
+section.akengage-outer-container.akengage-theme--minimal .akengage-reactions .akengage-react-btn {
+	color: var(--eg-texto-suave) !important;
+}
+section.akengage-outer-container.akengage-theme--minimal .akengage-reactions .akengage-react-btn:hover:not(:disabled),
+section.akengage-outer-container.akengage-theme--minimal .akengage-reactions .akengage-react-btn:focus-visible {
+	color: var(--eg-enlace) !important;
+	background-color: rgba(127, 127, 127, .16);
+}
+section.akengage-outer-container.akengage-theme--minimal .akengage-reactions .akengage-react-btn:focus-visible {
+	outline-color: var(--eg-acento);
+}
+section.akengage-outer-container.akengage-theme--minimal .akengage-reactions .akengage-react-btn[aria-pressed="true"] {
+	color: var(--eg-enlace) !important;
+}
+section.akengage-outer-container.akengage-theme--minimal article.akengage-is-favorite .akengage-comment-body {
+	background-color: var(--eg-fav-fondo);
+}

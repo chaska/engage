@@ -12,12 +12,12 @@
 		<description>Engage, sistema de comentarios para Joomla (fork comunitario)</description>
 		<element>pkg_engage</element>
 		<type>package</type>
-		<version>3.4.2.1</version>
+		<version>3.4.3</version>
 		<infourl title="Engage (fork comunitario)">https://github.com/chaska/engage</infourl>
 		<downloads>
-			<downloadurl type="full" format="zip">https://github.com/chaska/engage/releases/download/v3.4.2.1/pkg_engage-3.4.2.1.zip</downloadurl>
+			<downloadurl type="full" format="zip">https://github.com/chaska/engage/releases/download/v3.4.3/pkg_engage-3.4.3.zip</downloadurl>
 		</downloads>
-		<sha256>a1891a7cd729ba3ac6585c0a9fea8ba70a0e8695dcd1a246b561aac1869b2958</sha256>
+		<sha256>34e8b92531621295eff16b4d0409c20a39a5ff8f6b06386cecdb7851bc1e5c9f</sha256>
 		<tags>
 			<tag>stable</tag>
 		</tags>

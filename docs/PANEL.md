@@ -10,6 +10,7 @@ Desde la 0.6.24, al pulsar **Akeeba Engage** en el menú de administración de J
 - **Actividad**: total, publicados, por moderar, spam y comentarios recibidos en los últimos 7 y 30 días, con un mini-gráfico de barras de los últimos 30 días. El gráfico es un SVG dibujado en la propia página (sin librerías); tiene descripción para lectores de pantalla, ventana de detalle al pasar el ratón o tocar, y una tabla con los mismos datos («Ver como tabla»). Los días se cuentan en UTC.
 - **Últimos comentarios** con acciones rápidas: publicar, marcar como spam y eliminar. Cada acción abre una ventana de confirmación propia (accesible, con el foco en «Cancelar»; nunca el `confirm()` del navegador) y, al aceptar, usa las tareas que ya existían (`comments.publish`, `comments.possiblespam`, `comments.delete`) con el token de seguridad de Joomla y vuelve al panel. Los botones solo aparecen si usted tiene el permiso correspondiente (cambiar estado, eliminar), y las tareas lo vuelven a comprobar en el servidor. «Marcar como spam» no borra: deja el comentario en el estado de spam, donde se puede revisar.
 - **Más comentados**: los cinco contenidos con más comentarios publicados.
+- **Más valorados** (0.7.0): los cinco comentarios publicados con mejor puntuación (**me gusta menos no me gusta**, solo con puntuación positiva), con el nombre de quien comentó, un extracto y la puntuación; cada uno enlaza a los comentarios de su contenido. Además, los números de **Actividad** suman los «me gusta» y «no me gusta» de los comentarios publicados. Solo lectura, consultas con parámetros, sin llamadas externas, y sin mostrar quién reaccionó ni los favoritos (son privados). Con las reacciones desactivadas la tarjeta sigue mostrando lo ya guardado.
 - **Estado y recomendaciones** (semáforo verde, ámbar y rojo, con icono y texto, nunca solo color) y un botón para arreglar cada punto:
 
 | Punto | Rojo | Ámbar |
@@ -58,7 +59,7 @@ Comprobado en un Joomla 6.1.4 real, actualizando desde el paquete 3.4.2 original
 
 ## Archivos
 
-`backend/src/Controller/ControlpanelController.php`, `backend/src/View/Controlpanel/HtmlView.php`, `backend/tmpl/controlpanel/default.php`, `backend/src/Helper/Panel{Data,Health,Chart,Icons}.php`, `media/css/panel.css`, `media/js/panel.js`, `media/js/panel-theme.js`, cadenas `COM_ENGAGE_PANEL_*` en `com_engage.ini` y `COM_ENGAGE_MENU_*` en `com_engage.sys.ini` (en-GB y es-ES). `PanelHealth` y `PanelChart` son funciones puras (probadas con datos simulados); `PanelData` solo lee de la base de datos, con el constructor de consultas de Joomla y parámetros enlazados.
+`backend/src/Controller/ControlpanelController.php`, `backend/src/View/Controlpanel/HtmlView.php`, `backend/tmpl/controlpanel/default.php`, `backend/src/Helper/Panel{Data,Health,Chart,Icons}.php` (desde la 0.7.0 `PanelData::reactions()` alimenta la tarjeta «Más valorados»), `media/css/panel.css`, `media/js/panel.js`, `media/js/panel-theme.js`, cadenas `COM_ENGAGE_PANEL_*` en `com_engage.ini` y `COM_ENGAGE_MENU_*` en `com_engage.sys.ini` (en-GB y es-ES). `PanelHealth` y `PanelChart` son funciones puras (probadas con datos simulados); `PanelData` solo lee de la base de datos, con el constructor de consultas de Joomla y parámetros enlazados.
 
 ---
 
@@ -74,6 +75,7 @@ La pantalla **Opciones** (menú de Engage > Opciones, o la tarjeta «Opciones» 
 |---|---|
 | **Diseño** | Vista previa en vivo de un hilo (cambia al elegir sangría, cita y marca de las respuestas y el tema), tema visual con **tarjetas de vista previa** (Clásico, Moderno, Minimalista, Oscuro), nivel máximo de anidación, cita «En respuesta a», sangría, marca visual, orden y dónde mostrar el resumen de comentarios |
 | **Moderación** | Publicación inmediata o con aprobación, comentarios abiertos o cerrados, cierre automático, longitud mínima y máxima, elementos por página |
+| **Reacciones** (0.7.0) | Botones de reacción sí/no, botón de no me gusta sí/no, botón de favorito sí/no (interruptores) y quién puede reaccionar (control segmentado: usuarios registrados / solo quien puede comentar). Icono de corazón; se guardan al instante y el servidor valida cada valor como 0/1 o lista cerrada. Ver [`REACCIONES.md`](REACCIONES.md). |
 | **Protección contra spam** | CAPTCHA (los plugins de captcha activados) y a quién se exige, aceptación de condiciones y su texto, y Akismet (clave, a quién se comprueba, descartar spam evidente) |
 | **Notificaciones** | Aviso al autor del contenido y a quienes participan; correo a los gestores (plugin de correo) |
 | **Privacidad y Gravatar** | Modo de Gravatar (preguntar, apagado, siempre), aviso, origen del consentimiento (aviso de Engage o JBCookies) y grupo de JBCookies, enlace al perfil, calificación e imagen por defecto |
