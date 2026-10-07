@@ -41,7 +41,7 @@ $prev = [
 ];
 $resetLimite = function () use ($WORK) { foreach (['/cache', '/administrator/cache'] as $d) { exec('rm -rf ' . escapeshellarg("$WORK/" . (getenv('SITE_DIR') ?: 'site') . "$d/com_engage_reactions")); } };
 $setCom = function (array $extra = []) use ($db) {
-	$p = array_merge(['default_publish' => '1', 'max_level' => '3', 'comments_ordering' => 'asc'], $extra);
+	$p = array_merge(['default_publish' => '1', 'max_level' => '3', 'comments_ordering' => 'asc', 'sort_selector' => '0', 'copy_link' => '0', 'show_badges' => '0'], $extra);
 	q("UPDATE jos_extensions SET params='" . $db->real_escape_string(json_encode($p)) . "' WHERE element='com_engage' AND type='component'");
 };
 $setCat = function (int $id, int $published, int $access) { q("UPDATE jos_categories SET published=$published, access=$access WHERE id=$id"); };

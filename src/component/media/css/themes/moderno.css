@@ -477,3 +477,62 @@ section.akengage-outer-container.akengage-theme--modern .akengage-reactions .ake
 section.akengage-outer-container.akengage-theme--modern article.akengage-is-favorite .akengage-comment-body {
 	background-color: var(--eg-fav-fondo);
 }
+
+/* Herramientas de la lista (0.8.0): selector de orden, «Solo mis favoritos», «Copiar enlace», «Ver en el hilo» e insignias. Mismos colores del tema;
+   !important porque la plantilla puede forzar el color de todos los elementos. La barra tiene su propia superficie, asi que se lee sobre cualquier pagina. */
+section.akengage-outer-container.akengage-theme--modern .akengage-toolbar {
+	background-color: var(--eg-fondo) !important;
+	color: var(--eg-texto) !important;
+	border: var(--eg-borde-ancho) solid var(--eg-borde);
+	border-radius: var(--eg-radio);
+	padding: .55rem .85rem;
+}
+section.akengage-outer-container.akengage-theme--modern .akengage-toolbar .akengage-toolbar-label { color: var(--eg-texto) !important; }
+section.akengage-outer-container.akengage-theme--modern .akengage-toolbar .akengage-sort-link,
+section.akengage-outer-container.akengage-theme--modern .akengage-toolbar .akengage-fav-toggle {
+	background-color: var(--eg-fondo-boton) !important;
+	color: var(--eg-enlace) !important;
+	border: 1px solid var(--eg-enlace) !important;
+	border-radius: var(--eg-radio-boton);
+}
+section.akengage-outer-container.akengage-theme--modern .akengage-toolbar .akengage-sort-link:hover,
+section.akengage-outer-container.akengage-theme--modern .akengage-toolbar .akengage-sort-link:focus-visible,
+section.akengage-outer-container.akengage-theme--modern .akengage-toolbar .akengage-fav-toggle:hover,
+section.akengage-outer-container.akengage-theme--modern .akengage-toolbar .akengage-fav-toggle:focus-visible,
+section.akengage-outer-container.akengage-theme--modern .akengage-toolbar .akengage-sort-link.is-active,
+section.akengage-outer-container.akengage-theme--modern .akengage-toolbar .akengage-fav-toggle.is-active {
+	background-color: var(--eg-enlace) !important;
+	color: var(--eg-sobre-boton) !important;
+	border-color: var(--eg-enlace) !important;
+}
+section.akengage-outer-container.akengage-theme--modern .akengage-toolbar .akengage-sort-link:focus-visible,
+section.akengage-outer-container.akengage-theme--modern .akengage-toolbar .akengage-fav-toggle:focus-visible { outline-color: var(--eg-acento); }
+section.akengage-outer-container.akengage-theme--modern .akengage-fav-empty {
+	background-color: var(--eg-fondo) !important;
+	color: var(--eg-texto) !important;
+	border: var(--eg-borde-ancho) solid var(--eg-borde);
+	border-radius: var(--eg-radio);
+	padding: .85rem 1rem;
+}
+section.akengage-outer-container.akengage-theme--modern .akengage-context-link { color: var(--eg-enlace) !important; }
+section.akengage-outer-container.akengage-theme--modern .akengage-context-link:hover,
+section.akengage-outer-container.akengage-theme--modern .akengage-context-link:focus-visible { color: var(--eg-enlace-hover) !important; }
+section.akengage-outer-container.akengage-theme--modern .akengage-copylink .akengage-copy-btn { color: var(--eg-texto-suave) !important; }
+section.akengage-outer-container.akengage-theme--modern .akengage-copylink .akengage-copy-btn:hover,
+section.akengage-outer-container.akengage-theme--modern .akengage-copylink .akengage-copy-btn:focus-visible {
+	color: var(--eg-enlace) !important;
+	background-color: rgba(127, 127, 127, .16);
+}
+section.akengage-outer-container.akengage-theme--modern .akengage-copylink .akengage-copy-btn:focus-visible { outline-color: var(--eg-acento); }
+section.akengage-outer-container.akengage-theme--modern .akengage-copylink .akengage-copy-btn.akengage-copied { color: var(--eg-ok) !important; }
+section.akengage-outer-container.akengage-theme--modern .akengage-badge--author,
+section.akengage-outer-container.akengage-theme--modern .akengage-badge--author * {
+	background-color: var(--eg-enlace) !important;
+	color: var(--eg-sobre-boton) !important;
+}
+section.akengage-outer-container.akengage-theme--modern .akengage-badge--moderator,
+section.akengage-outer-container.akengage-theme--modern .akengage-badge--moderator * {
+	background-color: var(--eg-aviso) !important;
+	color: var(--eg-sobre-boton) !important;
+}
+section.akengage-outer-container.akengage-theme--modern .akengage-badge * { background-color: transparent !important; }

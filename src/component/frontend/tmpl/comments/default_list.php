@@ -118,7 +118,9 @@ if ($isModified)
 
 $openListItem++;
 $this->ensureHasParentInfo($comment, $parentIds, $parentNames);
-$bsCommentStateClass =  ($comment->enabled == 1) ? 'secondary' : (($comment->enabled == -3) ? 'warning' : 'danger')
+$bsCommentStateClass =  ($comment->enabled == 1) ? 'secondary' : (($comment->enabled == -3) ? 'warning' : 'danger');
+$badges = $this->badgesFor($comment); // 0.8.0: 'author' / 'moderator' (empty when the option is off)
+$favView = $this->isFavoritesView();
 ?>
 <li class="akengage-comment-item mb-2">
 
@@ -147,11 +149,17 @@ $bsCommentStateClass =  ($comment->enabled == 1) ? 'secondary' : (($comment->ena
 			<?php endif; ?>
 			<div class="akengange-comment-head d-flex flex-column w-100">
 				<div class="akengange-commenter-name d-flex flex-row flex-wrap gap-3 align-items-center mb-1">
+<?php if ($badges): // 0.8.0: with badges the name and the badges go together; the tags are at the margin so that nothing changes when there are none ?>
+					<span class="akengage-name-wrap flex-grow-1 d-inline-flex flex-wrap align-items-center gap-2"><span itemprop="name" class="fw-bold"><?= $this->escape($user->name) ?></span><?= $this->badgesHtml($badges) ?></span>
+<?php else: ?>
 					<span itemprop="name" class="fw-bold flex-grow-1"><?= $this->escape($user->name) ?></span>
+<?php endif; ?>
 
 					<?php if ($this->perms['state']): ?>
 					<div>
-						<?php if ($user->authorise('core.manage', $comment->asset_id)): ?>
+						<?php if (in_array('moderator', $badges, true)): ?>
+							<?php // 0.8.0: the star of the moderator is inside the "Moderator" badge next to the name; not repeated here ?>
+						<?php elseif ($user->authorise('core.manage', $comment->asset_id)): ?>
 							<span class="akengage-commenter-ismoderator fa fa-star text-warning" aria-hidden="true"></span>
 						<?php elseif (!$user->guest): ?>
 							<span class="akengage-commenter-isuser fa fa-user text-secondary" aria-hidden="true"></span>
@@ -172,7 +180,7 @@ $bsCommentStateClass =  ($comment->enabled == 1) ? 'secondary' : (($comment->ena
 						$tempUri->setFragment(sprintf('akengage-comment-%u', $comment->id));
 						$tempUri->setVar('akengage_cid', $comment->id);
 						?>
-						<a href="<?= $tempUri->toString() ?>"
+						<a href="<?= ($favView && ($ctxUrl = $this->commentPermalink((int) $comment->id)) !== '') ? htmlspecialchars($ctxUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : $tempUri->toString() ?>"
 								class="text-body text-decoration-none"
 						>
 							<?= $commentDate->format(Text::_('DATE_FORMAT_LC2'), true) ?>
@@ -302,10 +310,10 @@ $bsCommentStateClass =  ($comment->enabled == 1) ? 'secondary' : (($comment->ena
 			<?php endif; ?>
 		</div>
 
-		<?php $showReactions = $this->reactions['enabled'] && ($comment->enabled == 1); // 0.7.0: reaction buttons, same line as Reply ?>
-		<?php if ($this->perms['create'] || $showReactions): ?>
-			<div class="akengage-comment-reply<?= $showReactions ? ' akengage-comment-reply--react' : '' ?>">
-				<?php if ($this->perms['create']): ?>
+		<?php $showReactions = $this->reactions['enabled'] && ($comment->enabled == 1); $copyHtml = ($comment->enabled == 1) ? $this->copyButtonHtml((int) $comment->id) : ''; $showReply = $this->perms['create'] && !$favView; /* 0.7.0: reactions, same line as Reply. 0.8.0: copy link; no Reply in the favourites list (its level depends on the thread: use the link to the thread) */ ?>
+		<?php if ($showReply || $showReactions || $copyHtml !== '' || $favView): ?>
+			<div class="akengage-comment-reply<?= ($showReactions || $copyHtml !== '') ? ' akengage-comment-reply--react' : '' ?>">
+				<?php if ($showReply): ?>
 				<?php // You can reply to $this->maxLevel - 1 level comments only. Replies to deeper nested comments are to the $this->maxLevel - 1 level parent. ?>
 				<button class="akengage-comment-reply-btn btn btn-sm btn-outline-primary mb-1"
 						data-akengageid="<?= ($comment->depth < $this->maxLevel) ? $comment->id : $parentIds[$this->maxLevel - 1] ?>"
@@ -314,6 +322,12 @@ $bsCommentStateClass =  ($comment->enabled == 1) ? 'secondary' : (($comment->ena
 					<?= Text::_('COM_ENGAGE_COMMENTS_BTN_REPLY') ?>
 				</button>
 				<?php endif; ?>
+<?php if ($favView && ($ctxUrl = $this->commentPermalink((int) $comment->id)) !== ''): ?>
+				<a class="akengage-context-link" href="<?= htmlspecialchars($ctxUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"><?= Text::_('COM_ENGAGE_FAV_VIEW_IN_THREAD') ?></a>
+<?php endif; ?>
+<?php if ($copyHtml !== ''): ?>
+				<?= $copyHtml ?>
+<?php endif; ?>
 				<?php if ($showReactions): ?>
 				<?= $this->reactionsHtml((int) $comment->id) ?>
 				<?php endif; ?>

@@ -9,6 +9,8 @@ namespace Akeeba\Component\Engage\Site\View\Comments;
 
 defined('_JEXEC') or die;
 
+use Akeeba\Component\Engage\Administrator\Helper\CommentTools;
+use Akeeba\Component\Engage\Administrator\Helper\ListOrdering;
 use Akeeba\Component\Engage\Administrator\Helper\ReactionIcons;
 use Akeeba\Component\Engage\Administrator\Helper\Reactions;
 use Akeeba\Component\Engage\Administrator\Helper\UserFetcher;
@@ -30,8 +32,10 @@ use Joomla\CMS\Pagination\Pagination;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\User;
+use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
+use Throwable;
 
 class HtmlView extends BaseHtmlView
 {
@@ -139,6 +143,35 @@ class HtmlView extends BaseHtmlView
 	public $reactions = ['enabled' => false, 'dislike' => true, 'favorites' => true, 'who' => 'registered'];
 
 	/**
+	 * Tools of the comments list (component options sort_selector, default_sort, copy_link, show_badges), normalised. With all of them
+	 * turned off the page is byte for byte the one of the previous version.
+	 *
+	 * @var   array
+	 * @since 0.8.0
+	 */
+	public $tools = ['sort_selector' => false, 'default_sort' => 'auto', 'copy_link' => false, 'show_badges' => false];
+
+	/**
+	 * What CommentTools::resolve() decided for this request (sort mode, favourites filter, buttons). Set by the controller; when the
+	 * view is used without it, display() resolves it without any request parameter.
+	 *
+	 * @var   array|null
+	 * @since 0.8.0
+	 */
+	public $listState = null;
+
+	/**
+	 * Cache, for this request, of "can this user moderate comments" (user ID => bool): one ACL check per person, however many
+	 * comments they wrote.
+	 *
+	 * @var   array
+	 */
+	private $moderatorCache = [];
+
+	/** @var int|null  created_by of the content item (0 = unknown); loaded on first use */
+	private $contentAuthorId = null;
+
+	/**
 	 * Currently logged in user's permissions
 	 *
 	 * @var   array
@@ -243,6 +276,9 @@ class HtmlView extends BaseHtmlView
 	public function display($tpl = null)
 	{
 		$this->setLayout('default');
+
+		// The view object can be reused for several articles in the same request (blog layouts): nothing of the previous one may stay
+		$this->contentAuthorId = null;
 		$this->_setPath('template', [
 			JPATH_SITE . '/components/com_engage/tmpl/comments',
 		]);
@@ -282,6 +318,17 @@ class HtmlView extends BaseHtmlView
 		$this->pagination->prefix = 'akengage_';
 		$this->pagination->setAdditionalUrlParam('akengage_cid', '');
 
+		// 0.8.0: the sort chosen by the visitor and the favourites list survive the pagination links
+		if (!empty($this->listState['explicit']))
+		{
+			$this->pagination->setAdditionalUrlParam(CommentTools::PARAM_SORT, (string) $this->listState['explicit']);
+		}
+
+		if (!empty($this->listState['favorites']))
+		{
+			$this->pagination->setAdditionalUrlParam(CommentTools::PARAM_FAV, '1');
+		}
+
 		// Asset metadata-based properties
 		$meta        = Meta::getAssetAccessMeta($this->assetId, true);
 		$this->title = $meta['title'];
@@ -309,6 +356,8 @@ class HtmlView extends BaseHtmlView
 		$mobileAvatar        = (string) $params->get('mobile_avatar', 'auto');
 		$this->mobileAvatar  = in_array($mobileAvatar, ['auto', 'show', 'hide'], true) ? $mobileAvatar : 'auto';
 		$this->reactions     = Reactions::options(static fn(string $k, $d) => $params->get($k, $d));
+		$this->tools         = CommentTools::options(static fn(string $k, $d) => $params->get($k, $d));
+		$this->listState     = $this->listState ?? CommentTools::resolve($this->tools, $this->reactions, null, null, 'ASC', !$this->user->guest);
 		$this->replyToNames  = $this->showInReplyTo ? $this->loadReplyToNames() : ['same' => [], 'other' => []];
 
 		// Page parameters
@@ -381,6 +430,17 @@ class HtmlView extends BaseHtmlView
 			]);
 			$doc->getWebAssetManager()->useScript('com_engage.reactions');
 		}
+
+		// Tools (0.8.0): copy link. The same script options and texts for every visitor (cache friendly).
+		if ($this->tools['copy_link'])
+		{
+			Text::script('COM_ENGAGE_TOOLS_COPY_OK');
+			Text::script('COM_ENGAGE_TOOLS_COPY_FAIL');
+			$doc->addScriptOptions('akeeba.Engage.Tools', ['copy' => true]);
+			$doc->getWebAssetManager()->useScript('com_engage.tools');
+		}
+
+		$this->prepareHead($doc);
 
 		// Comment form
 		if (!$this->areCommentsClosed && $this->perms['create'])
@@ -496,7 +556,9 @@ class HtmlView extends BaseHtmlView
 
 		try
 		{
-			$db      = $this->getModel()->getDatabase();
+			// 0.8.0: getDatabase() of the models is protected in Joomla 6 and calling it is an Error (not an Exception), so this
+			// lookup killed the WHOLE list whenever a page began with a reply whose parent was on the previous page.
+			$db      = Factory::getContainer()->get(DatabaseInterface::class);
 			$assetId = (int) $this->assetId;
 			$query   = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true))
 				->select($db->quoteName(['id', 'name', 'created_by']))
@@ -515,7 +577,7 @@ class HtmlView extends BaseHtmlView
 				$ret['other'][(int) $row->id] = $this->getAuthorName($row);
 			}
 		}
-		catch (Exception $e)
+		catch (Throwable $e)
 		{
 			// Without the parent's name the note falls back to the generic text.
 		}
@@ -634,6 +696,244 @@ class HtmlView extends BaseHtmlView
 		{
 			return new DateTimeZone('UTC');
 		}
+	}
+
+	/**
+	 * Head of the page when the visitor sorted the list or filtered it (0.8.0): the "only my favourites" list is personal, so it is
+	 * kept out of search engines; a sorted list points to the page without parameters, so that search engines do not index the same
+	 * comments three times. Nothing happens when no parameter was used.
+	 *
+	 * @param   object  $doc  The HTML document
+	 */
+	private function prepareHead($doc): void
+	{
+		try
+		{
+			$state = $this->listState ?? [];
+
+			if (!empty($state['favorites']))
+			{
+				$doc->setMetaData('robots', 'noindex, nofollow');
+
+				return;
+			}
+
+			if (empty($state['explicit']))
+			{
+				return;
+			}
+
+			$canonical = CommentTools::cleanUrl(Uri::getInstance()->toString(['scheme', 'host', 'port', 'path', 'query']));
+
+			if (!CommentTools::isSafeAbsoluteUrl($canonical))
+			{
+				return;
+			}
+
+			// Do not add a second canonical if the site (or Joomla) already declared one
+			foreach ((array) ($doc->_links ?? []) as $link)
+			{
+				if (is_array($link) && (($link['relation'] ?? '') === 'canonical'))
+				{
+					return;
+				}
+			}
+
+			$doc->addHeadLink(htmlspecialchars($canonical, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), 'canonical');
+		}
+		catch (Exception $e)
+		{
+			// Without the extra head data the page is still correct
+		}
+	}
+
+	/**
+	 * Relative URL (path and query) of the current page, with the fragment of the comments section, after removing and adding
+	 * parameters of this fork. Used for the links of the sort selector and of the favourites toggle: no scheme or host, so nothing of the
+	 * request's Host header ends up in cacheable HTML.
+	 *
+	 * @param   string[]             $remove
+	 * @param   array<string,string> $add
+	 */
+	private function toolsUrl(array $remove, array $add): string
+	{
+		// safeRelative: the path of the request is attacker-influenced (a path starting with // would be a link to another site)
+		return CommentTools::withQuery(CommentTools::safeRelative(Uri::getInstance()->toString(['path', 'query'])), $remove, $add, 'akengage-comments-section');
+	}
+
+	/** Link of one sort mode (back to the first page; the favourites filter, if active, is kept). */
+	public function sortUrl(string $mode): string
+	{
+		// The favourites parameter is kept only when that list is the one shown (a guest's ignored parameter is not passed on)
+		return (ListOrdering::sortMode($mode) === null) ? '' : $this->toolsUrl(
+			array_merge([CommentTools::PARAM_SORT, 'akengage_limitstart', 'akengage_limit', 'akengage_cid'], $this->isFavoritesView() ? [] : [CommentTools::PARAM_FAV]),
+			[CommentTools::PARAM_SORT => $mode, 'akengage_limitstart' => '0']
+		);
+	}
+
+	/** Link of the favourites toggle: with $on the filtered list, without it the full list (the chosen sort is kept in both). */
+	public function favoritesUrl(bool $on): string
+	{
+		$add = ['akengage_limitstart' => '0'];
+
+		if ($on)
+		{
+			$add[CommentTools::PARAM_FAV] = '1';
+		}
+
+		return $this->toolsUrl([CommentTools::PARAM_FAV, 'akengage_limitstart', 'akengage_limit', 'akengage_cid'], $add);
+	}
+
+	/**
+	 * Absolute permalink of a comment for the copy button, built here and validated (http/https, plain host, no user info, no
+	 * characters that can break out of an attribute). Empty when it cannot be built safely: then no button is drawn.
+	 */
+	public function commentPermalink(int $commentId): string
+	{
+		return CommentTools::permalink(Uri::getInstance()->toString(['scheme', 'host', 'port', 'path', 'query']), $commentId);
+	}
+
+	/** Is the list currently the "only my favourites" one? */
+	public function isFavoritesView(): bool
+	{
+		return !empty($this->listState['favorites']);
+	}
+
+	/**
+	 * User ID of the author of the content item the comments belong to (0 = unknown or not an article). One bound query per page.
+	 */
+	public function getContentAuthorId(): int
+	{
+		if ($this->contentAuthorId !== null)
+		{
+			return $this->contentAuthorId;
+		}
+
+		$this->contentAuthorId = 0;
+
+		try
+		{
+			// getDatabase() of the models is protected in Joomla 6: take the database from the container
+			$db      = Factory::getContainer()->get(DatabaseInterface::class);
+			$assetId = (int) $this->assetId;
+			$query   = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true))
+				->select($db->quoteName('created_by'))
+				->from($db->quoteName('#__content'))
+				->where($db->quoteName('asset_id') . ' = :asset_id')
+				->bind(':asset_id', $assetId, ParameterType::INTEGER);
+			$this->contentAuthorId = max(0, (int) $db->setQuery($query, 0, 1)->loadResult());
+		}
+		catch (Exception $e)
+		{
+			$this->contentAuthorId = 0;
+		}
+
+		return $this->contentAuthorId;
+	}
+
+	/**
+	 * Can this user moderate comments? (core.edit.state or core.manage of the component, evaluated with Joomla's ACL.) Cached per
+	 * user for the request. A blocked or missing account is never shown as a moderator.
+	 */
+	public function isModeratorUser(int $userId): bool
+	{
+		if ($userId <= 0)
+		{
+			return false;
+		}
+
+		if (!array_key_exists($userId, $this->moderatorCache))
+		{
+			$ok = false;
+
+			try
+			{
+				$u  = UserFetcher::getUser($userId);
+				$ok = $u !== null && !$u->guest && (int) $u->id === $userId && empty($u->block)
+					&& ($u->authorise('core.edit.state', 'com_engage') || $u->authorise('core.manage', 'com_engage'));
+			}
+			catch (Exception $e)
+			{
+				$ok = false;
+			}
+
+			$this->moderatorCache[$userId] = (bool) $ok;
+		}
+
+		return $this->moderatorCache[$userId];
+	}
+
+	/**
+	 * Badges to show next to the name of the author of a comment: a list of keys ('author', 'moderator'). Empty when the option is off.
+	 *
+	 * @return string[]
+	 */
+	public function badgesFor(object $comment): array
+	{
+		if (empty($this->tools['show_badges']))
+		{
+			return [];
+		}
+
+		return CommentTools::badges((int) ($comment->created_by ?? 0), $this->getContentAuthorId(), fn(int $id): bool => $this->isModeratorUser($id));
+	}
+
+	/**
+	 * HTML of the badges of one comment (texts escaped, fixed icons, no group names, no IDs). Empty string when there are none.
+	 *
+	 * @param   string[]  $badges  badgesFor()
+	 */
+	public function badgesHtml(array $badges): string
+	{
+		if (!$badges)
+		{
+			return '';
+		}
+
+		$e    = static fn(string $s): string => htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+		$html = '<span class="akengage-badges">';
+
+		foreach ($badges as $badge)
+		{
+			if ($badge === 'author')
+			{
+				$html .= '<span class="akengage-badge akengage-badge--author">' . ReactionIcons::svg('badge-author') . '<span class="akengage-badge-text">' . $e(Text::_('COM_ENGAGE_BADGE_AUTHOR')) . '</span></span>';
+			}
+			elseif ($badge === 'moderator')
+			{
+				$html .= '<span class="akengage-badge akengage-badge--moderator">' . ReactionIcons::svg('badge-moderator') . '<span class="akengage-badge-text">' . $e(Text::_('COM_ENGAGE_BADGE_MODERATOR')) . '</span></span>';
+			}
+		}
+
+		return $html . '</span>';
+	}
+
+	/**
+	 * HTML of the copy-link button of one comment (0.8.0): a button with an outline icon and the absolute permalink in a data
+	 * attribute. Hidden until tools.js confirms the browser can copy (without JavaScript it is not shown). Empty when the option is
+	 * off or the link cannot be validated.
+	 */
+	public function copyButtonHtml(int $commentId): string
+	{
+		if (empty($this->tools['copy_link']) || $commentId <= 0)
+		{
+			return '';
+		}
+
+		$url = $this->commentPermalink($commentId);
+
+		if ($url === '')
+		{
+			return '';
+		}
+
+		$e     = static fn(string $s): string => htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+		$label = $e(Text::_('COM_ENGAGE_TOOLS_COPY_LABEL'));
+
+		return '<span class="akengage-copylink" data-engage-copywrap hidden>'
+			. '<button type="button" class="akengage-copy-btn" data-engage-copy="' . $e($url) . '" data-engage-id="' . (int) $commentId . '" aria-label="' . $label . '" title="' . $label . '">'
+			. ReactionIcons::svg('link') . ReactionIcons::svg('check')
+			. '</button></span>';
 	}
 
 	/**

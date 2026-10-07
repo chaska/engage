@@ -42,7 +42,7 @@ register_shutdown_function(function () use ($pid, $prevIso, $prevCom, $ASSET, $d
 });
 for ($i = 0; $i < 40; $i++) { $c = @file_get_contents("$BASE/"); if ($c !== false) { break; } usleep(250000); }
 
-$p = ['default_publish' => '1', 'max_level' => '3', 'comments_ordering' => 'asc'];
+$p = ['default_publish' => '1', 'max_level' => '3', 'comments_ordering' => 'asc', 'sort_selector' => '0', 'copy_link' => '0', 'show_badges' => '0'];
 q("UPDATE jos_extensions SET params='" . $db->real_escape_string(json_encode($p)) . "' WHERE element='com_engage' AND type='component'");
 $uid = (int) one("SELECT id FROM jos_users WHERE username='reacreg1'");
 if (!$uid) { die("Falta el usuario reacreg1 (ejecuta antes reacciones-http.php)\n"); }

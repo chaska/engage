@@ -154,6 +154,19 @@
 		},
 
 		{
+			"name": "com_engage.tools",
+			"description": "Tools of the comments list: copy the link of a comment (Clipboard API with a controlled fallback), no dependencies",
+			"type": "script",
+			"uri": "com_engage/tools.js",
+			"dependencies": [
+				"core"
+			],
+			"attributes": {
+				"defer": true
+			}
+		},
+
+		{
 			"name": "com_engage.settings",
 			"description": "Modern options screen: instant saving with fetch and CSRF token",
 			"type": "script",

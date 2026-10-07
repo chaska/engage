@@ -20,21 +20,43 @@ defined('_JEXEC') or die();
  * - default_form.php  Comment / reply submission form
  */
 
+use Akeeba\Component\Engage\Administrator\Helper\ReactionIcons;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Language\Text;
 
 /** @var \Akeeba\Component\Engage\Site\View\Comments\HtmlView $this */
 
 $cParams = ComponentHelper::getParams('com_engage');
+
+// 0.8.0: sort selector and "only my favourites" (CommentTools::resolve). With the options off nothing new is printed, not even whitespace.
+$listState   = $this->listState ?? [];
+$favView     = $this->isFavoritesView();
+$showToolbar = !empty($listState['selector']) && ($favView || $this->pagination->total >= 2);
+$headerHtml  = $favView
+	? Text::sprintf('COM_ENGAGE_FAV_HEADER', (int) $this->pagination->total)
+	: Text::plural($this->headerKey, $this->pagination->total, htmlspecialchars((string) $this->title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
 ?>
 <section id="akengage-comments-section" class="akengage-outer-container<?= ($this->theme !== 'classic') ? ' akengage-theme--' . $this->escape($this->theme) : '' ?><?= $this->escape($this->mobileAvatarClass()) ?>"
 		aria-label="<?= Text::_('COM_ENGAGE_COMMENTS_SECTION_HEADER') ?>">
 
 	<h3 class="akengage-title h4 border-bottom mb-2">
-		<?= Text::plural($this->headerKey, $this->pagination->total, htmlspecialchars((string) $this->title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) ?>
+		<?= $headerHtml ?>
 	</h3>
 
 	<?= $this->loadPosition('engage-before-comments') ?>
+<?php if ($showToolbar): ?>
+	<div class="akengage-toolbar" data-engage-toolbar>
+		<div class="akengage-sort" role="group" aria-labelledby="akengage-sort-label-<?= (int) $this->assetId ?>">
+			<span class="akengage-toolbar-label" id="akengage-sort-label-<?= (int) $this->assetId ?>"><?= Text::_('COM_ENGAGE_SORT_LABEL') ?></span>
+			<?php foreach ($listState['modes'] as $sortMode): $sortActive = ($sortMode === $listState['selected']); ?>
+			<a class="akengage-sort-link<?= $sortActive ? ' is-active' : '' ?>" href="<?= $this->escape($this->sortUrl($sortMode)) ?>" rel="nofollow"<?= $sortActive ? ' aria-current="true"' : '' ?>><?= Text::_('COM_ENGAGE_SORT_' . strtoupper($sortMode)) ?></a>
+			<?php endforeach; ?>
+		</div>
+		<?php if (!empty($listState['favButton'])): ?>
+		<a class="akengage-fav-toggle<?= $favView ? ' is-active' : '' ?>" href="<?= $this->escape($this->favoritesUrl(!$favView)) ?>" rel="nofollow" data-engage-fav-toggle<?= $favView ? ' aria-current="true"' : ' hidden' ?>><?= ReactionIcons::svg('favorite') ?><span class="akengage-fav-toggle-text"><?= Text::_($favView ? 'COM_ENGAGE_FAV_SHOW_ALL' : 'COM_ENGAGE_FAV_ONLY') ?></span></a>
+		<?php endif; ?>
+	</div>
+<?php endif; ?>
 
 	<?php if ($this->pagination->total): ?>
 		<div class="akengage-list-container">
@@ -50,6 +72,8 @@ $cParams = ComponentHelper::getParams('com_engage');
 			</div>
 		</div>
 		<?php endif; ?>
+	<?php elseif ($favView): ?>
+		<p class="akengage-fav-empty"><?= Text::_('COM_ENGAGE_FAV_EMPTY') ?></p>
 	<?php endif; ?>
 
 	<?php if (!$this->areCommentsClosed && $this->user->guest && !$this->perms['create']): ?>

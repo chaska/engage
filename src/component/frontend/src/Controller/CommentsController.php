@@ -10,8 +10,10 @@ namespace Akeeba\Component\Engage\Site\Controller;
 defined('_JEXEC') or die;
 
 use Akeeba\Component\Engage\Administrator\Controller\CommentsController as AdminCommentsController;
+use Akeeba\Component\Engage\Administrator\Helper\CommentTools;
 use Akeeba\Component\Engage\Administrator\Helper\ListLimits;
 use Akeeba\Component\Engage\Administrator\Helper\ListOrdering;
+use Akeeba\Component\Engage\Administrator\Helper\Reactions;
 use Akeeba\Component\Engage\Administrator\Helper\UserFetcher;
 use Akeeba\Component\Engage\Administrator\Mixin\ControllerRedirectionTrait;
 use Akeeba\Component\Engage\Administrator\Mixin\ControllerReturnURLTrait;
@@ -86,6 +88,8 @@ class CommentsController extends AdminCommentsController
 			'akengage_limitstart' => 'INT',
 			'akengage_limit'      => 'INT',
 			'akengage_cid'        => 'INT',
+			'akengage_sort'       => 'CMD',
+			'akengage_fav'        => 'CMD',
 		], $urlparams);
 
 		return parent::display($cachable, $urlparams);
@@ -376,6 +380,39 @@ class CommentsController extends AdminCommentsController
 		$assetId = $this->getAssetId();
 		$model->setState('filter.asset_id', $assetId);
 
+		// 0.8.0: sort selector (akengage_sort) and "only my favourites" (akengage_fav). Raw values go through closed lists / strict
+		// comparisons in CommentTools::resolve and ListOrdering::sortMode; they never reach the SQL.
+		$cParams   = ComponentHelper::getParams('com_engage');
+		$getParam  = static fn(string $k, $d) => $cParams->get($k, $d);
+		$identity  = UserFetcher::getUser();
+		$loggedIn  = $identity !== null && !$identity->guest && (int) $identity->id > 0;
+		$listState = CommentTools::resolve(
+			CommentTools::options($getParam),
+			Reactions::options($getParam),
+			$this->input->get(CommentTools::PARAM_SORT, null, 'raw'),
+			$this->input->get(CommentTools::PARAM_FAV, null, 'raw'),
+			$orderDir,
+			$loggedIn
+		);
+
+		// Belt and braces: the favourites list only exists for a user who can see this content item (what the reactions endpoints ask)
+		if ($listState['favorites'] && !ReactionsController::canView($identity, $assetId))
+		{
+			$listState['favorites'] = false;
+		}
+
+		$model->setState('list.sortmode', (string) ($listState['sort'] ?? ''));
+		$model->setState('filter.score_dislikes', (bool) Reactions::options($getParam)['dislike']);
+
+		if ($listState['favorites'])
+		{
+			// Personal list: the user comes from the session (never from the request); only published comments; never cached or shared
+			$model->setState('filter.favorite_user', (int) $identity->id);
+			$model->setState('filter.enabled', 1);
+			$this->disableJoomlaCache();
+			$this->app->setHeader('Vary', 'Cookie', false);
+		}
+
 		$cid = $this->input->getInt('akengage_cid', null);
 		$limitstart = $this->input->getInt('akengage_limit', null);
 
@@ -395,7 +432,8 @@ class CommentsController extends AdminCommentsController
 		$view = $this->getView();
 		$view->setModel($model, true);
 		$view->setModel($formModel);
-		$view->assetId = $assetId;
+		$view->assetId   = $assetId;
+		$view->listState = $listState;
 	}
 
 	/**
@@ -459,4 +497,4 @@ class CommentsController extends AdminCommentsController
 		return $defaultLimit;
 	}
 
-}
+}

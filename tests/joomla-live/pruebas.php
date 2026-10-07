@@ -42,6 +42,8 @@ function param(array $kv): void
 	// 0.7.1: esta bateria mide el HTML de la 0.6.28 (el detector de XSS rechaza cualquier <svg>, y los botones de reaccion llevan iconos SVG propios): las reacciones
 	// se desactivan, como en las pruebas 09 a 16, salvo que una llamada pida otra cosa. Las reacciones tienen la suya (17).
 	if (!array_key_exists('reactions_enabled', $p) && !array_key_exists('reactions_enabled', $kv)) { $p['reactions_enabled'] = '0'; }
+	// 0.8.0: igual con las herramientas nuevas (selector de orden, copiar enlace e insignias): esta bateria mide el HTML anterior. Tienen la suya (19).
+	foreach (['sort_selector', 'copy_link', 'show_badges'] as $nuevo) { if (!array_key_exists($nuevo, $p) && !array_key_exists($nuevo, $kv)) { $p[$nuevo] = '0'; } }
 	foreach ($kv as $k => $v) { if ($v === null) { unset($p[$k]); } else { $p[$k] = $v; } }
 	global $db;
 	$db->query("UPDATE jos_extensions SET params='" . $db->real_escape_string(json_encode($p)) . "' WHERE element='com_engage' AND type='component'");

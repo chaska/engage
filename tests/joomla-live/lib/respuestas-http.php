@@ -93,7 +93,7 @@ foreach (['asc', 'desc'] as $orden) {
 }
 foreach ($matriz as [$orden, $maxl]) {
 	$vaciar();
-	param(['reactions_enabled' => '0', 'default_publish' => '1', 'comments_ordering' => $orden, 'max_level' => (string) $maxl]);
+	param(['reactions_enabled' => '0', 'sort_selector' => '0', 'copy_link' => '0', 'show_badges' => '0', 'default_publish' => '1', 'comments_ordering' => $orden, 'max_level' => (string) $maxl]);
 	$c = new Cliente($BASE, "$WORK/tmp", 'respuestas');
 	$mapa = [];   // etiqueta => id
 	$plan = [['A', 0], ['B', 'A'], ['C', 'B'], ['D', 'C'], ['F', 'A'], ['E', 0], ['H', 'E']];

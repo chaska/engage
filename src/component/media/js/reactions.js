@@ -172,6 +172,25 @@
             paint(id, items[id], state);
             groups[i].hidden = false;
         }
+
+        showFavToggle();
+    }
+
+    /**
+     * 0.8.0: el conmutador «Solo mis favoritos» de la barra de la lista viene oculto en el HTML (que puede estar en cache y es igual para
+     * todos); solo se muestra a quien tiene sesion y puede reaccionar. Es un enlace normal a la misma pagina con akengage_fav=1: el
+     * servidor vuelve a comprobar la sesion al servir esa lista. Solo se hace caso al conmutador de la barra, fuera del texto de los comentarios.
+     */
+    function showFavToggle() {
+        var toggles = document.querySelectorAll("[data-engage-fav-toggle]");
+
+        for (var i = 0; i < toggles.length; i++) {
+            var t = toggles[i];
+
+            if (!t.closest("[data-engage-toolbar]") || t.closest(".akengage-comment-body") || t.getAttribute("aria-current") === "true") { continue; }
+
+            t.hidden = !(state.auth && state.can);
+        }
     }
 
     function collectIds() {
