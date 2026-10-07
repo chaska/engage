@@ -2,15 +2,29 @@
 # Prueba de ACTUALIZACION en sitio: instala el 3.4.2 original (reconstruido desde upstream/3.4.2-instalado), crea datos
 # reales y ajustes, instala encima el paquete del fork y compara tablas, ajustes, extensiones, ficheros y update site.
 # Usa un segundo Joomla (SITE_DIR=site2, DB joomla_upg, puerto 8081). Requisitos: 00-entorno.sh y 01-montar-joomla.sh con esas variables.
+# 0.7.0: PKG_ANTES=/ruta/pkg_engage-3.4.2.1.zip instala ese paquete (p. ej. el PUBLICADO, descargado de la release v3.4.2.1) en lugar del 3.4.2 original
+# y actualiza desde el. Sin la variable se parte del 3.4.2 original reconstruido desde upstream/. En ambos casos, tras actualizar se comprueba que la
+# tabla de reacciones se crea, que el esquema pasa a 3.4.3-20261007 y que los comentarios y ajustes previos quedan intactos.
 set -euo pipefail
 export SITE_DIR="${SITE_DIR:-site2}" DB_NAME="${DB_NAME:-joomla_upg}" PORT="${PORT:-8081}" IDS_FILE="${IDS_FILE:-ids2.json}"
 source "$(dirname "$0")/config.sh"
 OUT="$WORK/upgrade"; mkdir -p "$OUT"
 php "$REPO/build/build.php" >/dev/null
-echo "== 1. Paquete del 3.4.2 original (reconstruido desde upstream/3.4.2-instalado, upstream/ no se modifica)"
-php "$AQUI/lib/empaquetar-upstream.php" "$REPO/upstream/3.4.2-instalado" "$WORK/upstream-pkg" "$REPO/build/build.php" | tail -2
-echo "== 2. Instalacion del 3.4.2 original"
-bash "$AQUI/02-instalar-engage.sh" "$WORK/upstream-pkg/dist/pkg_engage-3.4.2.zip" > "$OUT/instalacion-3.4.2.txt" 2>&1; head -3 "$OUT/instalacion-3.4.2.txt"
+if [ -n "${PKG_ANTES:-}" ]; then
+	echo "== 1. Paquete de partida: $PKG_ANTES (sha256 $(sha256sum "$PKG_ANTES" | cut -c1-16)...)"
+	ANTES_ZIP="$PKG_ANTES"
+else
+	echo "== 1. Paquete del 3.4.2 original (reconstruido desde upstream/3.4.2-instalado, upstream/ no se modifica)"
+	php "$AQUI/lib/empaquetar-upstream.php" "$REPO/upstream/3.4.2-instalado" "$WORK/upstream-pkg" "$REPO/build/build.php" | tail -2
+	ANTES_ZIP="$WORK/upstream-pkg/dist/pkg_engage-3.4.2.zip"
+fi
+echo "== 2. Instalacion del paquete de partida"
+# Empieza SIEMPRE de un sitio sin Engage (Joomla no baja el esquema de #__schemas: si una pasada anterior dejo 3.4.3-20261007 la actualizacion no tendria nada que ejecutar)
+WORK="$WORK" SITE_DIR="$SITE_DIR" DB_NAME="$DB_NAME" php "$AQUI/lib/desinstalar.php" > "$OUT/desinstalacion-previa.txt" 2>&1 || true
+mysql "$DB_NAME" -e "DROP TABLE IF EXISTS jos_engage_reactions" 2>/dev/null || true
+bash "$AQUI/02-instalar-engage.sh" "$ANTES_ZIP" > "$OUT/instalacion-antes.txt" 2>&1; head -3 "$OUT/instalacion-antes.txt"
+echo "   tabla de reacciones ANTES de actualizar: $(mysql -N "$DB_NAME" -e "SHOW TABLES LIKE 'jos_engage_reactions'" | wc -l) (0 = no existe, como debe ser)"
+echo "   esquema ANTES: $(mysql -N "$DB_NAME" -e "SELECT version_id FROM jos_schemas WHERE extension_id=(SELECT extension_id FROM jos_extensions WHERE element='com_engage' AND type='component')")"
 echo "== 3. Datos reales y ajustes"
 mysql "$DB_NAME" -e "DELETE FROM jos_engage_comments" 2>/dev/null || true   # reejecutable: sin comentarios de pasadas anteriores
 JOOMLA_SITE="$WORK/$SITE_DIR" BASE_URL="$BASE_URL" php "$AQUI/lib/seed.php" > "$WORK/$IDS_FILE"
@@ -40,6 +54,13 @@ echo "-- ficheros: sobrantes del 3.4.2 que ya no estan en el fork:"
 comm -23 <(awk '{print $2}' "$OUT/antes-ficheros.txt") <(awk '{print $2}' "$OUT/despues-ficheros.txt") | sed 's/^/   /' | head -20
 echo "-- ficheros nuevos del fork:"; comm -13 <(awk '{print $2}' "$OUT/antes-ficheros.txt") <(awk '{print $2}' "$OUT/despues-ficheros.txt") | sed 's/^/   /' | head -20
 echo "-- ficheros modificados: $(comm -13 <(sort "$OUT/antes-ficheros.txt") <(sort "$OUT/despues-ficheros.txt") | awk '{print $2}' | sort -u | wc -l) (incluye los nuevos)"
+echo "== 5b. Reacciones (0.7.0): tabla nueva, esquema y datos previos"
+N="$(mysql -N "$DB_NAME" -e "SHOW TABLES LIKE 'jos_engage_reactions'" | wc -l)"; echo "   tabla jos_engage_reactions creada: $N (1 = si)"
+SCH="$(mysql -N "$DB_NAME" -e "SELECT version_id FROM jos_schemas WHERE extension_id=(SELECT extension_id FROM jos_extensions WHERE element='com_engage' AND type='component')")"; echo "   esquema DESPUES: $SCH (debe ser 3.4.3-20261007)"
+echo "   columnas: $(mysql -N "$DB_NAME" -e "SELECT GROUP_CONCAT(column_name ORDER BY ordinal_position) FROM information_schema.columns WHERE table_schema='$DB_NAME' AND table_name='jos_engage_reactions'")"
+echo "   indices: $(mysql -N "$DB_NAME" -e "SELECT GROUP_CONCAT(DISTINCT index_name ORDER BY index_name) FROM information_schema.statistics WHERE table_schema='$DB_NAME' AND table_name='jos_engage_reactions'")"
+echo "   comentarios despues: $(mysql -N "$DB_NAME" -e 'SELECT COUNT(*) FROM jos_engage_comments') (identicos a los de antes: lo dice la comparacion de tablas de arriba)"
+[ "$N" = "1" ] && [ "$SCH" = "3.4.3-20261007" ] && echo "RESULTADO reacciones: PASA" || { echo "RESULTADO reacciones: FALLA"; exit 1; }
 echo "== 6. Humo web tras actualizar"
 ART="$(python3 -c "import json;d=json.load(open('$WORK/$IDS_FILE'));print('%s&catid=%s' % (d['art_publico'], d['cat_publica']))")"
 for u in "/" "/administrator/" "/index.php?option=com_content&view=article&id=$ART"; do printf '%s -> HTTP %s\n' "$u" "$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL$u")"; done

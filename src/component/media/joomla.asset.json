@@ -1,7 +1,7 @@
 {
 	"$schema": "https://developer.joomla.org/schemas/json-schema/web_assets.json",
 	"name": "com_engage",
-	"version": "3.4.2.1",
+	"version": "3.4.3",
 	"description": "Akeeba Engage",
 	"license": "GPL-3.0-or-later",
 	"assets": [
@@ -138,6 +138,19 @@
 			"description": "Modern options screen (.eg-admin): rows, switches, segmented controls",
 			"type": "style",
 			"uri": "com_engage/settings.css"
+		},
+
+		{
+			"name": "com_engage.reactions",
+			"description": "Reaction buttons of the comments (like, dislike, favorite): counters and own state by AJAX, no dependencies",
+			"type": "script",
+			"uri": "com_engage/reactions.js",
+			"dependencies": [
+				"core"
+			],
+			"attributes": {
+				"defer": true
+			}
 		},
 
 		{

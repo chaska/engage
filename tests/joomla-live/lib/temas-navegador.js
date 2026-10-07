@@ -122,7 +122,7 @@ function medirBoton(i) {
 
 (async () => {
     sql(`DELETE FROM jos_engage_comments WHERE asset_id=${AS}`);
-    const base = {default_publish: '1', max_level: '3', comments_ordering: 'asc'};
+    const base = {default_publish: '1', max_level: '3', comments_ordering: 'asc', reactions_enabled: '0'}; // 0.7.0: las reacciones tienen su propia prueba (17-reacciones.sh)
     const cuerpo = '<p>Texto principal con <a href="https://example.org/enlace">un enlace</a> y <strong>negrita</strong>.</p><blockquote><p>Una cita dentro del comentario</p></blockquote><pre>codigo = 1</pre>';
     const raiz = ins('NULL', cuerpo, 'Lute', 1, '2025-03-12 10:00:00');
     sql(`UPDATE jos_engage_comments SET modified_by=518, modified='2026-10-04 12:00:00' WHERE id=${raiz}`);

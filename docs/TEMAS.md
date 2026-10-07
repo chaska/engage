@@ -57,6 +57,17 @@ Opción **Componentes > Engage > Opciones > Apariencia > «Avatar en móvil»** 
 - **Moderno** y **Minimalista** se ven **claros** siempre, también con el dispositivo en modo oscuro: el tema pisa ese bloque de `comments.css` (incluida la fecha, que `comments.css` pinta con `!important`).
 - **Oscuro** se ve **oscuro** siempre, con el dispositivo en modo claro u oscuro.
 
+## Reacciones y favoritos (0.7.0)
+
+Las reacciones (me gusta, no me gusta, favorito; ver [`REACCIONES.md`](REACCIONES.md)) usan **los mismos colores del tema**: los botones son de contorno con el color del texto suave (`--eg-texto-suave`) y al pasar el ratón o pulsarlos toman `--eg-enlace`; el foco usa `--eg-acento`. Los estilos neutros (los del tema Clásico) están en `replies.css`, que se carga siempre.
+
+Tres variables nuevas, definidas en `:root` de cada tema:
+
+- `--eg-fav-fondo`: fondo amarillo suave del **cuerpo** del comentario favorito (solo lo ve quien lo marcó). Moderno `#fff4c2`, Minimalista `#fff6cc`, Oscuro `#4a3f12` (un amarillo oliva oscuro, para que el texto claro mantenga el contraste). Con el tema Clásico vale `#fff3bf` y la hoja fija también el color del texto (`--eg-fav-texto`, `#1f2937`), de los enlaces (`--eg-fav-enlace`, `#0a58ca`) y de las notas (`--eg-fav-suave`, `#4b5563`).
+- `--eg-fav-estrella` y `--eg-fav-estrella-borde`: relleno y contorno de la estrella pulsada.
+
+Contraste del texto sobre el amarillo, calculado y **medido en navegador** (texto principal, fecha, enlaces, notas y código, con la página clara u oscura y el dispositivo en modo claro u oscuro): mínimo 9,5:1 en Oscuro, 13,2:1 en Moderno y Clásico y 14,6:1 en Minimalista (se exige 4,5:1). Si cambia `--eg-fav-fondo`, mantenga ese mínimo con `--eg-texto`, `--eg-texto-suave`, `--eg-enlace`, `--eg-ok` y `--eg-peligro`.
+
 ## Variables CSS (`--eg-*`)
 
 Todos los colores y medidas del tema son variables definidas en `:root` de la hoja del tema. Para cambiarlas, **redefínalas después** de esa hoja: en el CSS personalizado de su plantilla (Cassiopeia: `media/templates/site/cassiopeia/css/user.css`; Helix Ultimate: «CSS personalizado») o en el ajuste de Engage «Cargar CSS personalizado» si su plantilla permite añadir hojas después de la de Engage. Ejemplo (tema Moderno con acento verde y tarjetas menos redondeadas):
@@ -89,6 +100,9 @@ Valores por defecto de cada tema:
 | `--eg-fondo` | fondo de la tarjeta | `#ffffff` | `#ffffff` | `#1e293b` |
 | `--eg-fondo-cabecera` | fondo de la cabecera de la tarjeta | `#f5f7fb` | `#ffffff` | `#263449` |
 | `--eg-fondo-respuesta` | fondo de las respuestas con reply_style = soft | `#f1f5fd` | `#fafafa` | `#233147` |
+| `--eg-fav-fondo` | fondo amarillo suave del cuerpo de un comentario favorito (solo lo ve quien lo marcó) | `#fff4c2` | `#fff6cc` | `#4a3f12` |
+| `--eg-fav-estrella` | relleno de la estrella de favorito pulsada | `#facc15` | `#facc15` | `#fbbf24` |
+| `--eg-fav-estrella-borde` | contorno de la estrella pulsada | `#854d0e` | `#854d0e` | `#fbbf24` |
 | `--eg-fondo-boton` | fondo de los botones con borde | `#ffffff` | `#ffffff` | `#1e293b` |
 | `--eg-borde` | bordes y separadores | `#d5dce8` | `#e5e7eb` | `#3b4a63` |
 | `--eg-texto` | texto principal | `#1e293b` | `#222222` | `#f1f5f9` |

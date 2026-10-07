@@ -80,6 +80,9 @@
 	--eg-fuente-tam: 1.02rem;  /* tamaño del texto del comentario */
 	--eg-interlineado: 1.6;  /* interlineado del comentario */
 	--eg-movimiento: box-shadow .2s ease, transform .2s ease, background-color .15s ease, color .15s ease;  /* transiciones */
+	--eg-fav-fondo: #fff4c2;  /* fondo del cuerpo de un comentario favorito (amarillo suave; el texto del tema mantiene >= 4,5:1) */
+	--eg-fav-estrella: #facc15;  /* relleno de la estrella pulsada */
+	--eg-fav-estrella-borde: #854d0e;  /* contorno de la estrella pulsada */
 	--akengage-reply-bg: var(--eg-fondo-respuesta);
 }
 
@@ -455,3 +458,22 @@ section.akengage-outer-container.akengage-theme--modern .akengage-commenter-user
 section.akengage-outer-container.akengage-theme--modern article[class*="akengage-comment--"]:hover { transform: translateY(-1px); }
 section.akengage-outer-container.akengage-theme--modern .akengage-list-container .akengage-comment-actions button.btn:hover { transform: translateY(-1px); }
 section.akengage-outer-container.akengage-theme--modern .akengage-list-container .akengage-comment-reply button.btn:hover { box-shadow: 0 6px 16px rgba(37, 99, 235, .30); }
+
+/* Reacciones a los comentarios (0.7.0): botones de contorno que se rellenan al pulsarlos; favorito con cuerpo amarillo suave */
+section.akengage-outer-container.akengage-theme--modern .akengage-reactions .akengage-react-btn {
+	color: var(--eg-texto-suave) !important;
+}
+section.akengage-outer-container.akengage-theme--modern .akengage-reactions .akengage-react-btn:hover:not(:disabled),
+section.akengage-outer-container.akengage-theme--modern .akengage-reactions .akengage-react-btn:focus-visible {
+	color: var(--eg-enlace) !important;
+	background-color: rgba(127, 127, 127, .16);
+}
+section.akengage-outer-container.akengage-theme--modern .akengage-reactions .akengage-react-btn:focus-visible {
+	outline-color: var(--eg-acento);
+}
+section.akengage-outer-container.akengage-theme--modern .akengage-reactions .akengage-react-btn[aria-pressed="true"] {
+	color: var(--eg-enlace) !important;
+}
+section.akengage-outer-container.akengage-theme--modern article.akengage-is-favorite .akengage-comment-body {
+	background-color: var(--eg-fav-fondo);
+}

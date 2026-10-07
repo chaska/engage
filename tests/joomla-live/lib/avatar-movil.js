@@ -53,7 +53,7 @@ const restaurar = () => {
     for (const [id, en, pr] of prev.plug) sql(`UPDATE jos_extensions SET enabled=${en}, params=${q(pr || '')} WHERE extension_id=${id}`);
 };
 const setCom = (tema, valor) => {
-    const p = {default_publish: '1', max_level: '3', comments_ordering: 'asc'};
+    const p = {default_publish: '1', max_level: '3', comments_ordering: 'asc', reactions_enabled: '0'}; // 0.7.0: sin la fila de reacciones, para seguir comparando con la referencia de la 0.6.27
     if (tema) p.theme = tema;
     if (valor) p.mobile_avatar = valor;
     sql(`UPDATE jos_extensions SET params=${q(JSON.stringify(p))} WHERE element='com_engage' AND type='component'`);

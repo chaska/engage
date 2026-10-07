@@ -302,6 +302,10 @@ class Engage extends CMSPlugin implements SubscriberInterface
 
 		$assetId = $data->asset_id;
 		$db      = $this->getDatabase();
+
+		// 0.7.0: the reactions of those comments first (they are found through the comments, which are deleted next)
+		\Akeeba\Component\Engage\Administrator\Helper\ReactionStore::deleteForAsset($db, (int) $assetId);
+
 		$query   = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true))
 			->delete($db->qn('#__engage_comments'))
 			->where($db->qn('asset_id') . ' = ' . $db->q($assetId));

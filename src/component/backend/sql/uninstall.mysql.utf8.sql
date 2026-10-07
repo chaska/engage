@@ -7,6 +7,7 @@
 -- Currently used tables
 DROP TABLE IF EXISTS `#__engage_comments`;
 DROP TABLE IF EXISTS `#__engage_unsubscribe`;
+DROP TABLE IF EXISTS `#__engage_reactions`;
 
 -- Legacy table, just in case
 DROP TABLE IF EXISTS `#__engage_emailtemplates`;

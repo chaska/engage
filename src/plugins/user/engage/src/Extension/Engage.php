@@ -127,6 +127,13 @@ class Engage extends CMSPlugin implements SubscriberInterface
 			return;
 		}
 
+		// 0.7.0: the reactions made by the user (likes, dislikes, favorites) are deleted with the account when Joomla deleted it
+		// (never throws). This runs before the checks below, which belong to the comment pseudonymisation.
+		if ($success)
+		{
+			\Akeeba\Component\Engage\Administrator\Helper\ReactionStore::deleteForUser($this->getDatabase(), (int) $userId);
+		}
+
 		// Make sure we've seen this user ID before
 		if (array_key_exists($userId, $this->usersToRemove))
 		{

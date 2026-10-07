@@ -289,6 +289,25 @@ Conclusión: con `max_level` >= 2 el servidor ya agrupa y anida; con `max_level`
 
 NO PROBADO: Helix Ultimate real (simulado), Firefox/Safari, la pestaña «Respuestas» y su `showon` pintados en el panel, el módulo `engage_latest` renderizado, y el `max_level` real del sitio de Chas.
 
+## 13. Reacciones a los comentarios (0.7.0, paquete 3.4.3)
+
+Joomla 6.1.4, PHP 8.3.6, MariaDB 10.11, Chromium headless con Playwright. Scripts: `tests/joomla-live/17-reacciones.sh` (HTTP, CLI y navegador), `04-actualizacion.sh` (con `PKG_ANTES` para el paquete publicado) y `18-desinstalacion.sh`.
+
+| Prueba | Resultado |
+|---|---|
+| HTTP real (`lib/reacciones-http.php`): invitado, 2 Registered, Manager; esqueleto idéntico para todos y sin estado ni token; consulta GET sin efectos; CSRF (sin token, falso, de otra sesión, en la URL, GET, PUT, JSON, `cross-site`); 21 `comment_id` y 11 `type` hostiles (SQL, XSS, NUL, arrays, enormes); inexistente, sin publicar, spam, artículo restringido y sin publicar; transiciones y acumulación; favorito privado; propio; límite de 60 por minuto (429); opciones; borrado en cascada | 127 comprobaciones, 0 fallan; las tablas, usuarios, ajustes y permisos no cambian con ninguna entrada inválida |
+| RGPD y usuarios (`lib/reacciones-cli.php`, framework y plugins reales): exportación y supresión por `com_privacy`, borrado con `User::delete()`, borrado por artículo | 12 comprobaciones, 0 fallan |
+| Navegador (`lib/reacciones-navegador.js`): 5 variantes (Clásico, Clásico con CSS propio, Moderno, Minimalista, Oscuro) x página clara/oscura x 390/768/1280 px = 30 combinaciones: botonera en la fila de «Responder» sin solapes ni desbordes, área táctil >= 40 px en móvil, contorno/relleno según `aria-pressed`, contadores, favorito amarillo, iconos >= 3:1; teclado (Tab, Espacio, Enter, foco visible), ARIA, persistencia, doble clic, botón falso inyectado, sin JavaScript, movimiento reducido, caché de página, opciones | 387 comprobaciones, 0 fallan. Contraste mínimo del texto sobre el amarillo del favorito: 9,5:1 (Oscuro), 13,2:1 (Moderno y Clásico, con y sin CSS propio), 14,6:1 (Minimalista); se exigía 4,5:1 |
+| Red y consola del navegador | 0 peticiones a otros hosts, 0 errores de JavaScript |
+| Actualización desde la **3.4.2 original** (reconstruida desde `upstream/`) | tabla creada; esquema `3.0.2-20220107` -> `3.4.3-20261007`; tablas de comentarios idénticas (volcado completo), permisos y plantillas de correo idénticos; 16 comprobaciones web |
+| Actualización desde el **paquete 3.4.2.1 publicado** (descargado de la release; SHA-256 `a1891a7cd729ba3a…2958`, igual al de la release) | igual que arriba: tabla creada, esquema actualizado, datos previos intactos, 16 comprobaciones web, 0 avisos de PHP |
+| Desinstalación (`Installer::uninstall` del paquete, con reacciones guardadas) | 0 tablas `engage_*` (también desaparece la de reacciones), 0 extensiones, 0 sitios de actualización, 0 esquemas, 0 plantillas de correo, 0 carpetas |
+| Regresión: 03 (73), 05 (27+22+4), 07 (39+3), 08 (22+46), 09 (37+17), 10 (247), 11 (61), 12-ajustes (74), 12-maquetación (24; 552 filas), 13 (15), 14 (16), 15 (72), 16 (759) | todo pasa. Con las reacciones desactivadas (09 a 16), `classic + auto` es idéntico a la referencia de la 0.6.27 (HTML y estilos calculados de 132 páginas) |
+
+Incidencias de la tanda: la prueba 07 (JBCookies con caché de página) falló una vez en JC-01 y pasó 42 de 42 al repetirla; se atribuye al retraso de unos 2 s con que el servidor de pruebas (`php -S` con opcache) relee `configuration.php` al activar la caché. La prueba 12-ajustes esperaba 8 categorías y ahora hay 9. Dos defectos propios encontrados por las pruebas y corregidos antes del paquete: `"1\n"` pasaba la validación de identificadores (el `$` de PCRE admite un salto de línea final; ahora con el modificador `D`) y los botones se deshabilitaban mientras se enviaban, con lo que el teclado perdía el foco (ahora `aria-busy`).
+
+NO PROBADO: Joomla 5.x, MySQL, otros navegadores, lectores de pantalla reales y la oferta de actualización desde el servidor de GitHub (la release v3.4.3 no existe).
+
 ## 9. Estado del paquete
 
 Hash del ZIP al cierre de esta tanda y coincidencia con `updates/pkgengage.xml`: ver `docs/PUBLICAR-RELEASE.md` y comprobar con `php build/build.php` (reproducible). No se ha publicado ninguna release: la URL de descarga de `updates/pkgengage.xml` no existirá hasta que el propietario suba **ese mismo ZIP** a la release `v3.4.2.1`.

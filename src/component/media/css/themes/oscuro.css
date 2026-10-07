@@ -80,6 +80,9 @@
 	--eg-fuente-tam: 1rem;  /* tamaño del texto del comentario */
 	--eg-interlineado: 1.6;  /* interlineado del comentario */
 	--eg-movimiento: box-shadow .2s ease, background-color .15s ease, color .15s ease;  /* transiciones */
+	--eg-fav-fondo: #4a3f12;  /* fondo del cuerpo de un comentario favorito (amarillo suave; el texto del tema mantiene >= 4,5:1) */
+	--eg-fav-estrella: #fbbf24;  /* relleno de la estrella pulsada */
+	--eg-fav-estrella-borde: #fbbf24;  /* contorno de la estrella pulsada */
 	--akengage-reply-bg: var(--eg-fondo-respuesta);
 }
 
@@ -456,4 +459,23 @@ section.akengage-outer-container.akengage-theme--dark .akengage-commenter-userna
 		transform: none !important;
 		animation: none !important;
 	}
+}
+
+/* Reacciones a los comentarios (0.7.0): botones de contorno que se rellenan al pulsarlos; favorito con cuerpo amarillo suave */
+section.akengage-outer-container.akengage-theme--dark .akengage-reactions .akengage-react-btn {
+	color: var(--eg-texto-suave) !important;
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-reactions .akengage-react-btn:hover:not(:disabled),
+section.akengage-outer-container.akengage-theme--dark .akengage-reactions .akengage-react-btn:focus-visible {
+	color: var(--eg-enlace) !important;
+	background-color: rgba(127, 127, 127, .16);
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-reactions .akengage-react-btn:focus-visible {
+	outline-color: var(--eg-acento);
+}
+section.akengage-outer-container.akengage-theme--dark .akengage-reactions .akengage-react-btn[aria-pressed="true"] {
+	color: var(--eg-enlace) !important;
+}
+section.akengage-outer-container.akengage-theme--dark article.akengage-is-favorite .akengage-comment-body {
+	background-color: var(--eg-fav-fondo);
 }

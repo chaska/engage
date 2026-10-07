@@ -9,6 +9,8 @@ namespace Akeeba\Component\Engage\Site\View\Comments;
 
 defined('_JEXEC') or die;
 
+use Akeeba\Component\Engage\Administrator\Helper\ReactionIcons;
+use Akeeba\Component\Engage\Administrator\Helper\Reactions;
 use Akeeba\Component\Engage\Administrator\Helper\UserFetcher;
 use Akeeba\Component\Engage\Administrator\Mixin\ViewLoadAnyTemplateTrait;
 use Akeeba\Component\Engage\Site\Helper\Meta;
@@ -126,6 +128,15 @@ class HtmlView extends BaseHtmlView
 	 * @since 0.6.28
 	 */
 	public $mobileAvatar = 'auto';
+
+	/**
+	 * Reaction buttons (component options reactions_*), normalised: enabled, dislike, favorites, who. When disabled the page is
+	 * byte for byte the one of the previous version (no skeleton, no script). The per-user state is never rendered here.
+	 *
+	 * @var   array
+	 * @since 0.7.0
+	 */
+	public $reactions = ['enabled' => false, 'dislike' => true, 'favorites' => true, 'who' => 'registered'];
 
 	/**
 	 * Currently logged in user's permissions
@@ -297,6 +308,7 @@ class HtmlView extends BaseHtmlView
 		$this->theme         = in_array($theme, ['classic', 'modern', 'minimal', 'dark'], true) ? $theme : 'classic';
 		$mobileAvatar        = (string) $params->get('mobile_avatar', 'auto');
 		$this->mobileAvatar  = in_array($mobileAvatar, ['auto', 'show', 'hide'], true) ? $mobileAvatar : 'auto';
+		$this->reactions     = Reactions::options(static fn(string $k, $d) => $params->get($k, $d));
 		$this->replyToNames  = $this->showInReplyTo ? $this->loadReplyToNames() : ['same' => [], 'other' => []];
 
 		// Page parameters
@@ -354,6 +366,21 @@ class HtmlView extends BaseHtmlView
 		Text::script('COM_ENGAGE_COMMENTS_FORM_BTN_SUBMIT_PLEASE_WAIT');
 
 		Text::script('COM_ENGAGE_COMMENTS_DELETE_PROMPT');
+
+		// Reactions (0.7.0): the same script options and texts for every visitor (the page may be cached); the state comes from the AJAX call
+		if ($this->reactions['enabled'])
+		{
+			foreach (['HINT_LOGIN', 'HINT_COMMENTERS', 'HINT_OWN', 'ERR_FAILED', 'ERR_RATE', 'ERR_DENIED'] as $reactionKey)
+			{
+				Text::script('COM_ENGAGE_REACTIONS_' . $reactionKey);
+			}
+
+			$doc->addScriptOptions('akeeba.Engage.Reactions', [
+				'stateUrl'  => Route::_('index.php?option=com_engage&task=reactions.state&format=json', false),
+				'toggleUrl' => Route::_('index.php?option=com_engage&task=reactions.toggle&format=json', false),
+			]);
+			$doc->getWebAssetManager()->useScript('com_engage.reactions');
+		}
 
 		// Comment form
 		if (!$this->areCommentsClosed && $this->perms['create'])
@@ -607,6 +634,44 @@ class HtmlView extends BaseHtmlView
 		{
 			return new DateTimeZone('UTC');
 		}
+	}
+
+	/**
+	 * HTML skeleton of the reaction buttons of one comment (0.7.0). Identical for every visitor: no state, no counters, hidden
+	 * until reactions.js fills it in (without JavaScript the buttons are not shown). Texts and the comment ID are escaped.
+	 *
+	 * @param   int  $commentId
+	 *
+	 * @return  string
+	 * @since   0.7.0
+	 */
+	public function reactionsHtml(int $commentId): string
+	{
+		if (!$this->reactions['enabled'] || $commentId <= 0)
+		{
+			return '';
+		}
+
+		$e     = static fn(string $s): string => htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+		$types = ['like' => true, 'dislike' => $this->reactions['dislike'], 'favorite' => $this->reactions['favorites']];
+		$html  = '<div class="akengage-reactions" role="group" aria-label="' . $e(Text::_('COM_ENGAGE_REACTIONS_GROUP')) . '" data-engage-reactions hidden>';
+
+		foreach ($types as $type => $on)
+		{
+			if (!$on)
+			{
+				continue;
+			}
+
+			$label = $e(Text::_('COM_ENGAGE_REACTIONS_' . strtoupper($type)));
+			$html .= '<span class="akengage-react-item akengage-react-item--' . $type . '">'
+				. '<button type="button" class="akengage-react-btn akengage-react-' . $type . '" data-engage-react="' . $type . '" data-engage-id="' . (int) $commentId . '" aria-pressed="false" aria-label="' . $label . '">'
+				. ReactionIcons::svg($type) . '</button>'
+				. (($type === 'favorite') ? '' : '<span class="akengage-react-count" data-engage-count="' . $type . '" aria-live="polite"></span>')
+				. '</span>';
+		}
+
+		return $html . '</div>';
 	}
 
 	/**

@@ -41,7 +41,7 @@ t_ok(S::parse('<!DOCTYPE x [<!ENTITY a SYSTEM "file:///etc/passwd">]><config><fi
 echo "B) Distribucion en categorias\n";
 $sec = SettingsLayout::sections();
 $ids = array_column($sec, 'id');
-t_ok($ids === ['design', 'moderation', 'antispam', 'notifications', 'privacy', 'security', 'advanced', 'permissions'], 'categorias: Diseno, Moderacion, Antispam, Notificaciones, Privacidad y Gravatar, Seguridad del HTML, Avanzado y Permisos');
+t_ok($ids === ['design', 'moderation', 'reactions', 'antispam', 'notifications', 'privacy', 'security', 'advanced', 'permissions'], 'categorias: Diseno, Moderacion, Reacciones (0.7.0), Antispam, Notificaciones, Privacidad y Gravatar, Seguridad del HTML, Avanzado y Permisos');
 $vistos = [];
 foreach ($sec as $s1) { foreach ($s1['items'] as $it) { $vistos[] = $it[0] . '.' . $it[1]; } }
 t_ok(count($vistos) === count(array_unique($vistos)), 'ningun ajuste aparece dos veces');
@@ -217,7 +217,7 @@ t_ok(str_contains($vista, "'url'   => Route::_('index.php?option=com_engage&task
 t_ok(str_contains($vista, 'COM_ENGAGE_SET_CLASSIC') && str_contains($tpl, 'classicUrl') && str_contains($vista, 'com_config&view=component&component=com_engage'), 'enlace "Opciones clasicas" a la pantalla de Joomla (respaldo)');
 $panel = $lf("$c/backend/tmpl/controlpanel/default.php");
 t_ok(str_contains($panel, "'index.php?option=com_engage&view=settings'") && str_contains($panel, "&section=permissions") && str_contains($panel, "'&section=' . rawurlencode"), 'el panel enlaza a la pantalla de opciones y cada aviso del semaforo abre su categoria');
-t_ok(PanelData::FORK_VERSION === '0.6.28', 'PanelData::FORK_VERSION = 0.6.28');
+t_ok(PanelData::FORK_VERSION === '0.7.0', 'PanelData::FORK_VERSION = 0.7.0');
 
 echo "G) Contraste de la vista previa (colores propios de cada tema de comentarios)\n";
 $lum = function (string $h): float { $h = ltrim($h, '#'); $c = [hexdec(substr($h, 0, 2)), hexdec(substr($h, 2, 2)), hexdec(substr($h, 4, 2))]; foreach ($c as &$v) { $v /= 255; $v = $v <= .03928 ? $v / 12.92 : (($v + .055) / 1.055) ** 2.4; } return .2126 * $c[0] + .7152 * $c[1] + .0722 * $c[2]; };

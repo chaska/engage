@@ -25,7 +25,7 @@ use Throwable;
 final class PanelData
 {
 	/** Version del fork segun el CHANGELOG (la prueba tests/28 comprueba que coincide con su primera entrada). */
-	public const FORK_VERSION = '0.6.28';
+	public const FORK_VERSION = '0.7.0';
 
 	public const REPO_URL      = 'https://github.com/chaska/engage';
 	public const CHANGELOG_URL = 'https://github.com/chaska/engage/blob/main/CHANGELOG.md';
@@ -120,6 +120,134 @@ final class PanelData
 				'article_id' => (int) ($r['article_id'] ?? 0),
 				'title'      => (string) ($r['title'] ?? ''),
 			], $db->setQuery($q)->loadAssocList() ?: []);
+		}
+		catch (Throwable $e)
+		{
+			$out['top'] = [];
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Reacciones (0.7.0): totales de «me gusta» y «no me gusta» de los comentarios PUBLICADOS y los 5 mejor valorados (me gusta menos
+	 * no me gusta, solo con puntuacion positiva). Solo lectura, parametros enlazados, sin datos de quien reacciono ni favoritos (privados).
+	 *
+	 * @return array{likes:int,dislikes:int,top:array<int,array<string,mixed>>}
+	 */
+	public static function reactions(DatabaseInterface $db, int $limit = 5): array
+	{
+		$out   = ['likes' => 0, 'dislikes' => 0, 'top' => []];
+		$limit = max(1, min(20, $limit));
+		$tLike = Reactions::LIKE;
+		$tDis  = Reactions::DISLIKE;
+
+		try
+		{
+			$q = self::query($db);
+			$q->select([
+				$db->quoteName('r.type', 'type'),
+				'COUNT(*) AS ' . $db->quoteName('n'),
+			])
+				->from($db->quoteName(ReactionStore::TABLE, 'r'))
+				->join('INNER', $db->quoteName('#__engage_comments', 'c'), $db->quoteName('c.id') . ' = ' . $db->quoteName('r.comment_id'))
+				->where($db->quoteName('c.enabled') . ' = 1')
+				->whereIn($db->quoteName('r.type'), [$tLike, $tDis], ParameterType::INTEGER)
+				->group($db->quoteName('r.type'));
+
+			foreach ($db->setQuery($q)->loadAssocList() ?: [] as $r)
+			{
+				$out[((int) $r['type'] === $tLike) ? 'likes' : 'dislikes'] = (int) $r['n'];
+			}
+		}
+		catch (Throwable $e)
+		{
+			// Panel sin esos numeros, pero vivo
+		}
+
+		try
+		{
+			$a1 = $tLike;
+			$a2 = $tDis;
+			$b1 = $tLike;
+			$b2 = $tDis;
+			$q  = self::query($db);
+			$q->select([
+				$db->quoteName('r.comment_id', 'comment_id'),
+				'SUM(CASE WHEN ' . $db->quoteName('r.type') . ' = :a1 THEN 1 ELSE 0 END) AS ' . $db->quoteName('likes'),
+				'SUM(CASE WHEN ' . $db->quoteName('r.type') . ' = :a2 THEN 1 ELSE 0 END) AS ' . $db->quoteName('dislikes'),
+				'SUM(CASE WHEN ' . $db->quoteName('r.type') . ' = :b1 THEN 1 WHEN ' . $db->quoteName('r.type') . ' = :b2 THEN -1 ELSE 0 END) AS ' . $db->quoteName('score'),
+			])
+				->from($db->quoteName(ReactionStore::TABLE, 'r'))
+				->join('INNER', $db->quoteName('#__engage_comments', 'c'), $db->quoteName('c.id') . ' = ' . $db->quoteName('r.comment_id'))
+				->where($db->quoteName('c.enabled') . ' = 1')
+				->whereIn($db->quoteName('r.type'), [$tLike, $tDis], ParameterType::INTEGER)
+				->group($db->quoteName('r.comment_id'))
+				->having($db->quoteName('score') . ' > 0')
+				->order($db->quoteName('score') . ' DESC')
+				->order($db->quoteName('likes') . ' DESC')
+				->order($db->quoteName('r.comment_id') . ' ASC')
+				->bind(':a1', $a1, ParameterType::INTEGER)
+				->bind(':a2', $a2, ParameterType::INTEGER)
+				->bind(':b1', $b1, ParameterType::INTEGER)
+				->bind(':b2', $b2, ParameterType::INTEGER)
+				->setLimit($limit, 0);
+			$ranked = $db->setQuery($q)->loadAssocList() ?: [];
+		}
+		catch (Throwable $e)
+		{
+			$ranked = [];
+		}
+
+		if (!$ranked)
+		{
+			return $out;
+		}
+
+		try
+		{
+			$ids = array_map(static fn(array $r): int => (int) $r['comment_id'], $ranked);
+			$q   = self::query($db);
+			$q->select([
+				$db->quoteName('c.id', 'id'),
+				$db->quoteName('c.name', 'name'),
+				$db->quoteName('c.body', 'body'),
+				$db->quoteName('c.asset_id', 'asset_id'),
+				$db->quoteName('u.name', 'user_name'),
+				$db->quoteName('a.title', 'title'),
+			])
+				->from($db->quoteName('#__engage_comments', 'c'))
+				->join('LEFT', $db->quoteName('#__users', 'u'), $db->quoteName('u.id') . ' = ' . $db->quoteName('c.created_by'))
+				->join('LEFT', $db->quoteName('#__content', 'a'), $db->quoteName('a.asset_id') . ' = ' . $db->quoteName('c.asset_id'))
+				->whereIn($db->quoteName('c.id'), $ids, ParameterType::INTEGER);
+			$by = [];
+
+			foreach ($db->setQuery($q)->loadAssocList() ?: [] as $r)
+			{
+				$by[(int) $r['id']] = $r;
+			}
+
+			foreach ($ranked as $r)
+			{
+				$c = $by[(int) $r['comment_id']] ?? null;
+
+				if ($c === null)
+				{
+					continue;
+				}
+
+				$author        = trim((string) ($c['user_name'] ?? '')) !== '' ? (string) $c['user_name'] : (string) ($c['name'] ?? '');
+				$out['top'][] = [
+					'id'       => (int) $c['id'],
+					'author'   => $author,
+					'excerpt'  => self::excerpt((string) ($c['body'] ?? ''), 90),
+					'asset_id' => (int) $c['asset_id'],
+					'title'    => (string) ($c['title'] ?? ''),
+					'likes'    => (int) $r['likes'],
+					'dislikes' => (int) $r['dislikes'],
+					'score'    => (int) $r['score'],
+				];
+			}
 		}
 		catch (Throwable $e)
 		{

@@ -262,12 +262,12 @@ const permisos = (com) => sql(`UPDATE jos_assets SET rules=${q(JSON.stringify(co
         const a = await p.evaluate(() => ({
             sw: [...document.querySelectorAll('[role=switch]')].every(x => x.hasAttribute('aria-checked') && x.getAttribute('aria-labelledby') && x.getAttribute('aria-describedby')),
             rg: [...document.querySelectorAll('[role=radiogroup]')].every(x => (x.getAttribute('aria-labelledby') || x.getAttribute('aria-label')) && x.querySelectorAll('[role=radio]').length >= 2 && x.querySelectorAll('[role=radio][tabindex="0"]').length === 1),
-            tabs: document.querySelectorAll('[role=tab]').length === 8 && [...document.querySelectorAll('[role=tab]')].every(x => document.getElementById(x.getAttribute('aria-controls'))),
+            tabs: document.querySelectorAll('[role=tab]').length === 9 && [...document.querySelectorAll('[role=tab]')].every(x => document.getElementById(x.getAttribute('aria-controls'))),
             labels: [...document.querySelectorAll('#eg-admin input:not([type=hidden]), #eg-admin select, #eg-admin textarea')].every(x => x.labels && x.labels.length >= 1),
             live: !!document.querySelector('#eg-live[role=status][aria-live=polite]'),
             nsw: document.querySelectorAll('[role=switch]').length, nrg: document.querySelectorAll('[role=radiogroup]').length,
         }));
-        r('C-aria', `ARIA: ${a.nsw} interruptores con nombre y ayuda, ${a.nrg} grupos de opciones con un solo tabindex=0, 8 pestanas con su panel, etiquetas de todos los campos, region viva`, a.sw && a.rg && a.tabs && a.labels && a.live && a.nsw >= 10, JSON.stringify(a));
+        r('C-aria', `ARIA: ${a.nsw} interruptores con nombre y ayuda, ${a.nrg} grupos de opciones con un solo tabindex=0, 9 pestanas con su panel (0.7.0: con Reacciones), etiquetas de todos los campos, region viva`, a.sw && a.rg && a.tabs && a.labels && a.live && a.nsw >= 10, JSON.stringify(a));
         await c.close();
     }
 
