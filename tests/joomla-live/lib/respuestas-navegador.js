@@ -25,7 +25,7 @@ const ins = (parent, body, name, created) => sql(`INSERT INTO jos_engage_comment
 
 (async () => {
     sql(`DELETE FROM jos_engage_comments WHERE asset_id=${AS}`);
-    setParams({reactions_enabled: '0', default_publish: '1', max_level: '3', comments_ordering: 'desc'});
+    setParams({reactions_enabled: '0', sort_selector: '0', copy_link: '0', show_badges: '0', default_publish: '1', max_level: '3', comments_ordering: 'desc'});
     const raiz = ins('NULL', 'Raiz', 'Lute', '2025-03-12 10:00:00');
     const resp = ins(raiz, 'Respuesta', 'ChasKa', '2026-10-04 10:00:00');
     ins(resp, 'Nieta', 'Lute', '2026-10-04 11:00:00');
@@ -50,12 +50,12 @@ const ins = (parent, body, name, created) => sql(`INSERT INTO jos_engage_comment
     r('N-despues', 'con replies.css cada nivel avanza (X estrictamente creciente por nivel)', d.o.length === 3 && xs(d.o)[0] < xs(d.o)[1] && xs(d.o)[1] < xs(d.o)[2], 'x=' + xs(d.o).join(',') + ' css=' + d.css.join('+'));
     r('N-cita', 'la respuesta y la nieta llevan la cita con el nombre de su padre y la raiz no', d.o.map(i => i.cita).join('|') === '|In reply to Lute|In reply to ChasKa', d.o.map(i => i.cita).join('|'));
     // 2) CSS propio activado: no se carga replies.css y comments.css indenta
-    setParams({reactions_enabled: '0', default_publish: '1', max_level: '3', comments_ordering: 'desc', loadCustomCss: '1'});
+    setParams({reactions_enabled: '0', sort_selector: '0', copy_link: '0', show_badges: '0', default_publish: '1', max_level: '3', comments_ordering: 'desc', loadCustomCss: '1'});
     const c = await sinPlantilla(false);
     r('N-cssPropio', 'con "Cargar CSS propio" se cargan comments.css y replies.css y la sangria NO se duplica (20px por nivel, igual que sin el CSS propio)', c.css.includes('comments.css') && c.css.includes('replies.css') && xs(c.o)[1] - xs(c.o)[0] === 20 && xs(c.o)[2] - xs(c.o)[1] === 20, 'css=' + c.css.join('+') + ' x=' + xs(c.o).join(','));
-    setParams({reactions_enabled: '0', default_publish: '1', max_level: '3', comments_ordering: 'desc'});
+    setParams({reactions_enabled: '0', sort_selector: '0', copy_link: '0', show_badges: '0', default_publish: '1', max_level: '3', comments_ordering: 'desc'});
     // 2b) opciones de diseno (plantilla simulada sin sangria propia): sangria por nivel en px a 1000 px de ancho (1rem = 16px)
-    const base = {reactions_enabled: '0', default_publish: '1', max_level: '3', comments_ordering: 'desc'};
+    const base = {reactions_enabled: '0', sort_selector: '0', copy_link: '0', show_badges: '0', default_publish: '1', max_level: '3', comments_ordering: 'desc'};
     for (const [op, px] of [['none', 0], ['small', 12], ['medium', 20], ['large', 36]]) {
         setParams({...base, reply_indent: op});
         const m = await sinPlantilla(false);
@@ -121,7 +121,7 @@ const ins = (parent, body, name, created) => sql(`INSERT INTO jos_engage_comment
     r('N-posicion', 'la respuesta nueva sale debajo de su padre (Respuesta), en el nivel 3 y con la cita a ChasKa; no es la primera de la lista', i > orden.split(',').indexOf('Respuesta') && lista[i].cita === 'In reply to ChasKa' && orden.startsWith('Raiz,Respuesta,'), 'orden=' + orden);
     await b.close();
     sql(`DELETE FROM jos_engage_comments WHERE asset_id=${AS}`);
-    setParams({reactions_enabled: '0', default_publish: '1'});
+    setParams({reactions_enabled: '0', sort_selector: '0', copy_link: '0', show_badges: '0', default_publish: '1'});
     const f = res.filter(z => z.estado === 'FALLA').length;
     fs.writeFileSync(`${WORK}/resultados-respuestas-navegador.json`, JSON.stringify(res, null, 1));
     console.log(`${res.length - f} PASA / ${f} FALLA`);

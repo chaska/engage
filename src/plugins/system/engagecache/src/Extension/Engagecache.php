@@ -80,6 +80,9 @@ class Engagecache extends CMSPlugin implements SubscriberInterface
 		$registeredurlparams->akengage_limitstart = 'INT';
 		$registeredurlparams->akengage_limit      = 'INT';
 		$registeredurlparams->akengage_cid        = 'INT';
+		// 0.8.0: sort selector and "only my favourites" are part of the cache key (a sorted list is not the default one)
+		$registeredurlparams->akengage_sort       = 'CMD';
+		$registeredurlparams->akengage_fav        = 'CMD';
 
 		$app->registeredurlparams = $registeredurlparams;
 	}
@@ -108,6 +111,9 @@ class Engagecache extends CMSPlugin implements SubscriberInterface
 
 		Text::script('COM_ENGAGE_COMMENTS_FORM_BTN_SUBMIT_PLEASE_WAIT');
 		Text::script('COM_ENGAGE_COMMENTS_DELETE_PROMPT');
+		// 0.8.0: texts of the copy-link notice (tools.js)
+		Text::script('COM_ENGAGE_TOOLS_COPY_OK');
+		Text::script('COM_ENGAGE_TOOLS_COPY_FAIL');
 		// Texts of the Gravatar consent notice; only when that plugin is enabled (no change for other sites).
 		if (PluginHelper::isEnabled('engage', 'gravatar'))
 		{

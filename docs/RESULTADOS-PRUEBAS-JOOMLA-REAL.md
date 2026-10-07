@@ -326,6 +326,24 @@ Resto de la tanda: `tests/31-reacciones-071.php` 75 comprobaciones, `tests/30-re
 
 NO PROBADO: Akeeba Data Compliance real (la exportación y el borrado de reacciones de `datacompliance/engage` solo se comprueban de forma estática), MySQL (solo MariaDB), Joomla 5.x, un estado doble real por HTTP con la 0.7.0, proxy inverso real delante del limitador por IP.
 
+## 15. Tanda 2 (0.8.0): orden, favoritos, copiar enlace e insignias (paquete 3.4.3 sin publicar)
+
+Joomla 6.1.4, PHP 8.3.6, MariaDB 10.11, Chromium headless. Detalle y decisiones en [`ORDEN-Y-FAVORITOS.md`](ORDEN-Y-FAVORITOS.md).
+
+| Prueba | Resultado |
+|---|---|
+| `php tests/run.php` (nuevo `32-herramientas-lista.php`) | todo en verde; la 32 tiene 176 comprobaciones (37 valores de ataque en el orden, `resolve()`, 40 URL hostiles, el modelo real con una base de datos que registra, 5.000 comentarios en el árbol) |
+| `19-tanda2.sh` HTTP (invitado, Registered x2, Manager, Editor, administrador) | 89 PASA / 0 FALLA: orden servido = orden calculado aparte en 8 combinaciones `comments_ordering` x `max_level`, paginación y `akengage_cid` con orden, 37 valores de ataque en `akengage_sort`, favoritos privados, opciones y su validación con token, insignias, 11 cabeceras `Host` hostiles, caché de página y conservadora con `engagecache` |
+| Rendimiento (5.000 comentarios, 20.000 reacciones, mediana de 15) | SQL 7,0 / 10,2 / 51,3 ms; total 165,5 / 172,2 / 234,5 ms (sin elección / Más recientes / Más valorados); orden «top» = cálculo independiente; paginando de 20 en 20, 5.000 vistos una sola vez |
+| HTML idéntico a la 0.7.1 con las herramientas apagadas | 30 de 30 combinaciones idénticas byte a byte (10 configuraciones x invitado, Registered, Manager) |
+| Chromium (`tanda2-navegador.js`) | 343 PASA / 0 FALLA: 5 variantes x claro/oscuro x 390/768/1280 (contraste mínimo medido: barra 6,7:1, bordes 6,7:1, icono de copiar 7:1, insignias 6,7:1; 0 solapes, 0 desbordes), teclado, portapapeles real, `execCommand`, aviso `role=status`, botón falso, otro anfitrión, sin JavaScript, moderador, caché |
+| Actualización desde la 3.4.2 original y desde la 3.4.2.1 publicada (`04-actualizacion.sh`, nueva sección 5c) | tablas, permisos y plantillas idénticos; esquema 3.4.3-20261007; las 4 opciones nuevas no se guardan y funcionan por defecto; apagadas, vuelve la 0.7.1 |
+| Regresión 03, 05, 07-17 | todo pasa (07: JC-01 falló una vez y pasó al repetir, el retraso conocido de `php -S`) |
+
+Fallo heredado encontrado y corregido: con la 0.7.1 y valores por defecto, una página que empezaba por una respuesta cuyo padre estaba en la anterior mostraba **0 comentarios** (`getDatabase()` protegido en Joomla 6).
+
+NO PROBADO: Joomla 5.x, MySQL, otros navegadores, lectores de pantalla reales, proxy inverso real.
+
 ## 9. Estado del paquete
 
 Hash del ZIP al cierre de esta tanda y coincidencia con `updates/pkgengage.xml`: ver `docs/PUBLICAR-RELEASE.md` y comprobar con `php build/build.php` (reproducible). No se ha publicado ninguna release: la URL de descarga de `updates/pkgengage.xml` no existirá hasta que el propietario suba **ese mismo ZIP** a la release `v3.4.2.1`.

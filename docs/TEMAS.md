@@ -68,6 +68,16 @@ Tres variables nuevas, definidas en `:root` de cada tema:
 
 Contraste del texto sobre el amarillo, calculado y **medido en navegador** (texto principal, fecha, enlaces, notas y código, con la página clara u oscura y el dispositivo en modo claro u oscuro): mínimo 9,5:1 en Oscuro, 13,2:1 en Moderno y Clásico y 14,6:1 en Minimalista (se exige 4,5:1). Si cambia `--eg-fav-fondo`, mantenga ese mínimo con `--eg-texto`, `--eg-texto-suave`, `--eg-enlace`, `--eg-ok` y `--eg-peligro`.
 
+## Barra de orden, «Copiar enlace» e insignias (0.8.0)
+
+Las herramientas de la lista (ver [`ORDEN-Y-FAVORITOS.md`](ORDEN-Y-FAVORITOS.md)) **no añaden variables nuevas**: usan las que ya definen los temas.
+
+- **Barra de orden** (`.akengage-toolbar`): tiene su propia superficie (`--eg-fondo`, texto `--eg-texto`, borde `--eg-borde`, redondeo `--eg-radio`), así que se lee sobre cualquier página, clara u oscura. Los enlaces de orden y el conmutador «Solo mis favoritos» son botones de contorno (`--eg-enlace` sobre `--eg-fondo-boton`); el actual, al pasar el ratón o con el foco se rellenan con `--eg-enlace` y el texto `--eg-sobre-boton`. El actual además va en negrita y con una marca (✓): no depende solo del color. Foco con `--eg-acento`.
+- **Botón «Copiar enlace»** (`.akengage-copy-btn`): de contorno como los de reacción, color `--eg-texto-suave` y `--eg-enlace` al pasar el ratón o con el foco; al copiar, `--eg-ok` y un icono de marca. El aviso «Enlace copiado» (`.akengage-toast`) lleva siempre sus propios colores (fondo `#1f2937`, texto blanco, con `!important`) para leerse sobre cualquier plantilla.
+- **Insignias** (`.akengage-badge`): «Autor» es una píldora con lápiz y «Moderador» un rectángulo con estrella (la forma y el icono las distinguen sin depender del color). Fondo `--eg-enlace` (autor) y `--eg-aviso` (moderador) con texto `--eg-sobre-boton`; contraste medido de 6,4:1 como mínimo (Moderno), 14,7:1 (Minimalista) y 10,4:1 (Oscuro). Con el tema **Clásico** (sin variables) son gris oscuro `#374151` con texto blanco (10:1), neutras y legibles en cualquier plantilla.
+- **Tema Clásico**: los botones y la barra usan `currentColor` y heredan el color del texto de la plantilla; nada de color propio salvo las insignias neutras y el aviso.
+- Un nombre larguísimo sin espacios se parte en la cabecera (`overflow-wrap: anywhere`) en lugar de ensanchar el comentario.
+
 ## Variables CSS (`--eg-*`)
 
 Todos los colores y medidas del tema son variables definidas en `:root` de la hoja del tema. Para cambiarlas, **redefínalas después** de esa hoja: en el CSS personalizado de su plantilla (Cassiopeia: `media/templates/site/cassiopeia/css/user.css`; Helix Ultimate: «CSS personalizado») o en el ajuste de Engage «Cargar CSS personalizado» si su plantilla permite añadir hojas después de la de Engage. Ejemplo (tema Moderno con acento verde y tarjetas menos redondeadas):

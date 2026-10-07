@@ -61,8 +61,21 @@ echo "   columnas: $(mysql -N "$DB_NAME" -e "SELECT GROUP_CONCAT(column_name ORD
 echo "   indices: $(mysql -N "$DB_NAME" -e "SELECT GROUP_CONCAT(DISTINCT index_name ORDER BY index_name) FROM information_schema.statistics WHERE table_schema='$DB_NAME' AND table_name='jos_engage_reactions'")"
 echo "   comentarios despues: $(mysql -N "$DB_NAME" -e 'SELECT COUNT(*) FROM jos_engage_comments') (identicos a los de antes: lo dice la comparacion de tablas de arriba)"
 [ "$N" = "1" ] && [ "$SCH" = "3.4.3-20261007" ] && echo "RESULTADO reacciones: PASA" || { echo "RESULTADO reacciones: FALLA"; exit 1; }
-echo "== 6. Humo web tras actualizar"
 ART="$(python3 -c "import json;d=json.load(open('$WORK/$IDS_FILE'));print('%s&catid=%s' % (d['art_publico'], d['cat_publica']))")"
+echo "== 5c. Tanda 2 (0.8.0): orden, favoritos, copiar enlace e insignias tras actualizar (valores por defecto y opciones apagadas)"
+PAG="$BASE_URL/index.php?option=com_content&view=article&id=$ART"
+NC="$(mysql -N "$DB_NAME" -e "SELECT COUNT(*) FROM jos_engage_comments WHERE enabled=1 AND asset_id=(SELECT asset_id FROM jos_content WHERE id=${ART%%&*})")"
+PARAMS_ANTES="$(mysql -N "$DB_NAME" -e "SELECT params FROM jos_extensions WHERE element='com_engage' AND type='component'")"
+echo "   comentarios publicados del articulo: $NC; las 4 opciones nuevas NO estan guardadas (se usan los valores por defecto): $(echo "$PARAMS_ANTES" | grep -Ec 'sort_selector|default_sort|copy_link|show_badges') apariciones (0 = si)"
+H="$(curl -s "$PAG&akengage_sort=top")"
+T1=$(echo "$H" | grep -c 'class="akengage-toolbar"'); T2=$(echo "$H" | grep -c 'tools.js'); T3=$(echo "$H" | grep -c 'akengage-copy-btn')
+echo "   por defecto: barra de orden=$T1 (1 = si), tools.js=$T2 (1 = si), botones de copiar=$T3 (>= 1 = si); orden pedido por la URL: $(echo "$H" | grep -c 'rel="canonical"') canonical"
+mysql "$DB_NAME" -e "UPDATE jos_extensions SET params=JSON_SET(IFNULL(NULLIF(params,''),'{}'), '$.sort_selector','0','$.copy_link','0','$.show_badges','0') WHERE element='com_engage' AND type='component'"
+H0="$(curl -s "$PAG&akengage_sort=top")"
+echo "   con las tres opciones en No: barra=$(echo "$H0" | grep -c 'akengage-toolbar') copiar=$(echo "$H0" | grep -c 'akengage-copy') insignias=$(echo "$H0" | grep -c 'akengage-badge') (0 = como la 0.7.1)"
+mysql "$DB_NAME" -e "UPDATE jos_extensions SET params='$(echo "$PARAMS_ANTES" | sed "s/'/''/g")' WHERE element='com_engage' AND type='component'"
+[ "$T1" = "1" ] && [ "$T2" -ge 1 ] && [ "$T3" -ge 1 ] && [ "$(echo "$PARAMS_ANTES" | grep -Ec 'sort_selector|default_sort|copy_link|show_badges')" = "0" ] && ! echo "$H0" | grep -q 'akengage-toolbar\|akengage-copy\|akengage-badge' && echo "RESULTADO tanda 2: PASA" || { echo "RESULTADO tanda 2: FALLA"; exit 1; }
+echo "== 6. Humo web tras actualizar"
 for u in "/" "/administrator/" "/index.php?option=com_content&view=article&id=$ART"; do printf '%s -> HTTP %s\n' "$u" "$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL$u")"; done
 DB_NAME="$DB_NAME" php "$AQUI/lib/humo-post-actualizacion.php" "$WORK" "$BASE_URL" "$IDS_FILE" | tee "$OUT/humo.txt"
 echo "== 7. Registro de errores de PHP durante la actualizacion y el humo:"; wc -c < "$WORK/php-errors-${SITE_DIR}.log"

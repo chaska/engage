@@ -41,7 +41,7 @@ $prev = [
 	'rules' => one("SELECT rules FROM jos_assets WHERE name='com_engage'"),
 ];
 $setCom = function (array $extra = []) use ($db) {
-	$p = array_merge(['default_publish' => '1', 'max_level' => '3', 'comments_ordering' => 'asc'], $extra);
+	$p = array_merge(['default_publish' => '1', 'max_level' => '3', 'comments_ordering' => 'asc', 'sort_selector' => '0', 'copy_link' => '0', 'show_badges' => '0'], $extra);
 	q("UPDATE jos_extensions SET params='" . $db->real_escape_string(json_encode($p)) . "' WHERE element='com_engage' AND type='component'");
 };
 $restaurar = function () use ($db, $prev, $ASSET) {

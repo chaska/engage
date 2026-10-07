@@ -51,7 +51,7 @@ const restaurar = () => {
     try { sql(`DELETE FROM jos_engage_reactions; DELETE FROM jos_engage_comments WHERE asset_id=${AS}`); } catch (e) {}
 };
 process.on('exit', restaurar);
-const setCom = (extra = {}) => sql(`UPDATE jos_extensions SET params=${q(JSON.stringify({default_publish: '1', max_level: '3', comments_ordering: 'asc', ...extra}))} WHERE element='com_engage' AND type='component'`);
+const setCom = (extra = {}) => sql(`UPDATE jos_extensions SET params=${q(JSON.stringify({default_publish: '1', max_level: '3', comments_ordering: 'asc', sort_selector: '0', copy_link: '0', show_badges: '0', ...extra}))} WHERE element='com_engage' AND type='component'`);
 
 // usuarios
 const mk = (u, g) => {

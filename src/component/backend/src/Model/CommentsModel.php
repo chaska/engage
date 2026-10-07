@@ -10,6 +10,7 @@ namespace Akeeba\Component\Engage\Administrator\Model;
 defined('_JEXEC') or die;
 
 use Akeeba\Component\Engage\Administrator\Helper\ListOrdering;
+use Akeeba\Component\Engage\Administrator\Helper\Reactions;
 use Akeeba\Component\Engage\Administrator\Helper\Timer;
 use Akeeba\Component\Engage\Administrator\Mixin\ModelPopulateStateTrait;
 use DateInterval;
@@ -218,6 +219,35 @@ class CommentsModel extends ListModel
 				$db->qn('c.id'),
 				$db->qn('c.parent_id'),
 			]);
+
+		// 0.8.0: sort modes chosen by the visitor (closed list, see ListOrdering::sortMode) and the "only my favourites" flat list
+		$mode     = ListOrdering::sortMode($this->getState('list.sortmode'));
+		$favorite = $this->favoriteUserId() > 0;
+		$assetId  = (int) $this->getState('filter.asset_id');
+
+		if ($mode === 'top' && $assetId <= 0)
+		{
+			// The score subquery is limited to one content item; without it fall back to the date order
+			$mode = 'newest';
+		}
+
+		if ($mode !== null)
+		{
+			$query->select($db->qn('c.created'));
+			$query->clear('order');
+
+			if ($mode === 'top')
+			{
+				$this->joinReactionScore($query, $assetId);
+			}
+
+			foreach (ListOrdering::sortOrderBy($mode) as [$column, $direction])
+			{
+				// Column and direction come from the fixed table of ListOrdering, never from the request
+				$query->order($db->quoteName($column) . ' ' . ($direction === 'ASC' ? 'ASC' : 'DESC'));
+			}
+		}
+
 		$allIDs = $db->setQuery($query)->loadAssocList('id') ?? [];
 
 		$this->treeAwareCount = 0;
@@ -228,12 +258,31 @@ class CommentsModel extends ListModel
 			return [];
 		}
 
+		$this->treeAwareCount = count($allIDs);
+
+		// Flat list (favourites): no tree, every comment at the first level, in the order of the query
+		if ($favorite)
+		{
+			$flat = [];
+
+			foreach (array_keys($allIDs) as $id)
+			{
+				$flat[" " . $id] = 1;
+			}
+
+			return ($limit > 0) ? array_slice($flat, $start, $limit, true) : array_slice($flat, $start, null, true);
+		}
+
+		// With a sort mode the first level follows the mode and the replies of each comment are always oldest first
+		if ($mode !== null)
+		{
+			$allIDs = $this->repliesOldestFirst($allIDs);
+		}
+
 		// Convert into an ID => parent array
 		$allIDs = array_map(function ($x) {
 			return $x['parent_id'] ?: null;
 		}, $allIDs);
-
-		$this->treeAwareCount = count($allIDs);
 
 		// Filter out orphan nodes (children of deleted or unpublished comments)
 		$allIDs = array_filter($allIDs, function ($parent_id) use ($allIDs) {
@@ -255,6 +304,92 @@ class CommentsModel extends ListModel
 		}
 
 		return array_slice($flattened, $start, null, true);
+	}
+
+	/**
+	 * Keeps the first level comments in the order they come in and puts every reply after them, oldest first (date, then ID).
+	 * The tree builder takes the children of a comment in the order they appear, so this is what makes the replies chronological
+	 * whatever the sort mode of the first level is.
+	 *
+	 * @param   array  $rows  id => [id, parent_id, created, ...] in query order
+	 *
+	 * @return  array
+	 * @since   0.8.0
+	 */
+	private function repliesOldestFirst(array $rows): array
+	{
+		$roots   = [];
+		$replies = [];
+
+		foreach ($rows as $id => $row)
+		{
+			if (empty($row['parent_id']))
+			{
+				$roots[$id] = $row;
+			}
+			else
+			{
+				$replies[$id] = $row;
+			}
+		}
+
+		uasort($replies, static function (array $a, array $b): int {
+			return [(string) ($a['created'] ?? ''), (int) $a['id']] <=> [(string) ($b['created'] ?? ''), (int) $b['id']];
+		});
+
+		return $roots + $replies;
+	}
+
+	/**
+	 * ID of the user whose favourites are listed (filter.favorite_user), or 0. Only ever a positive integer.
+	 *
+	 * @return  int
+	 * @since   0.8.0
+	 */
+	private function favoriteUserId(): int
+	{
+		$v = $this->getState('filter.favorite_user');
+
+		return (is_int($v) && $v > 0) ? $v : 0;
+	}
+
+	/**
+	 * Adds to the query the net score of the reactions of each comment of ONE content item: likes minus dislikes (dislikes only
+	 * count when the option shows them), leaving out the reactions that the author gave to his own comment, exactly as the counters
+	 * that people see (ReactionStore::counts). A single aggregated subquery over #__engage_reactions joined on its comment_id
+	 * index; all values are bound. Comments without reactions get 0.
+	 *
+	 * @param   DatabaseQuery  $query
+	 * @param   int            $assetId  The content item
+	 *
+	 * @return  void
+	 * @since   0.8.0
+	 */
+	private function joinReactionScore(DatabaseQuery $query, int $assetId): void
+	{
+		$db      = $this->getDatabase();
+		$like    = Reactions::LIKE;
+		$dislike = Reactions::DISLIKE;
+		$useDis  = $this->getState('filter.score_dislikes', true) !== false;
+		$types   = $useDis ? [$like, $dislike] : [$like];
+		$sub     = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true))
+			->select([
+				$db->quoteName('r.comment_id'),
+				'SUM(CASE ' . $db->quoteName('r.type') . ' WHEN ' . (int) $like . ' THEN 1 WHEN ' . (int) $dislike . ' THEN -1 ELSE 0 END) AS ' . $db->quoteName('score'),
+			])
+			->from($db->quoteName('#__engage_reactions', 'r'))
+			->join('INNER', $db->quoteName('#__engage_comments', 'sc'), $db->quoteName('sc.id') . ' = ' . $db->quoteName('r.comment_id'))
+			->join('LEFT', $db->quoteName('#__users', 'su'), $db->quoteName('su.id') . ' = ' . $db->quoteName('r.user_id'))
+			->where($db->quoteName('sc.asset_id') . ' = :rs_asset')
+			->where($db->quoteName('r.type') . ' IN (' . implode(',', array_map('intval', $types)) . ')')
+			->where($db->quoteName('r.user_id') . ' <> IFNULL(' . $db->quoteName('sc.created_by') . ', 0)')
+			->where('NOT (IFNULL(' . $db->quoteName('sc.created_by') . ', 0) <= 0 AND IFNULL(' . $db->quoteName('sc.email') . ", '') <> '' AND " . $db->quoteName('sc.email') . ' = ' . $db->quoteName('su.email') . ')')
+			->group($db->quoteName('r.comment_id'));
+
+		$query
+			->select('COALESCE(' . $db->quoteName('rs.score') . ', 0) AS ' . $db->quoteName('reaction_score'))
+			->join('LEFT', '(' . $sub . ') AS ' . $db->quoteName('rs') . ' ON ' . $db->quoteName('rs.comment_id') . ' = ' . $db->quoteName('c.id'))
+			->bind(':rs_asset', $assetId, ParameterType::INTEGER);
 	}
 
 	/**
@@ -461,6 +596,21 @@ class CommentsModel extends ListModel
 				->bind(':parent_id', $fltParentid, ParameterType::INTEGER);
 		}
 
+		// 0.8.0: only the comments that this user marked as favourite (type 3). The ID is a bound integer taken from the session by
+		// the controller; the join also narrows the query that loads the items of the page.
+		$fltFavorite = $this->favoriteUserId();
+
+		if ($fltFavorite > 0)
+		{
+			$favType = Reactions::FAVORITE;
+			$query->join('INNER', $db->quoteName('#__engage_reactions', 'fv'),
+				$db->quoteName('fv.comment_id') . ' = ' . $db->quoteName('c.id')
+				. ' AND ' . $db->quoteName('fv.user_id') . ' = :fav_user AND ' . $db->quoteName('fv.type') . ' = :fav_type'
+			)
+				->bind(':fav_user', $fltFavorite, ParameterType::INTEGER)
+				->bind(':fav_type', $favType, ParameterType::INTEGER);
+		}
+
 		// Search filter
 		$fltSearch    = $this->getState('filter.search');
 		$fltCreatedBy = $this->getState('filter.created_by');
@@ -651,6 +801,9 @@ class CommentsModel extends ListModel
 		$id .= ':' . serialize($this->getState('filter.frontend'));
 		$id .= ':' . serialize($this->getState('filter.categories_include'));
 		$id .= ':' . serialize($this->getState('filter.categories_exclude'));
+		$id .= ':' . serialize($this->getState('list.sortmode'));
+		$id .= ':' . serialize($this->getState('filter.favorite_user'));
+		$id .= ':' . serialize($this->getState('filter.score_dislikes'));
 
 		return parent::getStoreId($id);
 	}

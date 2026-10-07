@@ -156,7 +156,7 @@ class ReactionsController extends BaseController
 	}
 
 	/** El usuario puede ver el contenido al que pertenece el comentario (publicado y con nivel de acceso). */
-	private static function canView(User $user, int $assetId): bool
+	public static function canView(User $user, int $assetId): bool
 	{
 		if ($assetId <= 0)
 		{

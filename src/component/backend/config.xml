@@ -351,6 +351,56 @@
             <option value="show">COM_ENGAGE_CONFIG_MOBILE_AVATAR_SHOW</option>
             <option value="hide">COM_ENGAGE_CONFIG_MOBILE_AVATAR_HIDE</option>
         </field>
+
+        <field
+                name="show_badges"
+                type="radio"
+                layout="joomla.form.field.radio.switcher"
+                label="COM_ENGAGE_CONFIG_SHOW_BADGES_LABEL"
+                description="COM_ENGAGE_CONFIG_SHOW_BADGES_DESC"
+                default="1"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+                name="copy_link"
+                type="radio"
+                layout="joomla.form.field.radio.switcher"
+                label="COM_ENGAGE_CONFIG_COPY_LINK_LABEL"
+                description="COM_ENGAGE_CONFIG_COPY_LINK_DESC"
+                default="1"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+                name="sort_selector"
+                type="radio"
+                layout="joomla.form.field.radio.switcher"
+                label="COM_ENGAGE_CONFIG_SORT_SELECTOR_LABEL"
+                description="COM_ENGAGE_CONFIG_SORT_SELECTOR_DESC"
+                default="1"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+                name="default_sort"
+                type="list"
+                label="COM_ENGAGE_CONFIG_DEFAULT_SORT_LABEL"
+                description="COM_ENGAGE_CONFIG_DEFAULT_SORT_DESC"
+                default="auto"
+                validate="options"
+        >
+            <option value="auto">COM_ENGAGE_CONFIG_DEFAULT_SORT_AUTO</option>
+            <option value="newest">COM_ENGAGE_CONFIG_DEFAULT_SORT_NEWEST</option>
+            <option value="oldest">COM_ENGAGE_CONFIG_DEFAULT_SORT_OLDEST</option>
+            <option value="top">COM_ENGAGE_CONFIG_DEFAULT_SORT_TOP</option>
+        </field>
     </fieldset>
 
     <fieldset

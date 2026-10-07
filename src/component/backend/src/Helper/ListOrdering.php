@@ -96,6 +96,74 @@ abstract class ListOrdering
 	}
 
 	/**
+	 * Modos de ordenacion que el visitante puede pedir en el listado publico (0.8.0, parametro `akengage_sort`). Es una lista CERRADA de
+	 * nombres: el valor recibido NUNCA llega al SQL; se traduce con sortOrderBy() a columnas y direcciones fijas.
+	 *
+	 *  - newest: primer nivel de mas reciente a mas antiguo.
+	 *  - oldest: primer nivel de mas antiguo a mas reciente.
+	 *  - top:    primer nivel por valoracion (me gusta - no me gusta) y, a igualdad, el mas reciente primero.
+	 *
+	 * Las respuestas siguen siempre debajo de su padre, de mas antigua a mas reciente.
+	 */
+	public const SORT_MODES = ['newest', 'oldest', 'top'];
+
+	/** Valores validos de la opcion `default_sort`: 'auto' = la opcion de siempre (comments_ordering). */
+	public const DEFAULT_SORT_VALUES = ['auto', 'newest', 'oldest', 'top'];
+
+	/**
+	 * Modo de ordenacion pedido por el visitante, o null si no es uno de la lista. Comparacion ESTRICTA y exacta: una cadena
+	 * (no un array ni un objeto), sin espacios, saltos de linea ni cambios de mayusculas.
+	 *
+	 * @param   mixed  $value  Valor recibido (cualquier tipo)
+	 *
+	 * @return  string|null
+	 * @since   0.8.0
+	 */
+	public static function sortMode($value): ?string
+	{
+		return (is_string($value) && in_array($value, self::SORT_MODES, true)) ? $value : null;
+	}
+
+	/**
+	 * Valor normalizado de la opcion `default_sort` (cualquier valor ajeno vale 'auto').
+	 *
+	 * @param   mixed  $value
+	 *
+	 * @return  string
+	 * @since   0.8.0
+	 */
+	public static function defaultSort($value): string
+	{
+		return (is_string($value) && in_array($value, self::DEFAULT_SORT_VALUES, true)) ? $value : 'auto';
+	}
+
+	/**
+	 * Clausulas ORDER BY FIJAS de un modo: lista de [columna, direccion]. La columna `reaction_score` es el alias de la subconsulta
+	 * agregada de reacciones que anade el modelo solo para el modo `top`. Un modo desconocido da una lista vacia.
+	 *
+	 * @param   string  $mode  Un valor de sortMode()
+	 *
+	 * @return  array<int,array{0:string,1:string}>
+	 * @since   0.8.0
+	 */
+	public static function sortOrderBy(string $mode): array
+	{
+		switch ($mode)
+		{
+			case 'newest':
+				return [['c.created', 'DESC'], ['c.id', 'DESC']];
+
+			case 'oldest':
+				return [['c.created', 'ASC'], ['c.id', 'ASC']];
+
+			case 'top':
+				return [['reaction_score', 'DESC'], ['c.created', 'DESC'], ['c.id', 'DESC']];
+		}
+
+		return [];
+	}
+
+	/**
 	 * Devuelve exactamente 'ASC' o 'DESC'; cualquier otro valor da la dirección por defecto.
 	 *
 	 * @param   mixed  $direction  Valor recibido (cualquier tipo)

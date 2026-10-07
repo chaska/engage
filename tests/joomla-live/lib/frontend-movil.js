@@ -41,7 +41,7 @@ const restaurar = () => {
     sql(`UPDATE jos_extensions SET params=${q(prev.lang)} WHERE element='com_languages'`);
     for (const [id, en, pr] of prev.plug) sql(`UPDATE jos_extensions SET enabled=${en}, params=${q(pr || '')} WHERE extension_id=${id}`);
 };
-const setCom = t => sql(`UPDATE jos_extensions SET params=${q(JSON.stringify({theme: t, default_publish: '1', max_level: '3', comments_ordering: 'asc', reactions_enabled: '0'}))} WHERE element='com_engage' AND type='component'`);
+const setCom = t => sql(`UPDATE jos_extensions SET params=${q(JSON.stringify({theme: t, default_publish: '1', max_level: '3', comments_ordering: 'asc', reactions_enabled: '0', sort_selector: '0', copy_link: '0', show_badges: '0'}))} WHERE element='com_engage' AND type='component'`);
 const ins = (parent, body, name, by) => sql(`INSERT INTO jos_engage_comments (asset_id,parent_id,body,name,email,ip,user_agent,enabled,created,created_by) VALUES (${AS},${parent},${q('<p>' + body + '</p>')},${q(name)},${q(name ? name.toLowerCase().replace(/\W/g, '') + '@example.invalid' : '')},'203.0.113.7','t',1,NOW(),${by}); SELECT LAST_INSERT_ID()`);
 
 /** DENTRO de la pagina: geometria del aviso de Gravatar. */
