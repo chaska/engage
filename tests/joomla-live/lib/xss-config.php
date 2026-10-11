@@ -15,6 +15,13 @@ $cmd = $argv[1] ?? '';
 $limpia = function () use ($SITE) { foreach (['cache', 'administrator/cache'] as $d) { foreach (glob("$SITE/$d/*", GLOB_ONLYDIR) ?: [] as $g) { exec('rm -rf ' . escapeshellarg($g)); } } };
 $ASSET = (int) $ids['art_publico_asset'];
 if ($cmd === 'set') {
+	if (!is_file($bak)) {
+		// 0.8.3: el boton «Copiar enlace» (copy_link) tiene que estar encendido para la comprobacion N-COPY; se guarda el estado y se restaura en `restore`
+		$com = $db->query("SELECT IFNULL(params,'') FROM jos_extensions WHERE element='com_engage' AND type='component'")->fetch_row()[0];
+		file_put_contents("$bak.com", $com);
+		$pp = json_decode($com, true) ?: []; $pp['copy_link'] = '1';
+		$db->query("UPDATE jos_extensions SET params='" . $db->real_escape_string(json_encode($pp)) . "' WHERE element='com_engage' AND type='component'");
+	}
 	if (!is_file($bak)) { copy($cfgPath, $bak); $db_prev = [$db->query("SELECT enabled, IFNULL(params,'') FROM jos_extensions WHERE element='cache' AND folder='system'")->fetch_row(), $db->query("SELECT enabled FROM jos_extensions WHERE element='engagecache' AND folder='system'")->fetch_row()]; file_put_contents($estado, json_encode($db_prev)); }
 	[$caching, $page, $ecache, $live] = array_map('intval', array_slice($argv, 2, 4));
 	$cfg = str_replace('public $caching = 0;', 'public $caching = ' . $caching . ';', file_get_contents($bak));
@@ -35,6 +42,7 @@ if ($cmd === 'set') {
 	$db->query("DELETE FROM jos_engage_comments WHERE asset_id=$ASSET");
 } elseif ($cmd === 'restore') {
 	if (is_file($bak)) { copy($bak, $cfgPath); unlink($bak); }
+	if (is_file("$bak.com")) { $db->query("UPDATE jos_extensions SET params='" . $db->real_escape_string((string) file_get_contents("$bak.com")) . "' WHERE element='com_engage' AND type='component'"); unlink("$bak.com"); }
 	if (is_file($estado)) { [$c, $e] = json_decode(file_get_contents($estado), true); $db->query("UPDATE jos_extensions SET enabled=" . (int) $c[0] . ", params='" . $db->real_escape_string((string) $c[1]) . "' WHERE element='cache' AND folder='system'"); $db->query("UPDATE jos_extensions SET enabled=" . (int) $e[0] . " WHERE element='engagecache' AND folder='system'"); unlink($estado); }
 	$db->query("DELETE FROM jos_engage_comments WHERE asset_id=$ASSET");
 	$limpia();

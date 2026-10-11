@@ -360,6 +360,10 @@ Joomla 6.1.4, PHP 8.3, MariaDB 10.11. Tres plugins de prueba hacen de tercero (`
 
 Hallazgo propio: con la caché conservadora de Joomla dos elementos de otro componente compartían una entrada de la caché de vistas (la clave se calcula con la petición, que no lleva el `asset_id`); corregido (Engage añade el `asset_id` a la petición mientras despacha) y cubierto por la matriz de la caché.
 
+## 17. Revisión independiente de la 0.8.2: correcciones de la 0.8.3 (paquete 3.4.4 sin publicar)
+
+Joomla 6.1.4 real, MariaDB, PHP 8.3, Chromium. `tests/joomla-live/22-revision-082.sh` (nuevo) repite los PoC de la revisión por HTTP como invitado, Registered ajeno, Registered autor, Manager, Administrator y Super User, y en Chromium (BBCode y estilos; Gravatar en `05-gravatar.sh`). **Contra la 0.8.2 instalada fallan** h1 12 de 29, h2 9 de 9, h4 10 de 17, h8 5 de 9 y el navegador 11 de 26; **contra la 0.8.3 pasan todas**: h1 29, h2 9, h4 17, h8 9, h10 17 (opción «Incluir enlaces en los correos») y Chromium 26. Además `03` 73/0, `17` 387/0, `05` 27+22+4/0, `20` 45/0 y 16/0, `19` 343/0 en el navegador (HTTP 88/1: T-96, que falla igual con la 0.8.2), `21` 51+32/0 y `04` desde la 3.4.3, la 3.4.2.1 y la 3.4.2. Detalle por hallazgo, archivos y las pruebas de la propia suite que se corrigieron: [`CHANGELOG.md`](../CHANGELOG.md), entrada 0.8.3.
+
 ## 9. Estado del paquete
 
 Hash del ZIP al cierre de esta tanda y coincidencia con `updates/pkgengage.xml`: ver `docs/PUBLICAR-RELEASE.md` y comprobar con `php build/build.php` (reproducible). No se ha publicado ninguna release: la URL de descarga de `updates/pkgengage.xml` no existirá hasta que el propietario suba **ese mismo ZIP** a la release `v3.4.2.1`.
