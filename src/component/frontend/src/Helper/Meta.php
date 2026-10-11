@@ -201,15 +201,31 @@ final class Meta
 			return self::$cachedMeta[$metaKey];
 		}
 
-		$tempRet = array_shift($pluginResults);
+		/**
+		 * 0.8.3: no se toma «la primera ficha que llega». Cada ficha es DATO NO CONFIABLE (0.8.2: sanitiseMeta) y ademas tiene que ser coherente con
+		 * el activo (assetFits): un artículo (`com_content.article.N` en #__assets) solo lo describe una ficha de tipo `article`; el resto de activos
+		 * existen en #__assets, con nombre `com_<componente>.…`, y su ficha lleva un `type` coherente con ese componente (nunca `article`, nunca
+		 * `com_content`). Las fichas que no cumplen se descartan; si quedan DOS o mas validas el activo es ambiguo y se cierra (fail-closed).
+		 */
+		$assetName = self::assetName($assetId);
+		$valid     = [];
 
-		// 0.8.2: lo que devuelve un plugin (puede ser de terceros) son DATOS NO CONFIABLES: se validan tipo a tipo y rango a rango
-		$tempRet = self::sanitiseMeta($tempRet);
+		foreach ($pluginResults as $candidate)
+		{
+			$clean = self::sanitiseMeta($candidate);
 
-		if ($tempRet === null)
+			if ($clean !== null && self::assetFits($clean['type'], $assetName))
+			{
+				$valid[] = $clean;
+			}
+		}
+
+		if (count($valid) !== 1)
 		{
 			return self::$cachedMeta[$metaKey];
 		}
+
+		$tempRet = $valid[0];
 
 		foreach (self::$cachedMeta[$metaKey] as $k => $v)
 		{
@@ -222,6 +238,104 @@ final class Meta
 		}
 
 		return self::$cachedMeta[$metaKey];
+	}
+
+	/**
+	 * Resolves the name of an asset (`#__assets.name`) from its ID. Tests replace it with their own callable. NULL = the asset does not exist.
+	 *
+	 * @var   callable|null
+	 * @since 0.8.3
+	 */
+	public static $assetNameResolver = null;
+
+	/** @var array<int, string|null> */
+	private static $assetNames = [];
+
+	/**
+	 * Name of the asset in `#__assets` (e.g. `com_content.article.12`), or NULL when it does not exist or cannot be read (fail-closed).
+	 *
+	 * @since 0.8.3
+	 */
+	public static function assetName(int $assetId): ?string
+	{
+		if ($assetId <= 0)
+		{
+			return null;
+		}
+
+		if (array_key_exists($assetId, self::$assetNames))
+		{
+			return self::$assetNames[$assetId];
+		}
+
+		try
+		{
+			if (is_callable(self::$assetNameResolver))
+			{
+				$name = (self::$assetNameResolver)($assetId);
+			}
+			else
+			{
+				$db    = Factory::getContainer()->get(DatabaseInterface::class);
+				$query = $db->getQuery(true)
+					->select($db->quoteName('name'))
+					->from($db->quoteName('#__assets'))
+					->where($db->quoteName('id') . ' = :id')
+					->bind(':id', $assetId, ParameterType::INTEGER);
+				$name  = $db->setQuery($query)->loadResult();
+			}
+		}
+		catch (Throwable $e)
+		{
+			$name = null;
+		}
+
+		return self::$assetNames[$assetId] = (is_string($name) && $name !== '') ? $name : null;
+	}
+
+	/**
+	 * Does a record of this type describe an asset with this name?
+	 *
+	 * - `com_content.article.<id>`: only the `article` type (that of Engage's content plugin).
+	 * - `com_<component>.…` of any other component (never `com_content` or `com_engage`): a type different from `article` and coherent with the
+	 *   component: equal to its name without `com_`, or one is the beginning of the other (at least 3 characters: `viaje` and `com_viajes`).
+	 * - Anything else (no name, `root.1`, `com_content.category.3`...): no.
+	 *
+	 * @since 0.8.3
+	 */
+	public static function assetFits(string $type, ?string $assetName): bool
+	{
+		if ($assetName === null || $type === '' || $type === 'unknown')
+		{
+			return false;
+		}
+
+		if (preg_match('/^com_content\.article\.[1-9][0-9]*$/D', $assetName) === 1)
+		{
+			return $type === 'article';
+		}
+
+		if ($type === 'article' || preg_match('/^com_([a-z][a-z0-9_]{1,63})\.[^\s]+$/D', $assetName, $m) !== 1)
+		{
+			return false;
+		}
+
+		$component = $m[1];
+
+		if (in_array($component, ['content', 'engage'], true))
+		{
+			return false;
+		}
+
+		if ($component === $type)
+		{
+			return true;
+		}
+
+		$short = (strlen($type) <= strlen($component)) ? $type : $component;
+		$long  = (strlen($type) <= strlen($component)) ? $component : $type;
+
+		return strlen($short) >= 3 && str_starts_with($long, $short);
 	}
 
 	/**
@@ -703,6 +817,18 @@ final class Meta
 		$assetId = self::parseAssetId($assetId);
 
 		if ($assetId <= 0)
+		{
+			return -1;
+		}
+
+		/**
+		 * 0.8.3: the content of com_content (articles, categories) is cleaned by Engage's own content plugin (onContentAfterDelete); another
+		 * component's code must not be able to wipe the comments of an article by passing its asset ID (by mistake, or on purpose). If the
+		 * asset still exists and belongs to com_content, nothing is changed.
+		 */
+		$assetName = self::assetName($assetId);
+
+		if ($assetName !== null && str_starts_with($assetName, 'com_content.'))
 		{
 			return -1;
 		}

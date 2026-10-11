@@ -82,6 +82,10 @@ namespace Akeeba\Component\Engage\Administrator\Mixin {
 		public static function triggerPluginEventStatic(string $evento, array $args): array
 		{
 			$GLOBALS['T_PLUGIN_LLAMADAS'][] = $args;
+			// 0.8.3: T_PLUGINS_MULTI = lista de plugins (cada uno una callable) para probar varias respuestas al mismo evento
+			if (!empty($GLOBALS['T_PLUGINS_MULTI'])) {
+				return array_map(fn($p) => $p((int) $args[0], (bool) $args[1]), $GLOBALS['T_PLUGINS_MULTI']);
+			}
 			$f = $GLOBALS['T_PLUGINS'] ?? null;
 
 			return $f ? [$f((int) $args[0], (bool) $args[1])] : [];

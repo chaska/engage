@@ -24,6 +24,8 @@ $lee  = fn(string $f): string => str_replace("\r\n", "\n", (string) file_get_con
 require_once $root . '/src/component/frontend/src/Helper/Meta.php';
 require_once $root . '/src/plugins/content/engage/src/Extension/Engage.php';
 
+// 0.8.3: Meta pregunta por el nombre del activo en #__assets; aqui es `com_viajes.ruta.<id>` salvo que el caso diga otra cosa
+Meta::$assetNameResolver = fn(int $id) => $GLOBALS['T_ASSET_NAME'] ?? ('com_viajes.ruta.' . $id);
 $GLOBALS['T_USER']   = new User();
 $GLOBALS['T_PARAMS'] = [];
 

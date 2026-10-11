@@ -248,6 +248,13 @@ class Akismet extends CMSPlugin implements SubscriberInterface
 			throw new RuntimeException('No Akismet API key was provided');
 		}
 
+		// 0.8.3: the key becomes part of the HOST NAME of the request (https://<key>.rest.akismet.com): only letters and digits (Akismet keys are 12
+		// hexadecimal characters; 8 to 32 letters/digits leaves room). Anything else (dots, slashes, @, #, spaces...) would send the comment to another host.
+		if (preg_match('/^[A-Za-z0-9]{8,32}$/D', $apiKey) !== 1)
+		{
+			throw new RuntimeException('The Akismet API key has an invalid format');
+		}
+
 		try
 		{
 			$createdOn = Factory::getDate($comment->created)->toISO8601();

@@ -22,7 +22,7 @@ php build/build.php
 Al final muestra `SHA-256 <número largo>` y deja el ZIP en `dist/pkg_engage-3.4.4.zip`. El SHA-256 debe ser **idéntico** al que figura en `updates/pkgengage.xml` (línea `<sha256>`). El de la versión preparada (3.4.4) es:
 
 ```
-442bd11761ea52275b46288d473403e47249a7b3ee91b5da4622b0dbe2184774
+9376d477553925247353aec8e8838a3e8bea45756babf89acc9407a0892158d8
 ```
 
 Si no coincide, no subas el ZIP: avisa (puede deberse a otra versión de PHP o de zlib; el hash que cuenta es el del ZIP que se sube, y `updates/pkgengage.xml` tiene que llevar ese mismo).
