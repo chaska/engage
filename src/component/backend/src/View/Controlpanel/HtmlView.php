@@ -12,6 +12,7 @@ defined('_JEXEC') or die;
 use Akeeba\Component\Engage\Administrator\Helper\PanelChart;
 use Akeeba\Component\Engage\Administrator\Helper\PanelData;
 use Akeeba\Component\Engage\Administrator\Helper\PanelHealth;
+use Akeeba\Component\Engage\Administrator\Helper\TrustedBase;
 use Akeeba\Component\Engage\Administrator\Helper\UserFetcher;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -39,6 +40,8 @@ class HtmlView extends BaseHtmlView
 	protected $health = [];
 	/** @var string */
 	protected $installedVersion = '';
+	/** @var string 0.8.4: where the base URL of the email links comes from (option, live_site, learned or empty) */
+	protected $baseSource = '';
 	/** @var array<string,bool> */
 	protected $can = [];
 
@@ -54,12 +57,16 @@ class HtmlView extends BaseHtmlView
 			'comments' => $user->authorise('core.manage', 'com_engage'),
 		];
 
+		// 0.8.4: an administrator with core.admin opening this panel lets Engage learn the base URL of the email links (once; see TrustedBase)
+		TrustedBase::learnFromAdminRequest($user);
+
 		$this->stats            = PanelData::stats($db);
 		$this->chart            = PanelChart::geometry($this->stats['series']);
 		$this->latest           = PanelData::latest($db, 6);
 		$this->reactions        = PanelData::reactions($db, 5);
 		$this->health           = PanelHealth::evaluate(PanelData::facts($db, $user));
 		$this->installedVersion = PanelData::installedVersion($db);
+		$this->baseSource       = TrustedBase::source();
 
 		$app = Factory::getApplication();
 		$doc = $app->getDocument();

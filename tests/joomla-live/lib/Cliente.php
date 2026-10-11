@@ -5,6 +5,12 @@ class Cliente
 	public string $base;
 	public string $jar;
 	public array $ultimo = [];
+	/** Cabeceras que se envian siempre (p. ej. un Host distinto). */
+	public array $cabDefecto = [];
+	/** Quita la marca «Secure» de las cookies guardadas (sitio con SSL forzado probado por http con X-Engage-Test-Https). */
+	public bool $desecurizar = false;
+	/** @var array<string,string> galletas guardadas a mano cuando $desecurizar (curl no guarda las Secure recibidas por http) */
+	public array $galletas = [];
 
 	public function __construct(string $base, string $dirTmp, string $nombre)
 	{
@@ -21,7 +27,7 @@ class Cliente
 		curl_setopt_array($ch, [
 			CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_FOLLOWLOCATION => false,
 			CURLOPT_COOKIEJAR => $this->jar, CURLOPT_COOKIEFILE => $this->jar, CURLOPT_TIMEOUT => 60,
-			CURLOPT_CUSTOMREQUEST => $metodo, CURLOPT_HTTPHEADER => $cabeceras, CURLOPT_USERAGENT => 'joomla-live-tests/1.0',
+			CURLOPT_CUSTOMREQUEST => $metodo, CURLOPT_HTTPHEADER => array_merge($this->cabDefecto, $this->galletas ? ['Cookie: ' . implode('; ', array_map(fn($k, $v) => "$k=$v", array_keys($this->galletas), $this->galletas))] : [], $cabeceras), CURLOPT_USERAGENT => 'joomla-live-tests/1.0',
 		]);
 		if ($metodo === 'POST') {
 			curl_setopt($ch, CURLOPT_POSTFIELDS, $crudo ? ($campos[0] ?? '') : http_build_query($campos));
@@ -35,6 +41,10 @@ class Cliente
 		curl_close($ch);
 		$hdr  = substr((string) $resp, 0, $hs);
 		$loc  = preg_match('/^Location:\s*(.+?)\r?$/mi', $hdr, $m) ? trim($m[1]) : '';
+
+		if ($this->desecurizar && preg_match_all('/^Set-Cookie:\s*([^=;\s]+)=([^;\r\n]*)/mi', $hdr, $mc, PREG_SET_ORDER)) {
+			foreach ($mc as $c) { $this->galletas[$c[1]] = $c[2]; }
+		}
 
 		return $this->ultimo = ['code' => $code, 'loc' => $loc, 'headers' => $hdr, 'body' => (string) substr((string) $resp, $hs), 'ms' => $ms, 'err' => $err];
 	}

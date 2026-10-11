@@ -65,7 +65,7 @@ foreach (['en-GB', 'es-ES'] as $l) {
 	$ini = $lee("$root/component/backend/language/$l/com_engage.ini");
 	t_ok(str_contains($ini, 'COM_ENGAGE_PANEL_H_PLUGIN_EMAIL_NOBASE="') && str_contains($ini, 'live_site'), "$l: texto del aviso");
 }
-t_ok(preg_match('/NOBASE="[^"]*(Escriba|usted)/', $lee("$root/component/backend/language/es-ES/com_engage.ini")) === 1, 'es-ES: en tono de «usted»');
+t_ok(preg_match('/NOBASE="[^"]*abra el panel de control de Engage una vez como administrador[^"]*escriba la URL del sitio/', $lee("$root/component/backend/language/es-ES/com_engage.ini")) === 1, 'es-ES: en tono de «usted»');
 require_once "$root/component/backend/src/Helper/PanelHealth.php";
 use Akeeba\Component\Engage\Administrator\Helper\PanelHealth;
 $f = ['plugins' => ['engage/email' => ['exists' => true, 'enabled' => true, 'id' => 5]]];

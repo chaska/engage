@@ -25,7 +25,7 @@ use Throwable;
 final class PanelData
 {
 	/** Version del fork segun el CHANGELOG (la prueba tests/28 comprueba que coincide con su primera entrada). */
-	public const FORK_VERSION = '0.8.3';
+	public const FORK_VERSION = '0.8.4';
 
 	public const REPO_URL      = 'https://github.com/chaska/engage';
 	public const CHANGELOG_URL = 'https://github.com/chaska/engage/blob/main/CHANGELOG.md';
@@ -341,6 +341,10 @@ final class PanelData
 			'caching'          => (int) Factory::getApplication()->get('caching', 0),
 			// 0.8.3: is there a trusted base URL (live_site) for the links of the emails?
 			'trusted_base'     => TrustedBase::available(),
+			// 0.8.4: which base (https://host/path, without trailing slash) and where it comes from: option, live_site or learned
+			'base_url'         => rtrim(TrustedBase::root(), '/'),
+			'base_source'      => TrustedBase::source(),
+			'base_option_bad'  => TrustedBase::optionIsInvalid(),
 			'update_sites'     => [],
 			'can_edit_plugins' => $user->authorise('core.manage', 'com_plugins') && $user->authorise('core.edit', 'com_plugins'),
 			'can_options'      => $user->authorise('core.admin', 'com_engage') || $user->authorise('core.options', 'com_engage'),

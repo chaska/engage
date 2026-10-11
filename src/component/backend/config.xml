@@ -508,6 +508,20 @@
             label="COM_ENGAGE_CONFIG_ADVANCED_FIELDSET_LABEL"
             description="COM_ENGAGE_CONFIG_ADVANCED_FIELDSET_DESC"
     >
+        <field name="email_base_url"
+               type="text"
+               label="COM_ENGAGE_CONFIG_EMAIL_BASE_URL_LABEL"
+               description="COM_ENGAGE_CONFIG_EMAIL_BASE_URL_DESC"
+               default=""
+               maxlength="255"
+               hint="https://www.example.com"
+        />
+
+        <field name="email_base_learned"
+               type="hidden"
+               default=""
+        />
+
         <field name="email_include_links"
                type="radio"
                label="COM_ENGAGE_CONFIG_EMAIL_INCLUDE_LINKS_LABEL"

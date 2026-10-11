@@ -178,6 +178,20 @@ final class PanelHealth
 			return self::item('plugin_email', self::WARN, ['state' => 'nobase']);
 		}
 
+		// 0.8.4: an option that is filled in but not valid is ignored: say so (amber), even if another source rescues the links
+		if (!empty($f['base_option_bad']))
+		{
+			return self::item('plugin_email', self::WARN, ['state' => 'badoption', 'url' => (string) ($f['base_url'] ?? '')]);
+		}
+
+		// 0.8.4: show which base is used and where it comes from
+		$state = ['option' => 'okoption', 'live_site' => 'oklive', 'learned' => 'oklearned'][(string) ($f['base_source'] ?? '')] ?? '';
+
+		if ($state !== '' && (string) ($f['base_url'] ?? '') !== '')
+		{
+			return self::item('plugin_email', self::OK, ['state' => $state, 'url' => (string) $f['base_url']]);
+		}
+
 		return self::item('plugin_email', self::OK);
 	}
 
