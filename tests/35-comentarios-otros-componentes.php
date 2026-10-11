@@ -361,7 +361,9 @@ t_ok(preg_match_all('/createDispatcher\(/', $eng) === 1, 'el plugin despacha el 
 t_ok(str_contains($eng, 'private function renderComments('), 'renderComments sigue siendo privado');
 t_ok(str_contains($ctl, '$info[\'class\'] === Engage::class && $info[\'function\'] === \'renderComments\'') && str_contains($ctl, "throw new RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403)"), 'el guard del backtrace de CommentsController sigue donde estaba');
 $pos = fn(string $n) => strpos($ctl, $n);
-t_ok($pos('debug_backtrace') < $pos('Meta::isAssetViewable') && $pos('Meta::isAssetViewable') < $pos('$model->setState(\'filter.asset_id\''), 'el guard va primero y despues la comprobacion del activo, antes de pasar nada a la vista');
+$ini = $pos('function onBeforeMain');
+// 0.8.3: el guard es un metodo (assertCalledByThePlugin) que llaman display() y onBeforeMain()
+t_ok(strpos($ctl, 'assertCalledByThePlugin();', $ini) < $pos('Meta::isAssetViewable') && $pos('Meta::isAssetViewable') < $pos('$model->setState(\'filter.asset_id\''), 'el guard va primero y despues la comprobacion del activo, antes de pasar nada a la vista');
 t_ok(str_contains($ctl, "!== 'article' && !Meta::isAssetViewable("), 'la vista exige que el activo (que no sea un articulo) lo pueda ver el usuario');
 $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . '/src', FilesystemIterator::SKIP_DOTS));
 $usos = [];
