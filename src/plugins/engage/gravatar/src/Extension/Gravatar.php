@@ -9,6 +9,7 @@ namespace Akeeba\Plugin\Engage\Gravatar\Extension;
 
 defined('_JEXEC') or die;
 
+use Akeeba\Component\Engage\Administrator\Helper\TrustedBase;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\User;
@@ -273,9 +274,18 @@ class Gravatar extends CMSPlugin implements SubscriberInterface
 			$defaultImage = 'mp';
 		}
 
+		// 0.8.3: the absolute address of the custom image comes from the configured live_site, never from the Host header of the request (in "always" mode
+		// this URL goes into a page that Joomla's cache shares with everybody); without a trusted base the standard image is used
+		$trustedRoot = ($defaultImage === 'custom') ? TrustedBase::root() : '';
+
+		if ($defaultImage === 'custom' && $trustedRoot === '')
+		{
+			$defaultImage = 'mp';
+		}
+
 		if ($defaultImage === 'custom')
 		{
-			$url .= '&d=' . urlencode(Uri::base(false) . $customImage);
+			$url .= '&d=' . urlencode($trustedRoot . $customImage);
 		}
 		else
 		{

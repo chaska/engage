@@ -63,7 +63,49 @@ class Avatar
 	 * @throws  Exception
 	 * @since   0.6.17
 	 */
-	public static function getUserAvatarData(?int $user_id, int $size = 128, $fallbackEmail = null): array
+	public static function getUserAvatarData(?int $user_id, int $size = 128, $fallbackEmail = null, ?int $commentId = null): array
+	{
+		$data = self::resolveAvatarData($user_id, $size, $fallbackEmail);
+
+		/**
+		 * 0.8.3 (H4): the page NEVER receives the third party URL (it carries the hash of the e-mail address). `deferred` is now the opaque reference
+		 * `<comment id>.<size>.<token>` (AvatarResolver) that gravatar.js trades for the real URL, through an endpoint with ACL, after the visitor consents.
+		 * Without a comment ID there is no way to resolve it later, so a deferred avatar without it has no reference and simply stays the local image.
+		 */
+		if ($data['deferred'] !== '')
+		{
+			$secret = '';
+
+			try
+			{
+				$secret = (string) Factory::getApplication()->get('secret', '');
+			}
+			catch (Exception $e)
+			{
+				$secret = '';
+			}
+
+			$data['deferred'] = ($commentId !== null) ? AvatarResolver::reference($secret, $commentId, $size) : '';
+		}
+
+		return $data;
+	}
+
+	/**
+	 * The REAL deferred (third party) URL for a comment's author, for the endpoint that answers after the visitor consents. Never printed in a page.
+	 *
+	 * @throws  Exception
+	 * @since   0.8.3
+	 */
+	public static function getDeferredURL(?int $user_id, int $size, $fallbackEmail = null): string
+	{
+		return self::resolveAvatarData($user_id, $size, $fallbackEmail)['deferred'];
+	}
+
+	/**
+	 * @internal  The full data, including the third party URL: only for getUserAvatarData() and getDeferredURL().
+	 */
+	private static function resolveAvatarData(?int $user_id, int $size, $fallbackEmail): array
 	{
 		$empty = ['src' => '', 'deferred' => '', 'notice' => true, 'source' => 'engage', 'group' => ''];
 

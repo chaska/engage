@@ -85,8 +85,11 @@ foreach (['G-01 mode ausente (ajustes antiguos)' => $antiguos, 'G-02 mode=ask' =
 	$p = $ver($nombre, $params);
 	foreach (['inv' => $hashInv, 'reg' => $hashReg] as $quien => $hash) {
 		$h = $p[$quien];
-		$data = preg_match_all('#<img[^>]*data-engage-gravatar="(https://www\.gravatar\.com/avatar/' . $hash . '\?[^"]*)"#', $h);
-		r("$id-$quien", "$nombre ($quien): ningun src/srcset/href/link/picture con gravatar.com y la URL solo en data-engage-gravatar", cargables($h) === [] && fueraDeData($h) === 0 && $data === 1, 'cargables=' . json_encode(cargables($h)) . ", fuera de data=" . fueraDeData($h) . ", data=$data");
+		// 0.8.3: el atributo lleva una REFERENCIA opaca (<id>.<tamano>.<token>); ni la URL de Gravatar ni el hash del correo (sha256 o md5) ni el correo salen en el HTML
+		$data = preg_match_all('#<img[^>]*data-engage-gravatar="[1-9][0-9]*\.48\.[0-9a-f]{32}"#', $h);
+		$correo = $quien === 'inv' ? 'ana.invitada@example.test' : 'luis.registrado@example.test';
+		$rastro = stripos($h, $hash) !== false || stripos($h, md5($correo)) !== false || stripos($h, $correo) !== false || fueraDeData($h) !== 0 || preg_match('#gravatar\.com/avatar/#i', $h) === 1;
+		r("$id-$quien", "$nombre ($quien): ningun src/srcset/href/link/picture con gravatar.com; el atributo data-engage-gravatar lleva solo una referencia opaca y NO hay rastro del hash (sha256/md5) ni del correo en el HTML", cargables($h) === [] && !$rastro && $data >= 1 && $data === preg_match_all('#<img[^>]*data-engage-gravatar=#', $h), 'cargables=' . json_encode(cargables($h)) . ", rastro=" . ($rastro ? 'SI' : 'no') . ", data=$data");
 		r("$id-$quien-b", "$nombre ($quien): el avatar servido es el SVG local, sin perfil de Gravatar y el JS de consentimiento esta registrado", (bool) preg_match('#<img src="[^"]*/media/com_engage/images/avatar-generico\.svg"#', $h) && strpos($h, 'gravatar.com/' . $hash . '"') === false && strpos($h, 'com_engage/js/gravatar') !== false && strpos($h, 'COM_ENGAGE_GRAVATAR_BTN_ACCEPT') !== false);
 	}
 }
