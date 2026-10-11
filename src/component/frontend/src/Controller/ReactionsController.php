@@ -186,6 +186,13 @@ class ReactionsController extends BaseController
 			return false;
 		}
 
+		// 0.8.3: content of other components: the SAME rule the thread uses (Meta::isAssetViewable: a missing, 0 or invalid `access` CLOSES,
+		// where the check below treated a record without `access` as «no restriction» while the thread did not show it)
+		if ($meta['type'] !== 'article')
+		{
+			return Meta::isAssetViewable($meta, $user);
+		}
+
 		if (empty($meta['published']) && !$user->authorise('core.edit.state', 'com_engage'))
 		{
 			return false;

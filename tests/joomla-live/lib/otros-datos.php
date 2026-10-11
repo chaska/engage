@@ -5,7 +5,7 @@
  *                               (los 14 + los 12 del plugin hostil) con una marca unica `MARCA-<asset_id>`, usuarios `otrosreg` (Registered) y
  *                               `otrosmgr` (Manager) y los dos plugins de prueba activados; ajustes de com_engage de pruebas
  *   php otros-datos.php borrar  lo deja como estaba (tabla, comentarios, usuarios, ajustes). Requiere WORK, SITE_DIR, DB_NAME, DB_USER.
- * Los asset_id 900001-900014 y 910001-910012 no existen en #__assets: Engage solo necesita el numero.
+ * Los asset_id 900001-900014 y 910001-910012 se insertan en #__assets (0.8.3: Engage exige que el activo exista, con nombre com_tercero.item.N o com_hostil.item.N).
  */
 $WORK = rtrim(getenv('WORK') ?: die("Define WORK\n"), '/');
 $db   = new mysqli('127.0.0.1', getenv('DB_USER') ?: 'joomla_test', trim(file_get_contents("$WORK/dbpass.txt")), getenv('DB_NAME') ?: 'joomla_test');
@@ -55,6 +55,12 @@ if ($cmd === 'crear') {
 		$ae  = $id === 13 ? "no es un correo\r\nBcc: x@y.z" : 'ana@example.invalid';
 		q("INSERT INTO jos_tercero_prueba VALUES ($id, $asset, '" . $db->real_escape_string($t) . "', '" . $db->real_escape_string($id === 13 ? $xss : 'Viajes') . "', '" . $db->real_escape_string($an) . "', '" . $db->real_escape_string($ae) . "', '" . $db->real_escape_string($url) . "', '" . $db->real_escape_string($pu) . "', $pub, $up, $acc, " . $nulo($par) . ", " . $nulo($cat) . ", $en, $cl, " . $nulo($show) . ")");
 	}
+	// 0.8.3 (H7): Engage exige que el activo exista en #__assets con un nombre `com_<componente>.…` coherente con el tipo de la ficha
+	q("DELETE FROM jos_assets WHERE id BETWEEN 900001 AND 900014 OR id BETWEEN 910001 AND 910012");
+	foreach (array_merge(range(900001, 900014), range(910001, 910012)) as $a) {
+		$comp = $a >= 910001 ? 'hostil' : 'tercero';
+		q("INSERT INTO jos_assets (id, parent_id, lft, rgt, level, name, title, rules) VALUES ($a, 1, " . (2 * $a) . ", " . (2 * $a + 1) . ", 1, 'com_$comp.item.$a', 'Activo de prueba $a', '{}')");
+	}
 	// Una marca unica en un comentario publicado de cada activo: si aparece en la pagina, el hilo se ha mostrado
 	q("DELETE FROM jos_engage_comments WHERE asset_id BETWEEN 900001 AND 900014 OR asset_id BETWEEN 910001 AND 910012");
 	foreach (array_merge(range(900001, 900014), range(910001, 910012)) as $a) {
@@ -74,6 +80,7 @@ if ($cmd === 'crear') {
 	echo "ok crear\n";
 } elseif ($cmd === 'borrar') {
 	q("DROP TABLE IF EXISTS jos_tercero_prueba");
+	q("DELETE FROM jos_assets WHERE id BETWEEN 900001 AND 900014 OR id BETWEEN 910001 AND 910012");
 	q("DELETE FROM jos_engage_comments WHERE asset_id BETWEEN 900001 AND 900014 OR asset_id BETWEEN 910001 AND 910012 OR asset_id=999999");
 	q("DELETE FROM jos_engage_unsubscribe WHERE asset_id BETWEEN 900001 AND 900014");
 	foreach (['otrosreg', 'otrosmgr'] as $u) { $id = (int) one("SELECT id FROM jos_users WHERE username='$u'"); if ($id) { q("DELETE FROM jos_user_usergroup_map WHERE user_id=$id"); q("DELETE FROM jos_users WHERE id=$id"); } }
