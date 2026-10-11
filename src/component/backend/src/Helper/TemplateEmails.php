@@ -303,17 +303,32 @@ abstract class TemplateEmails
 	 */
 	public static function inertLinks(array $data): array
 	{
-		foreach ($data as $key => $value)
+		foreach (self::LINK_TAGS as $key)
 		{
-			$key = (string) $key;
-
-			if (($value === '' || $value === null) && ($key === 'SITEURL' || substr($key, -4) === '_URL' || substr($key, -5) === '_LINK'))
+			if (array_key_exists($key, $data) && ($data[$key] === '' || $data[$key] === null))
 			{
 				$data[$key] = '#';
 			}
 		}
 
 		return $data;
+	}
+
+	/** Tags that are the target of a link (an `href`) in the templates. AVATAR_URL is an image, not a link. */
+	public const LINK_TAGS = ['SITEURL', 'CONTENT_LINK', 'COMMENT_LINK', 'PUBLISH_URL', 'UNPUBLISH_URL', 'DELETE_URL', 'POSSIBLESPAM_URL', 'SPAM_URL', 'UNSPAM_URL', 'UNSUBSCRIBE_URL'];
+
+	/** Does this email have a link tag without an address? Then the buttons and links that use it must disappear (EngageMailTemplate). */
+	public static function hasEmptyLinks(array $data): bool
+	{
+		foreach (self::LINK_TAGS as $key)
+		{
+			if (array_key_exists($key, $data) && ($data[$key] === '' || $data[$key] === null))
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -386,6 +401,13 @@ abstract class TemplateEmails
 			else
 			{
 				$templateMailer = new MailTemplate($key, $langTag, $mailer);
+			}
+
+			// 0.8.3: with empty link tags the dead buttons and links are removed after the tags are replaced (EngageMailTemplate)
+			if (self::hasEmptyLinks($data) && get_class($templateMailer) === MailTemplate::class)
+			{
+				$templateMailer                   = new EngageMailTemplate($key, $langTag, $mailer);
+				$templateMailer->engageStripLinks = true;
 			}
 
 			$templateMailer->addTemplateData(self::inertLinks($data));

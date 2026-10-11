@@ -30,6 +30,14 @@ class CommentsController extends AdminController
 	use ControllerRegisterTasksTrait;
 	use ControllerReturnURLTrait;
 
+	/**
+	 * 0.8.3: closed list of the tasks of the comments list (toolbar buttons and the quick actions of the dashboard).
+	 */
+	protected function engageAllowedTasks(): ?array
+	{
+		return ['main', 'display', 'publish', 'unpublish', 'delete', 'possiblespam', 'reportham', 'reportspam', 'checkin'];
+	}
+
 	/** @inheritdoc */
 	protected $text_prefix = 'COM_ENGAGE_COMMENTS';
 

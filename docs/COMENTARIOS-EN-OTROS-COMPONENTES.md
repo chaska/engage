@@ -31,11 +31,11 @@ Reglas (lo que no se cumpla no muestra **nada**):
 
 ## 2. Responder con la ficha: `onAkeebaEngageGetAssetMeta`
 
-Un plugin del grupo **`content`** que escucha `onAkeebaEngageGetAssetMeta`. Engage lo lanza con `[$assetId, $cargarParametros]` y espera en `result` **una matriz con la ficha, o `null` si ese `asset_id` no es de su plugin** (nunca invente una ficha para un id ajeno: Engage usa la primera matriz que reciba).
+Un plugin del grupo **`content`** que escucha `onAkeebaEngageGetAssetMeta`. Engage lo lanza con `[$assetId, $cargarParametros]` y espera en `result` **una matriz con la ficha, o `null` si ese `asset_id` no es de su plugin** (nunca invente una ficha para un id ajeno). Desde la **0.8.3** Engage ya no usa «la primera matriz que reciba»: descarta las fichas que no cuadran con el activo (ver «El activo tiene que existir y cuadrar con su tipo») y, si quedan dos o más válidas para el mismo activo, lo trata como ambiguo y **no muestra nada**.
 
 | Clave | Tipo | Significado |
 |---|---|---|
-| `type` | `string` | Nombre de su tipo: minúsculas, cifras y `_`, de 1 a 32 caracteres, empezando por letra. No puede ser `unknown` ni `article` (reservado a `com_content`). Un tipo no válido anula toda la ficha |
+| `type` | `string` | Nombre de su tipo: minúsculas, cifras y `_`, de 1 a 32 caracteres, empezando por letra. No puede ser `unknown` ni `article` (reservado a `com_content`). **Tiene que ser coherente con el componente del activo** (ver «El activo tiene que existir y cuadrar con su tipo»). Un tipo no válido o incoherente anula toda la ficha |
 | `title` | `string` | Título (texto plano, hasta 255 caracteres). Engage lo escapa al mostrarlo |
 | `category` | `string` | Nombre de la categoría (texto plano) |
 | `author_name` | `string` | Nombre del autor (texto plano) |
@@ -236,14 +236,23 @@ class Terceroprueba extends CMSPlugin implements SubscriberInterface
 - **Vista `comments` propia.** Joomla guarda las vistas en una caché estática por nombre compartida por todos los componentes de la petición. Engage **no** la usa: crea su vista con su propia fábrica y rechaza cualquier vista que no sea una clase suya. Puede tener usted una vista llamada `comments` sin que se pisen.
 - **`layout` y `view` de la petición** (CVE-2026-40383, inclusión de ficheros locales): solo se aceptan letras y cifras; `../../`, `%00`, `....//` y similares se convierten en `default`.
 - **Volver al elemento tras comentar.** Por seguridad (caché de página) el enlace de vuelta del formulario conserva de la URL solo los parámetros conocidos: `option`, `view`, `layout`, `tmpl`, `id`, `catid`, `Itemid`, `lang`, `print`, `showall`, `start`, `limitstart` y `limit`. Con URL amigables (SEF) o con esos parámetros se vuelve al elemento; si su URL depende de otro parámetro, el visitante vuelve a la portada y el comentario queda guardado igual.
-- **La vista de comentarios no se alcanza por URL.** Solo se muestra cuando la llama el plugin de contenido de Engage; una URL directa responde 403/404.
-- **Quien responde manda para sus ids.** Engage fía en el plugin que reconoce el `asset_id`. Devuelva `null` para ids que no sean suyos.
+- **La vista de comentarios no se alcanza por URL.** Solo se muestra cuando la llama el plugin de contenido de Engage; una URL directa responde 403 (también `task=comments.display` y cualquier otra tarea: desde la 0.8.3 los controladores públicos de Engage tienen una lista cerrada de tareas).
+- **Quien responde manda para sus ids… y Engage lo comprueba.** Devuelva `null` para ids que no sean suyos.
+
+### El activo tiene que existir y cuadrar con su tipo (0.8.3)
+
+Un plugin de terceros podía contestar por el `asset_id` de **otro** componente (o de un artículo) con una ficha más abierta, y Engage tomaba la primera ficha que llegaba. Ahora, antes de aceptar una ficha, Engage consulta `#__assets` y exige:
+
+- El activo **existe** en `#__assets` y su `name` tiene la forma `com_<componente>.<algo>` (por ejemplo `com_miapp.elemento.12`). Un `asset_id` que no existe en `#__assets` no muestra comentarios. Su componente crea ese activo al guardar el elemento (es lo normal en Joomla: `Table\Asset`).
+- Su `type` es **coherente con el nombre del componente**: igual a lo que sigue a `com_`, o uno es el comienzo del otro con al menos 3 caracteres (`type` `viaje` o `viajes` para `com_viajes`; `mapa` para `com_mapaviajes`). `com_content` y `com_engage` no valen para los terceros.
+- Los activos `com_content.article.N` solo los describe una ficha de tipo `article` (la del plugin de contenido de Engage); nadie más.
+- Si varias fichas son válidas para el mismo activo, el activo es ambiguo y se cierra.
 
 ### Límites conocidos
 
 - **Contador de comentarios** (el «3 comentarios» en listados y bloques): **no soportado** fuera de `com_content`; solo sale el hilo completo.
 - **Listados** (categoría, destacados) de otros componentes: sin hilo; el contexto `com_content.*` queda para los artículos.
-- **Borrado.** Engage solo limpia los comentarios de los **artículos** que se borran (`onContentAfterDelete` con `com_content.article`). Cuando su componente borre un elemento **debe** limpiar lo suyo:
+- **Borrado.** Engage solo limpia los comentarios de los **artículos** que se borran (`onContentAfterDelete` con `com_content.article`). Cuando su componente borre un elemento **debe** llamar a `Meta::deleteAssetData()` (es obligatorio: Engage no puede enterarse solo, y los comentarios huérfanos quedarían en la base de datos con datos personales de los comentaristas):
 
 ```php
 use Akeeba\Component\Engage\Site\Helper\Meta;
@@ -253,7 +262,9 @@ $borrados = Meta::deleteAssetData((int) $fila->asset_id);   // -1 si el id no es
 // 2) y usted borra la fila de #__assets del elemento y la suya
 ```
 
-  `deleteAssetData()` es un método estático de PHP: no hay ninguna ruta HTTP, tarea ni evento que llegue a él. No toca `#__assets`.
+  `deleteAssetData()` es un método estático de PHP: no hay ninguna ruta HTTP, tarea ni evento que llegue a él. No toca `#__assets`. Desde la 0.8.3 **se niega a borrar** (devuelve `-1`) los activos que existen y son de `com_content` (los artículos los limpia Engage por su cuenta), para que el código de otro componente no pueda vaciar los comentarios de un artículo por error.
+- **Los `asset_id` no se reutilizan.** Los comentarios se enlazan al elemento solo por su `asset_id`. Si su componente borrase un elemento **sin** llamar a `deleteAssetData()` y más tarde **otro** elemento recibiera el mismo `asset_id` (por ejemplo, creando filas de `#__assets` con ids elegidos a mano), heredaría los comentarios del anterior, con sus nombres y correos. Con los ids autonuméricos de `#__assets` de Joomla no ocurre; no cree activos con ids propios ni reasigne ids. Como defensa, un activo que ya no existe en `#__assets` no muestra ningún comentario (ver arriba), pero los datos siguen en la base de datos hasta que llame a `deleteAssetData()`.
+- **`public_url` nulo o relativo.** Puede devolver `public_url` y `category` ausentes o `null` (Engage los trata como cadena vacía, sin avisos de PHP) y una `public_url` relativa: en los correos se completa con el `live_site` de la configuración de Joomla. Sin `live_site` los correos de Engage no llevan enlaces (ver `docs/PANEL.md`, semáforo de los correos); el enlace de `com_content` es relativo desde la 0.8.3 por lo mismo.
 - Si el plugin de Engage no está activo o `com_engage` no está habilitado, el evento no hace nada.
 
 ## 5. Lista de comprobación de seguridad para el desarrollador
@@ -265,7 +276,8 @@ $borrados = Meta::deleteAssetData((int) $fila->asset_id);   // -1 si el id no es
 - [ ] `type` es fijo, propio y no es `article` ni `unknown`.
 - [ ] Mi vista calcula el `asset_id` desde **mi** base de datos, nunca desde un parámetro de la URL ni de un formulario, y no lanza el evento si el visitante no puede ver el elemento (Engage lo vuelve a comprobar, pero no debe ser mi única defensa).
 - [ ] `$params` es un `Registry` y no lleva `moduleclass_sfx`.
-- [ ] Borro con `Meta::deleteAssetData()` y borro mi fila de `#__assets` cuando borro el elemento.
+- [ ] Borro con `Meta::deleteAssetData()` y borro mi fila de `#__assets` cuando borro el elemento; no creo ni reasigno `asset_id` a mano.
+- [ ] El activo existe en `#__assets` con nombre `com_<mi componente>.…` y mi `type` es coherente con ese componente (si no, Engage descarta la ficha).
 - [ ] Mi plugin no abre accesos nuevos (rutas, tareas, `exit`) para mostrar el hilo: Engage no los necesita.
 - [ ] Lo he probado como invitado, Registered y Manager, con la caché de página activada y con un elemento sin publicar, en categoría sin publicar y con un nivel de acceso que el visitante no tiene.
 

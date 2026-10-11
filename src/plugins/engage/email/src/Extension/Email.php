@@ -22,6 +22,7 @@ use HTMLPurifier;
 use HTMLPurifier_Config;
 use Joomla\CMS\Access\Access;
 use Joomla\CMS\Application\WebApplication;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -361,7 +362,13 @@ class Email extends CMSPlugin implements SubscriberInterface
 		 * request that triggered the email, and a record from a third-party plugin may have no public_url or category (NULL): everything is cast to
 		 * string, a relative public_url is completed with the trusted base, and without a trusted base there are no links at all (the dashboard warns).
 		 */
-		$publicUrl      = TrustedBase::absolute((string) ($meta['public_url'] ?? ''));
+		/**
+		 * 0.8.3: option «Include links in the emails» (email_include_links, closed list 1/0, default 1). Only an explicit 0 turns the links off; any other value
+		 * is 1. With 0 NO URL is calculated for moderation, content or comment (no signed link, no orphan token); only the unsubscribe link stays, signed and
+		 * on the trusted base, because people must be able to unsubscribe.
+		 */
+		$includeLinks   = !in_array(ComponentHelper::getParams('com_engage')->get('email_include_links', 1), [0, '0', false], true);
+		$publicUrl      = $includeLinks ? TrustedBase::absolute((string) ($meta['public_url'] ?? '')) : '';
 		$publicUri      = Uri::getInstance($publicUrl);
 		$returnUrl      = base64_encode($publicUrl);
 		$protoUrl       = 'index.php?option=com_engage&task=%s&returnurl=%s';
@@ -387,7 +394,7 @@ class Email extends CMSPlugin implements SubscriberInterface
 		}
 
 		$data = [
-			'SITEURL'           => TrustedBase::root(),
+			'SITEURL'           => $includeLinks ? TrustedBase::root() : '',
 			'SITENAME'          => $this->getApplication()->get('sitename', 'A Joomla! site'),
 			'NAME'              => strip_tags($commentUser->name),
 			'EMAIL'             => strip_tags($commentUser->email),
@@ -447,8 +454,8 @@ class Email extends CMSPlugin implements SubscriberInterface
 			 * Moderation links (publish, unpublish, delete, spam) are only generated for recipients who are allowed to use
 			 * them. Everyone else gets the plain link to the comment. The unsubscribe link is for everybody.
 			 */
-			$canState    = $this->recipientCan($recipient, 'core.edit.state');
-			$canDelete   = $this->recipientCan($recipient, 'core.delete');
+			$canState    = $includeLinks && $this->recipientCan($recipient, 'core.edit.state');
+			$canDelete   = $includeLinks && $this->recipientCan($recipient, 'core.delete');
 			$fallbackUrl = ($publicUrl !== '') ? $publicUri->toString() : '';
 
 			// Try to send an email

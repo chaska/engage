@@ -22,6 +22,12 @@ class EmailtemplatesController extends BaseController
 {
 	use ControllerEventsTrait;
 
+	/** 0.8.3: closed list of tasks. */
+	protected function engageAllowedTasks(): ?array
+	{
+		return ['main', 'display', 'updateemails', 'resetemails'];
+	}
+
 	/**
 	 * 0.8.3: these tasks rewrite the system's mail templates (#__mail_templates). The CSRF token is not authority: the user also needs
 	 * `core.admin` on com_engage and `core.edit` on com_mails (a Manager who only has `core.manage` can open the screen but not do this).

@@ -141,7 +141,7 @@ $aplica = function (array $c) use ($cfgOrig, $cfgPath, $limpiaCache) {
 	file_put_contents($cfgPath, $cfg);
 	q("UPDATE jos_extensions SET enabled=" . (int) $page . ", params='{\"browsercache\":\"0\",\"cachetime\":\"15\"}' WHERE element='cache' AND folder='system'");
 	q("UPDATE jos_extensions SET enabled=" . (int) $ecache . " WHERE element='engagecache' AND folder='system'");
-	$limpiaCache(); usleep(2500000);
+	$limpiaCache(); usleep(4500000);
 };
 // Solo los grupos de la cache de paginas y de la cache de vistas del articulo (los demas son del propio Joomla: menus, plugins, esquemas...)
 $listaCache = fn(): array => array_values(array_filter(explode("\n", trim((string) shell_exec('find ' . escapeshellarg("$SITE/cache") . ' ' . escapeshellarg("$SITE/administrator/cache") . ' -type f ! -name index.html 2>/dev/null'))), fn($f) => preg_match('~/(page|com_content|com_engage)/~', $f) === 1));

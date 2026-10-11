@@ -162,6 +162,22 @@ if ($okA) {
 	}
 }
 r('H1-19', "Panel como Administrator: $nA peticiones (vistas y tareas publicas de los 5 controladores) sin 5xx", $okA && !$cincoA, ($okA ? '' : 'no se pudo iniciar sesion; ') . count($cincoA) . ': ' . implode(' | ', array_slice($cincoA, 0, 6)));
+// Las tareas del panel que SI usa la interfaz (lista cerrada del panel) siguen funcionando para el Super User
+$sup = new Cliente($BASE, "$WORK/tmp", 'r3sup'); $okS = $sup->loginAdmin('admintest', 'Aa1!' . trim(file_get_contents("$WORK/adminpass.txt")));
+$tkS = $okS ? Cliente::token($sup->get('/administrator/index.php?option=com_engage&view=comments')['body']) : '';
+// Con comentarios propios de esta comprobacion (los de la matriz se siguen necesitando intactos mas abajo)
+q("INSERT INTO jos_engage_comments (asset_id,parent_id,body,name,email,ip,user_agent,enabled,created,created_by) VALUES ($ASSET_PUB,NULL,'<p>R3B-ADMIN</p>','R3N-ADMIN','admin-r3@privado.invalid','198.51.100.99','R3UA-ADMIN',0,'2026-09-01 10:00:00',0)");
+$idp = (int) $db->insert_id; $pasos = [];
+$idRs = (function () use ($ASSET_PUB, $db) { q("INSERT INTO jos_engage_comments (asset_id,parent_id,body,name,email,ip,user_agent,enabled,created,created_by) VALUES ($ASSET_PUB,NULL,'<p>R3B-ADMIN2</p>','R3N-ADMIN2','admin2-r3@privado.invalid','198.51.100.98','R3UA-ADMIN2',-3,'2026-09-01 10:00:00',0)"); return (int) $db->insert_id; })();
+$idDel = (function () use ($ASSET_PUB, $db) { q("INSERT INTO jos_engage_comments (asset_id,parent_id,body,name,email,ip,user_agent,enabled,created,created_by) VALUES ($ASSET_PUB,NULL,'<p>R3B-ADMIN3</p>','R3N-ADMIN3','admin3-r3@privado.invalid','198.51.100.97','R3UA-ADMIN3',1,'2026-09-01 10:00:00',0)"); return (int) $db->insert_id; })();
+foreach (['publish' => 1, 'unpublish' => 0, 'possiblespam' => -3, 'reportham' => 1] as $t => $esperado) {
+	$sup->post("/administrator/index.php?option=com_engage&task=comments.$t", ['cid' => [$idp], $tkS => 1]);
+	$pasos[] = "$t=" . (int) one("SELECT enabled FROM jos_engage_comments WHERE id=$idp"); if ((int) one("SELECT enabled FROM jos_engage_comments WHERE id=$idp") !== $esperado) { $pasos[] = 'MAL'; }
+}
+$sup->post("/administrator/index.php?option=com_engage&task=comments.reportspam", ['cid' => [$idRs], $tkS => 1]);
+$edit = $sup->get("/administrator/index.php?option=com_engage&view=comment&task=edit&id=$idp"); $pant = $edit['loc'] !== '' ? $sup->get($edit['loc']) : ['code' => 0, 'body' => ''];
+$sup->post("/administrator/index.php?option=com_engage&task=comments.delete", ['cid' => [$idDel], $tkS => 1]);
+r('H1-23', 'Panel (Super User): las tareas que usa la interfaz siguen funcionando con la lista cerrada (publicar, despublicar, posible spam, no es spam, spam, editar, borrar)', $okS && !in_array('MAL', $pasos, true) && (int) one("SELECT COUNT(*) FROM jos_engage_comments WHERE id=$idRs") === 0 && (int) one("SELECT COUNT(*) FROM jos_engage_comments WHERE id=$idDel") === 0 && $pant['code'] === 200 && str_contains($pant['body'], 'R3B-ADMIN'), implode(',', $pasos) . " editar={$pant['code']}");
 // Los 5xx y avisos de PHP del barrido
 $nuevoLog = logNuevo($log0);
 $graves = array_filter(explode("\n", $nuevoLog), fn($l) => preg_match('/(Fatal|TypeError|Deprecated|Warning|Notice|Uncaught|ArgumentCountError)/', $l));

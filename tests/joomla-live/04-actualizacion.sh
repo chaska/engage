@@ -76,8 +76,9 @@ echo "   con las tres opciones en No: barra=$(echo "$H0" | grep -c 'akengage-too
 mysql "$DB_NAME" -e "UPDATE jos_extensions SET params='$(echo "$PARAMS_ANTES" | sed "s/'/''/g")' WHERE element='com_engage' AND type='component'"
 [ "$T1" = "1" ] && [ "$T2" -ge 1 ] && [ "$T3" -ge 1 ] && [ "$(echo "$PARAMS_ANTES" | grep -Ec 'sort_selector|default_sort|copy_link|show_badges')" = "0" ] && ! echo "$H0" | grep -q 'akengage-toolbar\|akengage-copy\|akengage-badge' && echo "RESULTADO tanda 2: PASA" || { echo "RESULTADO tanda 2: FALLA"; exit 1; }
 echo "== 5d. 0.8.1: el PoC de XSS reflejado de la revision independiente contra el sitio actualizado (antes: el HTML llevaba \`x=\"><script>alert(document.domain)</script>\` sin escapar en el enlace de la fecha de cada comentario)"
-PX="$(curl -s "$PAG&x=%22%3E%3Cscript%3Ealert(document.domain)%3C/script%3E&p=ATACANTE" | sed -e 's#<script type="application/ld+json">[^<]*</script>##g')"
-X1=$(echo "$PX" | grep -c '"><script>alert'); X2=$(echo "$PX" | grep -c 'ATACANTE'); X3=$(echo "$PX" | grep -Eo 'href="/[^"]*akengage_cid=[0-9]+#akengage-comment-[0-9]+"' | wc -l)
+PX="$(curl -s "$PAG&x=%22%3E%3Cscript%3Ealert(document.domain)%3C/script%3E&p=ATACANTE" | perl -0pe 's#<script type="application/ld\+json">.*?</script>##gs')"
+X1=$(echo "$PX" | grep -c '"><script>alert' || true); X2=$(echo "$PX" | grep -c 'akengage.*ATACANTE\|ATACANTE.*akengage' || true);   # (el formulario de acceso de Joomla refleja la URL: no es de Engage)
+ X3=$(echo "$PX" | grep -Eo 'href="/[^"]*akengage_cid=[0-9]+#akengage-comment-[0-9]+"' | wc -l || true)
 echo "   scripts inyectados: $X1 (0 = si); rastro de la consulta ajena en los enlaces: $X2 (0 = si); enlaces de fecha relativos y limpios: $X3 (= comentarios publicados: $NC)"
 [ "$X1" = "0" ] && [ "$X2" = "0" ] && { [ "$NC" = "0" ] || [ "$X3" -ge 1 ]; } && echo "RESULTADO XSS 0.8.1: PASA" || { echo "RESULTADO XSS 0.8.1: FALLA"; exit 1; }
 echo "== 6. Humo web tras actualizar"
