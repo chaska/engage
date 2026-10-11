@@ -11,6 +11,7 @@ use Akeeba\Component\Engage\Administrator\Helper\Avatar;
 use Akeeba\Component\Engage\Administrator\Helper\Html2Text;
 use Akeeba\Component\Engage\Administrator\Helper\HtmlFilter;
 use Akeeba\Component\Engage\Administrator\Helper\TemplateEmails;
+use Akeeba\Component\Engage\Administrator\Helper\TrustedBase;
 use Akeeba\Component\Engage\Administrator\Helper\UserFetcher;
 use Akeeba\Component\Engage\Administrator\Table\CommentTable;
 use Akeeba\Component\Engage\Site\Helper\Meta;
@@ -355,8 +356,14 @@ class Email extends CMSPlugin implements SubscriberInterface
 		HtmlFilter::includeHTMLPurifier();
 		$commentUser    = $this->getUser($comment);
 		$meta           = Meta::getAssetAccessMeta($comment->asset_id);
-		$publicUri      = Uri::getInstance($meta['public_url']);
-		$returnUrl      = base64_encode($meta['public_url']);
+		/**
+		 * 0.8.3: the links of the email are built on the TRUSTED base (the live_site of Joomla's configuration), never on the Host header of the
+		 * request that triggered the email, and a record from a third-party plugin may have no public_url or category (NULL): everything is cast to
+		 * string, a relative public_url is completed with the trusted base, and without a trusted base there are no links at all (the dashboard warns).
+		 */
+		$publicUrl      = TrustedBase::absolute((string) ($meta['public_url'] ?? ''));
+		$publicUri      = Uri::getInstance($publicUrl);
+		$returnUrl      = base64_encode($publicUrl);
 		$protoUrl       = 'index.php?option=com_engage&task=%s&returnurl=%s';
 		$dateFormat     = Text::_('DATE_FORMAT_LC2');
 		$purifierConfig = HTMLPurifier_Config::createDefault();
@@ -380,16 +387,16 @@ class Email extends CMSPlugin implements SubscriberInterface
 		}
 
 		$data = [
-			'SITEURL'           => Uri::base(),
+			'SITEURL'           => TrustedBase::root(),
 			'SITENAME'          => $this->getApplication()->get('sitename', 'A Joomla! site'),
 			'NAME'              => strip_tags($commentUser->name),
 			'EMAIL'             => strip_tags($commentUser->email),
 			'IP'                => strip_tags($comment->ip),
 			'USER_AGENT'        => strip_tags($comment->user_agent),
-			'CONTENT_LINK'      => $meta['public_url'],
-			'COMMENT_LINK'      => $publicUri->toString(),
-			'CONTENT_TITLE'     => strip_tags($meta['title']),
-			'CONTENT_CATEGORY'  => strip_tags($meta['category']),
+			'CONTENT_LINK'      => $publicUrl,
+			'COMMENT_LINK'      => $publicUrl,
+			'CONTENT_TITLE'     => strip_tags((string) ($meta['title'] ?? '')),
+			'CONTENT_CATEGORY'  => strip_tags((string) ($meta['category'] ?? '')),
 			'AVATAR_URL'        => $avatarUrl,
 			'COMMENT_SANITIZED' => $processedComment,
 			'COMMENT_PLAINTEXT' => $plainTextConverter->getText(),
@@ -421,7 +428,7 @@ class Email extends CMSPlugin implements SubscriberInterface
 			$publicUri->setFragment('akengage-comment-' . $comment->getId());
 			$publicUri->setVar('akengage_cid', $comment->getId());
 
-			$returnUrlComment = base64_encode($publicUri->toString());
+			$returnUrlComment = base64_encode($publicUrl !== '' ? $publicUri->toString() : '');
 
 			// Get the localised “created on” date
 			try
@@ -442,7 +449,7 @@ class Email extends CMSPlugin implements SubscriberInterface
 			 */
 			$canState    = $this->recipientCan($recipient, 'core.edit.state');
 			$canDelete   = $this->recipientCan($recipient, 'core.delete');
-			$fallbackUrl = $publicUri->toString();
+			$fallbackUrl = ($publicUrl !== '') ? $publicUri->toString() : '';
 
 			// Try to send an email
 			try

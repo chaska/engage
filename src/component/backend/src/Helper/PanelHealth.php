@@ -166,9 +166,19 @@ final class PanelHealth
 			return self::item('plugin_email', self::WARN, ['state' => 'missing']);
 		}
 
-		return $p['enabled']
-			? self::item('plugin_email', self::OK)
-			: self::item('plugin_email', self::WARN, ['state' => 'disabled'], self::pluginFix($f, $p));
+		if (!$p['enabled'])
+		{
+			return self::item('plugin_email', self::WARN, ['state' => 'disabled'], self::pluginFix($f, $p));
+		}
+
+		// 0.8.3: the links of the emails (moderation, unsubscribe, link to the comment) are only built on the live_site configured in Joomla's
+		// configuration.php; without it the emails carry no links at all (the Host header of a request is not trusted). Unknown (missing fact) = no warning.
+		if (array_key_exists('trusted_base', $f) && !$f['trusted_base'])
+		{
+			return self::item('plugin_email', self::WARN, ['state' => 'nobase']);
+		}
+
+		return self::item('plugin_email', self::OK);
 	}
 
 	private static function pluginCache(array $f): array

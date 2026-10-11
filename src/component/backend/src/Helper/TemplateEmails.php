@@ -292,6 +292,31 @@ abstract class TemplateEmails
 	}
 
 	/**
+	 * Joomla's mail layer turns every EMPTY or relative href of the HTML part into an absolute URL built with the Host header of the request
+	 * (MailHelper::convertRelativeToAbsoluteUrls: `Uri::root()`). A link that has no trusted base (0.8.3: see TrustedBase) is therefore sent to the HTML part
+	 * as `#`, which that conversion leaves alone; the plain text part keeps the empty string (see sendMail).
+	 *
+	 * @param   array  $data  The tags of the email
+	 *
+	 * @return  array
+	 * @since   0.8.3
+	 */
+	public static function inertLinks(array $data): array
+	{
+		foreach ($data as $key => $value)
+		{
+			$key = (string) $key;
+
+			if (($value === '' || $value === null) && ($key === 'SITEURL' || substr($key, -4) === '_URL' || substr($key, -5) === '_LINK'))
+			{
+				$data[$key] = '#';
+			}
+		}
+
+		return $data;
+	}
+
+	/**
 	 * Sends an email using a template.
 	 *
 	 * WARNING! THIS DOES NOT CHECK IF THE TEMPLATE EXISTS. USE TemplateEmails::updateTemplate($key) FIRST.
@@ -363,7 +388,7 @@ abstract class TemplateEmails
 				$templateMailer = new MailTemplate($key, $langTag, $mailer);
 			}
 
-			$templateMailer->addTemplateData($data);
+			$templateMailer->addTemplateData(self::inertLinks($data));
 
 			// Joomla usa estos datos en lugar de $data al generar la parte de texto plano.
 			$templateMailer->addTemplateData(self::plainTextData($data), true);
