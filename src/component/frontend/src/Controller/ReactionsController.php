@@ -42,6 +42,22 @@ class ReactionsController extends BaseController
 	/** @inheritdoc */
 	protected $default_view = 'comments';
 
+	/**
+	 * 0.8.3: lista cerrada de tareas. Antes, cualquier otra (`reactions.foo`, el `display` por omision) caia en `display()` de Joomla y daba
+	 * un 500 o mostraba la vista de comentarios sin mas. Ahora solo `toggle` y `state`; el resto, 403 igual que cualquier otra denegacion.
+	 *
+	 * @throws  \RuntimeException  403
+	 */
+	public function execute($task)
+	{
+		if (!in_array(strtolower((string) $task), ['toggle', 'state'], true))
+		{
+			throw new \RuntimeException(\Joomla\CMS\Language\Text::_('JERROR_ALERTNOAUTHOR'), 403);
+		}
+
+		return parent::execute($task);
+	}
+
 	/** Alterna una reaccion (POST + token). */
 	public function toggle(): void
 	{

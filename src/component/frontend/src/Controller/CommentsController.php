@@ -79,6 +79,9 @@ class CommentsController extends AdminCommentsController
 	 */
 	public function display($cachable = false, $urlparams = [])
 	{
+		// 0.8.3: the guard also lives here (not only in onBeforeMain, which a URL like task=comments.display or task=display&view=comments skipped)
+		$this->assertCalledByThePlugin();
+
 		$urlparams = array_merge_recursive([
 			'option'              => 'CMD',
 			'view'                => 'CMD',
@@ -125,6 +128,16 @@ class CommentsController extends AdminCommentsController
 	 * @throws  Exception
 	 * @since   3.0.0
 	 */
+	/**
+	 * Closed list of the tasks that the pages use (0.8.3): `main` (only the content plugin reaches it, see assertCalledByThePlugin()) and the
+	 * moderation links (buttons and signed emails). Everything else answers 403: `display`, `getModel`, `redirect`, `execute`... and every
+	 * public method that Joomla registers as a task.
+	 */
+	protected function engageAllowedTasks(): ?array
+	{
+		return ['main', 'publish', 'unpublish', 'delete', 'possiblespam', 'reportham', 'reportspam', 'unsubscribe'];
+	}
+
 	public function getView($name = '', $type = '', $prefix = '', $config = [])
 	{
 		return $this->reusableGetView($name, $type, $prefix, $config);
@@ -339,28 +352,7 @@ class CommentsController extends AdminCommentsController
 		}
 
 		// Make sure we are allowed to show this page (we must be called by the plugin).
-		$backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-		$allowed   = false;
-
-		foreach ($backtrace as $info)
-		{
-			if (!isset($info['class']) || !isset($info['function']))
-			{
-				continue;
-			}
-
-			if ($info['class'] === Engage::class && $info['function'] === 'renderComments')
-			{
-				$allowed = true;
-
-				break;
-			}
-		}
-
-		if (!$allowed)
-		{
-			throw new RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
-		}
+		$this->assertCalledByThePlugin();
 
 		// Apply the custom pagination to the model.
 		$defaultLimit = $this->getDefaultListLimit();
@@ -448,6 +440,25 @@ class CommentsController extends AdminCommentsController
 		$view->setModel($formModel);
 		$view->assetId   = $assetId;
 		$view->listState = $listState;
+	}
+
+	/**
+	 * The list of comments is only shown by the content plugin (Engage::renderComments), never by a URL of its own.
+	 *
+	 * @throws  RuntimeException  403
+	 * @since   0.8.3
+	 */
+	private function assertCalledByThePlugin(): void
+	{
+		foreach (debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS) as $info)
+		{
+			if (isset($info['class'], $info['function']) && $info['class'] === Engage::class && $info['function'] === 'renderComments')
+			{
+				return;
+			}
+		}
+
+		throw new RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
 	}
 
 	/**

@@ -356,7 +356,7 @@ Joomla 6.1.4, PHP 8.3, MariaDB 10.11. Tres plugins de prueba hacen de tercero (`
 | HTML del artículo frente a la 0.8.1 | 96 de 96 páginas idénticas byte a byte (16 configuraciones de tema, reacciones y orden x artículo público y restringido x invitado, Registered y Manager) |
 | Chromium (`otros-navegador.js`) | 32 PASA / 0 FALLA: texto hostil sin diálogos, canario, nodos ni enlaces peligrosos (con y sin caché de página, 2 visitas), cero peticiones externas, elemento restringido sin fugas, comentar de verdad |
 | Actualización (`04-actualizacion.sh`) desde la 3.4.3 publicada, la 3.4.2.1 publicada y la 3.4.2 original | tablas, permisos y plantillas idénticos; esquema 3.4.3-20261007; versión instalada 3.4.4 |
-| Regresión 03 (73 PASA), 17 (387 comprobaciones), 19 (tanda 2), 20 (XSS) | ver el CHANGELOG |
+| Regresión 03 (73 PASA / 0 FALLA), 17 (387 comprobaciones, 0 fallan), 19 (tanda 2: HTTP 45 PASAN / 0 FALLAN; el navegador de 20-xss, 16 / 0 con las opciones por defecto: con las herramientas apagadas que deja 03 el botón Copiar no existe y `N-COPY` y `S-01`/`S-02` no aplican) | todo en verde |
 
 Hallazgo propio: con la caché conservadora de Joomla dos elementos de otro componente compartían una entrada de la caché de vistas (la clave se calcula con la petición, que no lleva el `asset_id`); corregido (Engage añade el `asset_id` a la petición mientras despacha) y cubierto por la matriz de la caché.
 
