@@ -223,7 +223,98 @@ class HtmlFilter
 			return ComponentHelper::filterText($text);
 		}
 
-		return self::getHTMLPurifier()->purify($text);
+		return self::restrictStyles(self::getHTMLPurifier()->purify($text));
+	}
+
+	/**
+	 * Closed list of the CSS properties a comment may carry in a style attribute (0.8.3).
+	 *
+	 * HTML Purifier let `background:url(http://tracker/pixel)` through in `span[style]` (a tracking pixel for everyone who reads the comment) and any
+	 * length or margin that moves the page layout. Only these properties survive; HTML Purifier validates each value (colours, lengths) and
+	 * restrictStyles() then checks the values it cannot bound by itself (font size). No url(), no position, no margins, no sizes, no !important.
+	 *
+	 * @since 0.8.3
+	 */
+	public const ALLOWED_CSS_PROPERTIES = ['color', 'background-color', 'font-weight', 'font-style', 'text-decoration', 'font-size'];
+
+	/**
+	 * @since 0.8.3
+	 */
+	public static function configureStyles(HTMLPurifier_Config $config): void
+	{
+		$config->set('CSS.AllowedProperties', self::ALLOWED_CSS_PROPERTIES);
+		$config->set('CSS.AllowTricky', false);
+		$config->set('CSS.Trusted', false);
+		$config->set('CSS.ForbiddenProperties', ['position', 'top', 'left', 'right', 'bottom', 'z-index', 'margin', 'padding', 'width', 'height', 'float', 'display', 'background', 'background-image', 'content']);
+	}
+
+	/**
+	 * Second line after HTML Purifier: every style attribute of the HTML is rebuilt from the declarations that pass a strict check (0.8.3).
+	 *
+	 * @since 0.8.3
+	 */
+	public static function restrictStyles(string $html): string
+	{
+		return preg_replace_callback(
+			'/\s+style\s*=\s*(?:"([^"]*)"|\'([^\']*)\')/i',
+			static function (array $m): string {
+				$kept = [];
+
+				foreach (explode(';', html_entity_decode(($m[1] ?? '') . ($m[2] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8')) as $decl)
+				{
+					$decl = trim($decl);
+
+					if ($decl === '' || !str_contains($decl, ':'))
+					{
+						continue;
+					}
+
+					[$prop, $val] = array_map('trim', explode(':', $decl, 2));
+					$prop = strtolower($prop);
+					$val  = strtolower($val);
+
+					if (!in_array($prop, self::ALLOWED_CSS_PROPERTIES, true) || preg_match('~[\\\\/@"\'<>(){}]|!important|url|expression|import~', preg_replace('/^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/', 'rgb', $val)))
+					{
+						continue;
+					}
+
+					$ok = false;
+
+					switch ($prop)
+					{
+						case 'color':
+						case 'background-color':
+							$ok = (bool) preg_match('/^(#[0-9a-f]{3}|#[0-9a-f]{6}|rgb|[a-z]{3,20})$/', preg_replace('/^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/', 'rgb', $val));
+							break;
+
+						case 'font-weight':
+							$ok = (bool) preg_match('/^(normal|bold|bolder|lighter|[1-9]00)$/', $val);
+							break;
+
+						case 'font-style':
+							$ok = (bool) preg_match('/^(normal|italic|oblique)$/', $val);
+							break;
+
+						case 'text-decoration':
+							$ok = (bool) preg_match('/^(none|(underline|line-through|overline)( (underline|line-through|overline))*)$/', $val);
+							break;
+
+						case 'font-size':
+							$ok = (bool) preg_match('/^(xx-small|x-small|small|medium|large|x-large|xx-large|smaller|larger)$/', $val)
+								|| (preg_match('/^([0-9]{2,3})%$/', $val, $n) && (int) $n[1] >= 50 && (int) $n[1] <= 200);
+							break;
+					}
+
+					if ($ok)
+					{
+						$kept[] = $prop . ': ' . $val;
+					}
+				}
+
+				return $kept ? (' style="' . htmlspecialchars(implode('; ', $kept), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"') : '';
+			},
+			$html
+		) ?? $html;
 	}
 
 	/**
@@ -257,6 +348,7 @@ class HtmlFilter
 		$config->set('Core.Encoding', 'UTF-8');
 		$config->set('HTML.Doctype', 'HTML 4.01 Transitional');
 		$config->set('Cache.SerializerPath', self::getCachePath());
+		self::configureStyles($config);
 
 		// If we are given an explicit configuration we will not go through Joomla's text filters configuration.
 		if (ComponentHelper::getParams('com_engage')->get('htmlpurifier_config_joomla', 0) == 0)
