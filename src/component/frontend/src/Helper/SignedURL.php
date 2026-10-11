@@ -9,6 +9,7 @@ namespace Akeeba\Component\Engage\Site\Helper;
 
 defined('_JEXEC') or die();
 
+use Akeeba\Component\Engage\Administrator\Helper\TrustedBase;
 use Exception;
 use Joomla\CMS\Crypt\Crypt;
 use Joomla\CMS\Factory;
@@ -25,19 +26,28 @@ final class SignedURL
 	/**
 	 * Get an absolute, signed, SEF URL
 	 *
+	 * 0.8.3: the host (and the scheme) come ONLY from the `live_site` configured in Joomla (TrustedBase), never from the Host header of the request that
+	 * triggered the email. Without a trusted base there is no link: an empty string (the caller must not send a link, nor a signed token, to anybody).
+	 *
 	 * @param   string       $url      The non-SEF URL to sign
 	 * @param   object       $comment  The comment object used in the signature
 	 * @param   string|null  $email    The email address used in the signature
 	 *
-	 * @return  string
+	 * @return  string  The absolute URL, or an empty string when there is no trusted base
 	 * @throws Exception
 	 * @since   1.0.0
 	 */
 	public static function getAbsoluteSignedURL(string $url, object $comment, ?string $email = null): string
 	{
+		if (!TrustedBase::available())
+		{
+			return '';
+		}
+
 		$signedURL = self::getSignedURL($url, $comment, $email);
 
-		return Route::_($signedURL, true, Route::TLS_IGNORE, true);
+		// Only the path and the query of the routed URL are used (Route::_ builds the SEF path); the origin is the trusted one
+		return TrustedBase::absolute(Route::_($signedURL, true, Route::TLS_IGNORE, false));
 	}
 
 	/**

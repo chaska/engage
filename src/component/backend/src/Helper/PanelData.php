@@ -339,6 +339,8 @@ final class PanelData
 			'purifier_cache'   => null,
 			// 0.8.1: caché global de Joomla (0 = desactivada, 1 = conservadora, 2 = progresiva): sin el plugin Engage Cache el orden no funciona
 			'caching'          => (int) Factory::getApplication()->get('caching', 0),
+			// 0.8.3: is there a trusted base URL (live_site) for the links of the emails?
+			'trusted_base'     => TrustedBase::available(),
 			'update_sites'     => [],
 			'can_edit_plugins' => $user->authorise('core.manage', 'com_plugins') && $user->authorise('core.edit', 'com_plugins'),
 			'can_options'      => $user->authorise('core.admin', 'com_engage') || $user->authorise('core.options', 'com_engage'),

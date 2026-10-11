@@ -18,6 +18,11 @@ if (preg_match('#^(/[^?]*\.php)(/.*)?$#', $path, $m) && is_file($root . $m[1])) 
 	$script = '/index.php';
 	$info   = $path === '/' ? '' : $path;
 }
+// Solo para las pruebas (0.8.3): la cabecera X-Engage-Test-Https simula una peticion que llega por https (SSL forzado en Joomla)
+if (($_SERVER['HTTP_X_ENGAGE_TEST_HTTPS'] ?? '') === '1') {
+	$_SERVER['HTTPS'] = 'on';
+	$_SERVER['SERVER_PORT'] = 443;
+}
 $_SERVER['SCRIPT_NAME']     = $script;
 $_SERVER['PHP_SELF']        = $script . $info;
 $_SERVER['SCRIPT_FILENAME'] = $root . $script;

@@ -278,7 +278,7 @@ class Akismet extends CMSPlugin implements SubscriberInterface
 		$commentUser = $this->getUser($comment);
 
 		$struct = array_merge([
-			'blog'                      => Uri::base(),
+			'blog'                      => (\Akeeba\Component\Engage\Administrator\Helper\TrustedBase::root() ?: Uri::base()),
 			'user_ip'                   => $comment->ip,
 			'user_agent'                => $comment->user_agent,
 			'comment_type'              => 'comment',

@@ -14,7 +14,7 @@
  */
 require __DIR__ . '/revision-082-comun.php';
 
-$uid = ['reg' => usuario('r3reg', 2), 'reg2' => usuario('r3reg2', 2), 'mgr' => usuario('r3mgr', 6)];
+$uid = ['reg' => usuario('r3reg', 2), 'reg2' => usuario('r3reg2', 2), 'mgr' => usuario('r3mgr', 6), 'adm' => usuario('r3adm', 7)];
 $C   = siembra($uid);
 register_shutdown_function(function () { q("DELETE FROM jos_engage_comments WHERE name LIKE 'R3N-%' OR body LIKE '%R3B-%'"); borraUsuarios(); });
 @mkdir("$WORK/tmp");
@@ -148,7 +148,9 @@ $st = $g->get("$OP&task=reactions.state&ids={$C['publicado']}&format=json");
 r('H1-17', 'reactions.state sigue respondiendo JSON a un invitado (tarea de la lista)', $st['code'] === 200 && str_starts_with(trim($st['body']), '{'), "HTTP {$st['code']}");
 
 // ------------------------------------------------------------------ 5) Panel
-$adm = new Cliente($BASE, "$WORK/tmp", 'r3adm'); $okA = $adm->loginAdmin('r3mgr', $PASS);
+$adm = new Cliente($BASE, "$WORK/tmp", 'r3adm'); $okA = $adm->loginAdmin('r3adm', $PASS); // Administrator (grupo 7): tiene core.manage de com_engage; el Manager no
+$mgrA = new Cliente($BASE, "$WORK/tmp", 'r3mgradm'); $okMA = $mgrA->loginAdmin('r3mgr', $PASS); $mA = $okMA ? $mgrA->get('/administrator/index.php?option=com_engage&view=comments') : ['code' => 0];
+r('H1-18b', 'Panel: el Manager (sin core.manage de com_engage) no entra (403) y el Administrator si (200)', $okA && $okMA && $mA['code'] === 403 && $adm->get('/administrator/index.php?option=com_engage&view=comments')['code'] === 200, "manager={$mA['code']}");
 $gA = $g->get('/administrator/index.php?option=com_engage&view=comments'); $rA = $reg->get('/administrator/index.php?option=com_engage&view=comment&id=' . $C['publicado']);
 r('H1-18', 'Panel: invitado y Registered (sin acceso al panel) no reciben ningun dato de comentarios', !sinRastros($gA['body'] . $rA['body'], rastros('publicado', $C)) && $gA['code'] < 500 && $rA['code'] < 500, "invitado={$gA['code']} registrado={$rA['code']}");
 $cincoA = []; $nA = 0;
@@ -159,7 +161,7 @@ if ($okA) {
 		foreach ($ts as $t) { foreach (['GET', 'POST'] as $met) { $u = "/administrator/index.php?option=com_engage&task=$ctl.$t&cid[]={$C['sinpublicar']}&id={$C['sinpublicar']}"; $x = $met === 'GET' ? $adm->get($u) : $adm->post($u, ['x' => 1]); $nA++; if ($x['code'] >= 500) { $cincoA[] = "$met $ctl.$t {$x['code']}"; } } }
 	}
 }
-r('H1-19', "Panel como Manager: $nA peticiones (vistas y tareas publicas de los 5 controladores) sin 5xx", $okA && !$cincoA, ($okA ? '' : 'no se pudo iniciar sesion; ') . count($cincoA) . ': ' . implode(' | ', array_slice($cincoA, 0, 6)));
+r('H1-19', "Panel como Administrator: $nA peticiones (vistas y tareas publicas de los 5 controladores) sin 5xx", $okA && !$cincoA, ($okA ? '' : 'no se pudo iniciar sesion; ') . count($cincoA) . ': ' . implode(' | ', array_slice($cincoA, 0, 6)));
 // Los 5xx y avisos de PHP del barrido
 $nuevoLog = logNuevo($log0);
 $graves = array_filter(explode("\n", $nuevoLog), fn($l) => preg_match('/(Fatal|TypeError|Deprecated|Warning|Notice|Uncaught|ArgumentCountError)/', $l));

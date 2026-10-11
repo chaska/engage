@@ -231,7 +231,9 @@ class Engage extends CMSPlugin implements SubscriberInterface
 
 		$nonSefUrl  = "index.php?option=com_content&view=article&id=%s&catid=%s";
 		$nonSefUrl  .= (empty($row->language) || ($row->language === '*')) ? '' : "&lang={$row->language}";
-		$public_url = Route::link('site', sprintf($nonSefUrl, $row->id, $row->catid), false, Route::TLS_IGNORE, true);
+		// 0.8.3: RELATIVE (path and query, no scheme or host). The absolute URL used the Host header of the request (and it was lost for any other
+		// host than live_site); whoever needs an absolute link (the emails) completes it with TrustedBase, i.e. with the configured live_site only.
+		$public_url = Route::link('site', sprintf($nonSefUrl, $row->id, $row->catid), false, Route::TLS_IGNORE, false);
 
 		if ($this->getApplication()->isClient('site'))
 		{
