@@ -36,7 +36,7 @@ namespace Joomla\CMS {
 		public static function getContainer() { return new class { public function get($x) { return $GLOBALS['T_DB']; } }; }
 	}
 }
-namespace Joomla\CMS\Uri { class Uri { public static function root($p = false) { return 'https://sitio.test/'; } } }
+namespace Joomla\CMS\Uri { class Uri { public static function root($p = false) { return $GLOBALS['T_URI_ROOT'] ?? 'https://sitio.test/'; } } }
 namespace Joomla\CMS\Language { class Text { public static function _($k) { return $k; } public static function sprintf($k, ...$a) { return $k; } } }
 namespace Joomla\CMS\Plugin {
 	class PluginHelper { public static function importPlugin($g) {} public static function isEnabled($a, $b) { return false; } }

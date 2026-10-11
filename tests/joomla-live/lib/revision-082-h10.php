@@ -101,6 +101,7 @@ foreach ([false, true] as $pers) {
 $cfgPath = "$SITE/configuration.php"; $cfgOrig = file_get_contents($cfgPath);
 register_shutdown_function(function () use ($cfgPath, $cfgOrig) { file_put_contents($cfgPath, $cfgOrig); });
 file_put_contents($cfgPath, preg_replace("/public \\\$live_site = '[^']*';/", "public \$live_site = '';", $cfgOrig)); usleep(4500000);
+$setCom(['email_base_url' => '', 'email_base_learned' => '']); // 0.8.4: sin ninguna fuente de base
 [$man, $pub, $sub] = $ejecutar('sinbase0', '0', false);
 $todos = array_merge($man, $pub, $sub);
 r('H10-D', 'Opcion 0 SIN live_site: ningun correo lleva href alguno (tampoco la baja: sin base fiable no se pone) ni token firmado', $todos && !array_filter($todos, fn($x) => $x['hrefs'] !== [] || $x['tokens'] !== 0), 'correos=' . count($todos));

@@ -12,7 +12,11 @@ $mailDir = "$WORK/mails";
 // no de Engage (las plantillas de Engage ya llevan su propio HTML). Se desactiva (en Joomla, disable_htmllayout = 0 significa «sin envoltorio») para medir solo lo que genera Engage.
 $comMails = one("SELECT IFNULL(params,'') FROM jos_extensions WHERE element='com_mails'");
 q("UPDATE jos_extensions SET params='" . esc(json_encode(['mail_style' => 'both', 'disable_htmllayout' => '0'])) . "' WHERE element='com_mails'");
-register_shutdown_function(function () use ($cfgPath, $cfgOrig, $comMails) { q("UPDATE jos_extensions SET params='" . esc((string) $comMails) . "' WHERE element='com_mails'"); file_put_contents($cfgPath, $cfgOrig); q("DELETE FROM jos_engage_comments WHERE name LIKE 'R3N-%'"); borraUsuarios(); });
+// 0.8.4: sin opcion email_base_url ni base aprendida (si no, «sin live_site» ya tendria base); se restauran al acabar
+$comEng = one("SELECT IFNULL(params,'') FROM jos_extensions WHERE element='com_engage' AND type='component'");
+$pe = json_decode((string) $comEng, true) ?: []; $pe['email_base_url'] = ''; $pe['email_base_learned'] = '';
+q("UPDATE jos_extensions SET params='" . esc(json_encode($pe)) . "' WHERE element='com_engage' AND type='component'");
+register_shutdown_function(function () use ($cfgPath, $cfgOrig, $comMails, $comEng) { q("UPDATE jos_extensions SET params='" . esc((string) $comEng) . "' WHERE element='com_engage' AND type='component'"); q("UPDATE jos_extensions SET params='" . esc((string) $comMails) . "' WHERE element='com_mails'"); file_put_contents($cfgPath, $cfgOrig); q("DELETE FROM jos_engage_comments WHERE name LIKE 'R3N-%'"); borraUsuarios(); });
 usuario('r3adm', 7);
 @mkdir("$WORK/tmp");
 $setCfg = function (string $live, int $force) use ($cfgPath, $cfgOrig) {
@@ -58,7 +62,7 @@ r('H2-02', 'Sin live_site y Host hostil: el correo se envia SIN enlaces absoluto
 r('H2-03', 'Sin live_site y Host normal: tampoco se deriva la base del Host (nada de enlaces ni de token)', $n > 0 && !preg_match('~token=[0-9a-f]{64}~', $txt) && $urls === [], "correos=$n urls=" . implode(',', array_slice($urls, 0, 3)));
 $adm = new Cliente($BASE, "$WORK/tmp", 'r3h2adm'); $okA = $adm->loginAdmin('r3adm', $PASS);
 $pa = $okA ? $adm->get('/administrator/index.php?option=com_engage') : ['body' => '', 'code' => 0];
-r('H2-04', 'Sin live_site el semaforo del panel (correos de aviso) avisa de que no hay enlaces y que hay que fijar live_site', $okA && $pa['code'] === 200 && str_contains($pa['body'], 'live_site'), "login=" . ($okA ? 'si' : 'no') . " HTTP {$pa['code']}");
+r('H2-04', 'Sin live_site el semaforo del panel (correos de aviso) avisa de que no hay enlaces y dice que abra el panel como administrador o escriba la URL', $okA && $pa['code'] === 200 && preg_match('/abra el panel de control de Engage una vez|open the Engage control panel once/', $pa['body']) === 1, "login=" . ($okA ? 'si' : 'no') . " HTTP {$pa['code']}");
 // 3) live_site http + SSL forzado
 $setCfg('http://sitio-fiable.test', 2);
 [$code, $n, $urls, $txt] = $enviar('evil.test', 'd', true);

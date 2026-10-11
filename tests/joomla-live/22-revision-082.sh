@@ -15,7 +15,7 @@ set -uo pipefail
 source "$(dirname "$0")/config.sh"
 export WORK SITE_DIR IDS_FILE DB_NAME BASE_URL DB_USER
 rc=0
-for s in h1 h2 h4 h8 h10; do
+for s in h1 h2 h4 h8 h10 h11; do
 	echo "== $s"
 	php "$AQUI/lib/revision-082-$s.php" || rc=1
 done

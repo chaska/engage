@@ -45,6 +45,8 @@ final class SettingsSchema
 		'key'                       => ['regex' => '/^[A-Za-z0-9]{0,64}$/', 'maxlen' => 64],
 		'htmlpurifier_configstring' => ['regex' => '/^[A-Za-z0-9,\[\]|*.#:_\-\s]{0,4000}$/', 'maxlen' => 4000],
 		'tos_prompt'                => ['maxlen' => 500],
+		// 0.8.4: base URL of the links of the emails; the callback validates strictly and normalises (empty = clear)
+		'email_base_url'            => ['maxlen' => 255, 'callback' => [TrustedBase::class, 'validateOption']],
 	];
 
 	/**
@@ -274,6 +276,11 @@ final class SettingsSchema
 		if (isset(self::EXTRA[$def['key']]['regex']) && preg_match(self::EXTRA[$def['key']]['regex'], $value) !== 1)
 		{
 			throw new \InvalidArgumentException('formato');
+		}
+
+		if (isset(self::EXTRA[$def['key']]['callback']))
+		{
+			$value = (string) call_user_func(self::EXTRA[$def['key']]['callback'], $value);
 		}
 
 		return $value;

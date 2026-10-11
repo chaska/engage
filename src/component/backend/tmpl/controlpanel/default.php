@@ -297,6 +297,12 @@ echo I::sprite();
 						</li>
 					<?php endforeach; ?>
 				</ul>
+				<?php if ($this->baseSource === 'learned' && $this->can['admin']) : ?>
+					<form class="eg-health__forget" method="post" action="<?= $url('index.php?option=com_engage&task=controlpanel.forgetbase') ?>">
+						<button type="submit" class="eg-btn eg-btn--small"><?= $e(Text::_('COM_ENGAGE_PANEL_BASE_FORGET')) ?></button>
+						<?= $quickToken ?>
+					</form>
+				<?php endif; ?>
 			</section>
 
 			<!-- Mas comentados -->
