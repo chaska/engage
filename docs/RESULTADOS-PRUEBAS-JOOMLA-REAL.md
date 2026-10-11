@@ -344,6 +344,22 @@ Fallo heredado encontrado y corregido: con la 0.7.1 y valores por defecto, una p
 
 NO PROBADO: Joomla 5.x, MySQL, otros navegadores, lectores de pantalla reales, proxy inverso real.
 
+## 16. Comentarios en otros componentes (0.8.2, paquete 3.4.4 sin publicar)
+
+Joomla 6.1.4, PHP 8.3, MariaDB 10.11. Tres plugins de prueba hacen de tercero (`tests/joomla-live/lib/tercero-prueba`, `tercero-hostil`, `tercero-vista`; no van en el paquete). Contrato en [`COMENTARIOS-EN-OTROS-COMPONENTES.md`](COMENTARIOS-EN-OTROS-COMPONENTES.md).
+
+| Prueba | Resultado |
+|---|---|
+| `php tests/run.php` (nuevos `35`, `36`, `37`) | todo en verde; la 35 tiene 328 comprobaciones del código real de `Meta` y del plugin (la 36, 19; la 37, 38) |
+| `21-otros-componentes.sh` HTTP | 51 PASA / 0 FALLA: 14 elementos x invitado / Registered / Manager x 4 configuraciones de caché (sin caché, caché de página con y sin Engage Cache, caché conservadora), 12 fichas hostiles, 20 `asset_id` en bruto inválidos, contexto falsificado, la petición no decide el activo, URL directa, vista `comments` ajena en la caché estática de Joomla, 16 valores de `layout` hostiles x 5 rutas, 21 intentos de comentar, 3 órdenes de visita con caché de página, registro de PHP limpio |
+| Borrado `Meta::deleteAssetData()` (MariaDB real) | 11 PASA / 0 FALLA |
+| HTML del artículo frente a la 0.8.1 | 96 de 96 páginas idénticas byte a byte (16 configuraciones de tema, reacciones y orden x artículo público y restringido x invitado, Registered y Manager) |
+| Chromium (`otros-navegador.js`) | 32 PASA / 0 FALLA: texto hostil sin diálogos, canario, nodos ni enlaces peligrosos (con y sin caché de página, 2 visitas), cero peticiones externas, elemento restringido sin fugas, comentar de verdad |
+| Actualización (`04-actualizacion.sh`) desde la 3.4.3 publicada, la 3.4.2.1 publicada y la 3.4.2 original | tablas, permisos y plantillas idénticos; esquema 3.4.3-20261007; versión instalada 3.4.4 |
+| Regresión 03 (73 PASA), 17 (387 comprobaciones), 19 (tanda 2), 20 (XSS) | ver el CHANGELOG |
+
+Hallazgo propio: con la caché conservadora de Joomla dos elementos de otro componente compartían una entrada de la caché de vistas (la clave se calcula con la petición, que no lleva el `asset_id`); corregido (Engage añade el `asset_id` a la petición mientras despacha) y cubierto por la matriz de la caché.
+
 ## 9. Estado del paquete
 
 Hash del ZIP al cierre de esta tanda y coincidencia con `updates/pkgengage.xml`: ver `docs/PUBLICAR-RELEASE.md` y comprobar con `php build/build.php` (reproducible). No se ha publicado ninguna release: la URL de descarga de `updates/pkgengage.xml` no existirá hasta que el propietario suba **ese mismo ZIP** a la release `v3.4.2.1`.

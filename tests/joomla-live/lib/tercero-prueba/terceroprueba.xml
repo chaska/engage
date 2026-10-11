@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Plugin de PRUEBA que hace de «tercero»: lo instalan tests/joomla-live/21-otros-componentes.sh. NO forma parte del paquete de Engage. -->
+<extension version="4.0.0" type="plugin" group="content" method="upgrade">
+    <name>Tercero de prueba</name>
+    <description>Ejemplo de plugin de terceros para los comentarios de Engage en otros componentes (solo pruebas)</description>
+    <version>1.0.0</version>
+    <creationDate>2026-10-11</creationDate>
+    <author>Fork comunitario de Engage</author>
+    <license>GNU/GPL v3 or any later version</license>
+    <namespace path="src">Prueba\Plugin\Content\Terceroprueba</namespace>
+
+    <files>
+        <folder>services</folder>
+        <folder plugin="terceroprueba">src</folder>
+    </files>
+    <languages folder="language">
+        <language tag="en-GB">en-GB/plg_content_terceroprueba.ini</language>
+    </languages>
+</extension>

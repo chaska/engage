@@ -19,6 +19,7 @@ use Akeeba\Component\Engage\Administrator\Mixin\ControllerRedirectionTrait;
 use Akeeba\Component\Engage\Administrator\Mixin\ControllerReturnURLTrait;
 use Akeeba\Component\Engage\Administrator\Mixin\ControllerReusableModelsTrait;
 use Akeeba\Component\Engage\Administrator\Table\CommentTable;
+use Akeeba\Component\Engage\Site\Helper\Meta;
 use Akeeba\Component\Engage\Site\Mixin\ControllerFrontendCommentsTrait;
 use Akeeba\Component\Engage\Site\Model\CommentsModel;
 use Akeeba\Component\Engage\Site\View\Comments\HtmlView;
@@ -378,6 +379,19 @@ class CommentsController extends AdminCommentsController
 
 		// Get the asset_id and assert we have access to it
 		$assetId = $this->getAssetId();
+
+		/**
+		 * 0.8.2: belt and braces for content of components other than com_content. The plugin has already checked it, but the view
+		 * does not rely on that: the asset must be recognised by a plugin and viewable by this user (published, category, access and
+		 * parent access levels). Anything else answers 403, i.e. shows nothing. Articles keep their own path.
+		 */
+		$assetMeta = Meta::getAssetAccessMeta($assetId, true);
+
+		if (($assetMeta['type'] ?? 'unknown') !== 'article' && !Meta::isAssetViewable($assetMeta, UserFetcher::getUser()))
+		{
+			throw new RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
+		}
+
 		$model->setState('filter.asset_id', $assetId);
 
 		// 0.8.0: sort selector (akengage_sort) and "only my favourites" (akengage_fav). Raw values go through closed lists / strict

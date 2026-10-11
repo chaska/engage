@@ -110,7 +110,7 @@ final class Meta
 
 		// Check if the comments are auto-closed.
 		/** @var Date $date */
-		$date = $meta['published_on'];
+		$date = clone $meta['published_on']; // 0.8.2: Date::add() modifica el objeto; sin clonar, cada llamada movia la fecha de la cache
 
 		try
 		{
@@ -203,6 +203,14 @@ final class Meta
 
 		$tempRet = array_shift($pluginResults);
 
+		// 0.8.2: lo que devuelve un plugin (puede ser de terceros) son DATOS NO CONFIABLES: se validan tipo a tipo y rango a rango
+		$tempRet = self::sanitiseMeta($tempRet);
+
+		if ($tempRet === null)
+		{
+			return self::$cachedMeta[$metaKey];
+		}
+
 		foreach (self::$cachedMeta[$metaKey] as $k => $v)
 		{
 			if (!array_key_exists($k, $tempRet))
@@ -214,6 +222,414 @@ final class Meta
 		}
 
 		return self::$cachedMeta[$metaKey];
+	}
+
+	/**
+	 * Valor «nunca concedido»: un nivel de acceso que ningun usuario tiene (los niveles reales son enteros positivos pequenos).
+	 * Se usa cuando el plugin devuelve un nivel invalido: el contenido queda cerrado para todos (fail-closed).
+	 */
+	public const NO_LEVEL = PHP_INT_MAX;
+
+	/** Claves de los parametros por contenido que se aceptan (las de forms/engage.xml del plugin de contenido). */
+	private const PARAM_KEYS = [
+		'comments_show', 'default_publish', 'comments_show_featured', 'comments_show_category', 'comments_show_article',
+		'comments_ordering', 'comments_enabled', 'comments_close_after', 'comments_notify_author', 'comments_notify_users',
+	];
+
+	/**
+	 * Convierte un asset_id llegado de fuera en un entero valido, o 0 si no lo es.
+	 *
+	 * Solo se aceptan enteros PHP y cadenas de cifras decimales sin signo ni espacios ni ceros a la izquierda, de 1 a 4294967295
+	 * (columna INT UNSIGNED de #__assets). Decimales, notacion cientifica, hexadecimal, booleanos, matrices y objetos dan 0.
+	 *
+	 * @param   mixed  $value
+	 *
+	 * @return  int
+	 * @since   0.8.2
+	 */
+	public static function parseAssetId($value): int
+	{
+		if (is_int($value))
+		{
+			return ($value >= 1 && $value <= 4294967295) ? $value : 0;
+		}
+
+		if (is_string($value) && preg_match('/^[1-9][0-9]{0,9}$/D', $value) === 1)
+		{
+			$int = (int) $value;
+
+			return ($int <= 4294967295) ? $int : 0;
+		}
+
+		return 0;
+	}
+
+	/**
+	 * Valida la respuesta de un plugin a onAkeebaEngageGetAssetMeta.
+	 *
+	 * Devuelve NULL si la respuesta no se puede aceptar (tipo invalido): el activo se trata como desconocido. Si no, devuelve la
+	 * misma estructura con TODOS los valores del tipo y rango esperados. Un valor presente pero invalido nunca abre nada: los niveles
+	 * de acceso invalidos pasan a NO_LEVEL, `published` a false, `category_published` a 0, `comments_enabled` a 0.
+	 *
+	 * @param   array  $raw  Lo que devolvio el plugin
+	 *
+	 * @return  array|null
+	 * @since   0.8.2
+	 */
+	public static function sanitiseMeta(array $raw): ?array
+	{
+		// El tipo decide la clave de idioma del titulo: letras minusculas, cifras y guion bajo; 'unknown' no vale
+		$type = $raw['type'] ?? null;
+
+		if (!is_string($type) || preg_match('/^[a-z][a-z0-9_]{0,31}$/D', $type) !== 1 || $type === 'unknown')
+		{
+			return null;
+		}
+
+		$out = ['type' => $type];
+
+		foreach (['title', 'category', 'author_name'] as $k)
+		{
+			if (array_key_exists($k, $raw))
+			{
+				$out[$k] = self::cleanText($raw[$k]);
+			}
+		}
+
+		if (array_key_exists('author_email', $raw))
+		{
+			$out['author_email'] = self::cleanEmail($raw['author_email']);
+		}
+
+		foreach (['url', 'public_url'] as $k)
+		{
+			if (array_key_exists($k, $raw))
+			{
+				$out[$k] = self::cleanUrl($raw[$k]);
+			}
+		}
+
+		if (array_key_exists('published', $raw))
+		{
+			$p = $raw['published'];
+			$out['published'] = ($p === true) || ($p === 1) || ($p === '1');
+		}
+
+		if (array_key_exists('published_on', $raw))
+		{
+			$out['published_on'] = self::cleanDate($raw['published_on']);
+		}
+
+		if (array_key_exists('access', $raw))
+		{
+			$out['access'] = self::cleanLevel($raw['access']);
+		}
+
+		if (array_key_exists('parent_access', $raw))
+		{
+			// NULL = el activo no tiene padre con nivel propio; cualquier otra cosa tiene que ser un nivel valido
+			$out['parent_access'] = ($raw['parent_access'] === null) ? null : self::cleanLevel($raw['parent_access']);
+		}
+
+		if (array_key_exists('category_published', $raw))
+		{
+			$c = $raw['category_published'];
+
+			if ($c === null)
+			{
+				$out['category_published'] = null;
+			}
+			elseif (is_bool($c))
+			{
+				$out['category_published'] = (int) $c;
+			}
+			elseif ((is_int($c) || (is_string($c) && preg_match('/^-?[0-9]{1,3}$/D', $c) === 1)) && (int) $c >= -2 && (int) $c <= 2)
+			{
+				$out['category_published'] = (int) $c;
+			}
+			else
+			{
+				$out['category_published'] = 0;
+			}
+		}
+
+		if (array_key_exists('parameters', $raw))
+		{
+			$out['parameters'] = self::cleanParameters($raw['parameters']);
+		}
+
+		return $out;
+	}
+
+	/**
+	 * ¿Puede este usuario ver el activo? Es lo que exige el camino generico de los comentarios (0.8.2).
+	 *
+	 * Fail-closed: el activo tiene que ser reconocido por algun plugin (tipo distinto de 'unknown'), estar publicado, su categoria
+	 * publicada (o sin categoria) y el usuario tener el nivel de acceso del activo y el del padre. Un nivel de acceso ausente, cero o
+	 * invalido NO equivale a «sin restriccion»: cierra el contenido.
+	 *
+	 * @param   array      $meta  El resultado de getAssetAccessMeta()
+	 * @param   User|null  $user  El usuario; por omision el de la sesion
+	 *
+	 * @return  bool
+	 * @since   0.8.2
+	 */
+	public static function isAssetViewable(array $meta, ?User $user = null): bool
+	{
+		$type = $meta['type'] ?? 'unknown';
+
+		if (!is_string($type) || $type === 'unknown' || $type === '')
+		{
+			return false;
+		}
+
+		if (($meta['published'] ?? false) !== true)
+		{
+			return false;
+		}
+
+		if (!self::isCategoryPublished($meta))
+		{
+			return false;
+		}
+
+		$user   = $user ?? \Akeeba\Component\Engage\Administrator\Helper\UserFetcher::getUser();
+		$levels = array_map('intval', (array) $user->getAuthorisedViewLevels());
+
+		$access = $meta['access'] ?? null;
+
+		if (!is_int($access) || $access <= 0 || !in_array($access, $levels, true))
+		{
+			return false;
+		}
+
+		$parent = $meta['parent_access'] ?? null;
+
+		if ($parent !== null && (!is_int($parent) || $parent <= 0 || !in_array($parent, $levels, true)))
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	/** Texto sin caracteres de control y de un maximo de 255 caracteres. Se ESCAPA siempre al mostrarlo; aqui solo se limpia. */
+	private static function cleanText($value): ?string
+	{
+		if ($value === null)
+		{
+			return null;
+		}
+
+		if (!is_string($value) && !is_int($value) && !is_float($value))
+		{
+			return '';
+		}
+
+		$text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', (string) $value) ?? '';
+
+		if (!mb_check_encoding($text, 'UTF-8'))
+		{
+			$text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
+		}
+
+		return mb_substr($text, 0, 255, 'UTF-8');
+	}
+
+	/** Correo valido o NULL (vacio se conserva vacio). Sin saltos de linea: no puede inyectar cabeceras. */
+	private static function cleanEmail($value): ?string
+	{
+		if ($value === null)
+		{
+			return null;
+		}
+
+		if (!is_string($value))
+		{
+			return null;
+		}
+
+		if ($value === '')
+		{
+			return '';
+		}
+
+		if (strlen($value) > 254 || filter_var($value, FILTER_VALIDATE_EMAIL) === false)
+		{
+			return null;
+		}
+
+		return $value;
+	}
+
+	/**
+	 * URL relativa o del propio sitio (http/https con el anfitrion de la raiz del sitio). Todo lo demas (javascript:, data:, //otro.host,
+	 * usuario@, caracteres de control, comillas, ángulos, barras invertidas) da NULL. El vacio se conserva vacio.
+	 *
+	 * @param   mixed  $value
+	 *
+	 * @return  string|null
+	 * @since   0.8.2
+	 */
+	public static function cleanUrl($value): ?string
+	{
+		if ($value === null || !is_string($value))
+		{
+			return null;
+		}
+
+		if ($value === '')
+		{
+			return '';
+		}
+
+		if (strlen($value) > 2048 || preg_match('/[\x00-\x20\x7F<>"\'`\\\\]/', $value) === 1)
+		{
+			return null;
+		}
+
+		if (preg_match('/^[A-Za-z][A-Za-z0-9+.\-]*:/', $value) !== 1)
+		{
+			// Relativa: no puede empezar por // (protocolo relativo) ni llevar ':' antes de la primera '/', '?' o '#'
+			if (str_starts_with($value, '//'))
+			{
+				return null;
+			}
+
+			$cut = strcspn($value, '/?#');
+
+			return (strpos(substr($value, 0, $cut), ':') === false) ? $value : null;
+		}
+
+		$parts = parse_url($value);
+
+		if ($parts === false || !isset($parts['scheme'], $parts['host']) || isset($parts['user']) || isset($parts['pass']))
+		{
+			return null;
+		}
+
+		if (!in_array(strtolower($parts['scheme']), ['http', 'https'], true))
+		{
+			return null;
+		}
+
+		$root = null;
+
+		try
+		{
+			$root = parse_url((string) Uri::root());
+		}
+		catch (Throwable $e)
+		{
+			$root = null;
+		}
+
+		if (!is_array($root) || empty($root['host']) || strcasecmp($root['host'], $parts['host']) !== 0)
+		{
+			return null;
+		}
+
+		if (isset($parts['port']) && (int) $parts['port'] !== (int) ($root['port'] ?? (strtolower($parts['scheme']) === 'https' ? 443 : 80)))
+		{
+			return null;
+		}
+
+		return $value;
+	}
+
+	/** Fecha de publicacion: una copia como Date; si no es una fecha, la epoca (con comments_close_after > 0 eso cierra). */
+	private static function cleanDate($value): Date
+	{
+		try
+		{
+			if ($value instanceof \DateTimeInterface)
+			{
+				return new Date($value->format('Y-m-d H:i:s'), $value->getTimezone());
+			}
+
+			if (is_string($value) && $value !== '' && strlen($value) <= 40)
+			{
+				return new Date($value);
+			}
+		}
+		catch (Throwable $e)
+		{
+		}
+
+		return new Date('@0');
+	}
+
+	/** Nivel de acceso: entero positivo; cualquier otra cosa es NO_LEVEL (nadie lo tiene). */
+	private static function cleanLevel($value): int
+	{
+		if (is_int($value))
+		{
+			return ($value >= 1 && $value <= 4294967295) ? $value : self::NO_LEVEL;
+		}
+
+		if (is_string($value) && preg_match('/^[1-9][0-9]{0,9}$/D', $value) === 1 && (int) $value <= 4294967295)
+		{
+			return (int) $value;
+		}
+
+		return self::NO_LEVEL;
+	}
+
+	/**
+	 * Parametros del contenido: un Registry nuevo con solo las claves conocidas y valores escalares.
+	 *
+	 * comments_enabled → 0 o 1 (lo demas, 0); comments_close_after → entero 0..36500 (negativo = 0; invalido cierra el contenido);
+	 * default_publish → -1, 0 o 1 (invalido = 0: en moderacion).
+	 */
+	private static function cleanParameters($value): Registry
+	{
+		$out = new Registry();
+
+		if (!($value instanceof Registry))
+		{
+			return $out;
+		}
+
+		foreach (self::PARAM_KEYS as $k)
+		{
+			$v = $value->get($k, null);
+
+			if ($v === null || is_array($v) || is_object($v) || (is_string($v) && strlen($v) > 64))
+			{
+				continue;
+			}
+
+			$out->set($k, is_string($v) ? preg_replace('/[\x00-\x1F\x7F]/', '', $v) : $v);
+		}
+
+		if ($out->exists('comments_enabled'))
+		{
+			$v = $out->get('comments_enabled');
+			$out->set('comments_enabled', (($v === true) || ($v === 1) || ($v === '1')) ? 1 : 0);
+		}
+
+		if ($out->exists('comments_close_after'))
+		{
+			$v = $out->get('comments_close_after');
+
+			if (is_int($v) || (is_string($v) && preg_match('/^-?[0-9]{1,6}$/D', $v) === 1))
+			{
+				$out->set('comments_close_after', max(0, min(36500, (int) $v)));
+			}
+			else
+			{
+				$out->set('comments_close_after', 0);
+				$out->set('comments_enabled', 0);
+			}
+		}
+
+		if ($out->exists('default_publish'))
+		{
+			$v = $out->get('default_publish');
+			$out->set('default_publish', in_array($v, [-1, 0, 1, '-1', '0', '1'], true) ? (int) $v : 0);
+		}
+
+		return $out;
 	}
 
 	/**
@@ -268,6 +684,78 @@ final class Meta
 		self::$commentIDsPerAsset[$asset_id] = array_keys($model->commentIDTreeSliceWithDepth(0, null));
 
 		return self::$commentIDsPerAsset[$asset_id];
+	}
+
+	/**
+	 * Borra TODO lo que Engage guarda de un contenido: sus comentarios, las reacciones de esos comentarios y las bajas de aviso por
+	 * correo (0.8.2). Es para que el componente DUENO del contenido lo llame (por ejemplo desde su evento onContentAfterDelete);
+	 * Engage no puede enterarse solo de que un contenido de otro componente se ha borrado. NO borra la fila de #__assets: eso es cosa
+	 * de quien la creo. No hay ninguna ruta HTTP, tarea ni evento que llegue hasta aqui: solo se ejecuta si otro codigo PHP la llama.
+	 * SQL con parametros ligados y una transaccion: o se borra todo o no se borra nada.
+	 *
+	 * @param   int  $assetId  El asset_id (entero positivo; si no lo es no se hace nada)
+	 *
+	 * @return  int  Numero de comentarios borrados, o -1 si el asset_id no es valido o hubo un error (no se cambio nada)
+	 * @since   0.8.2
+	 */
+	public static function deleteAssetData(int $assetId): int
+	{
+		$assetId = self::parseAssetId($assetId);
+
+		if ($assetId <= 0)
+		{
+			return -1;
+		}
+
+		/** @var DatabaseDriver $db */
+		$db       = Factory::getContainer()->get(DatabaseInterface::class);
+		$newQuery = static function () use ($db) {
+			return method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true);
+		};
+
+		try
+		{
+			$db->transactionStart();
+
+			$sub = $newQuery()
+				->select($db->qn('c.id'))
+				->from($db->qn('#__engage_comments', 'c'))
+				->where($db->qn('c.asset_id') . ' = :asset');
+			$q   = $newQuery()
+				->delete($db->qn('#__engage_reactions'))
+				->where($db->qn('comment_id') . ' IN (' . $sub . ')')
+				->bind(':asset', $assetId, ParameterType::INTEGER);
+			$db->setQuery($q)->execute();
+
+			$q = $newQuery()
+				->delete($db->qn('#__engage_comments'))
+				->where($db->qn('asset_id') . ' = :asset')
+				->bind(':asset', $assetId, ParameterType::INTEGER);
+			$db->setQuery($q)->execute();
+			$deleted = (int) $db->getAffectedRows();
+
+			$q = $newQuery()
+				->delete($db->qn('#__engage_unsubscribe'))
+				->where($db->qn('asset_id') . ' = :asset')
+				->bind(':asset', $assetId, ParameterType::INTEGER);
+			$db->setQuery($q)->execute();
+
+			$db->transactionCommit();
+		}
+		catch (Throwable $e)
+		{
+			try
+			{
+				$db->transactionRollback();
+			}
+			catch (Throwable $e2)
+			{
+			}
+
+			return -1;
+		}
+
+		return $deleted;
 	}
 
 	/**
@@ -484,4 +972,4 @@ final class Meta
 
 		return self::$mvcFactory;
 	}
-}
+}

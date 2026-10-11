@@ -338,10 +338,15 @@ class Engage extends CMSPlugin implements SubscriberInterface
 		 * @var   object      $params  The category parameters, computed through the categories' hierarchy
 		 * @var   int|null    $page    Page number for multi-page articles
 		 */
-		[$context, $row, $params, $page] = array_values($event->getArguments());
-		$result = $event->getArgument('result', []);
+		[$context, $row, $params, $page] = array_pad(array_values($event->getArguments()), 4, null);
+		$result  = $event->getArgument('result', []);
+		$context = is_string($context) ? $context : null;
 
-		if (($row->access ?? 0) > 0 && !in_array($row->access, $this->getApplication()->getIdentity()->getAuthorisedViewLevels()))
+		/**
+		 * 0.8.2: the access level in the ROW is only trusted for articles (Joomla's own object). For any other component the
+		 * access levels come from the asset metadata in renderComments() (Meta::isAssetViewable), never from the row.
+		 */
+		if ($context === 'com_content.article' && is_object($row) && ($row->access ?? 0) > 0 && !in_array($row->access, $this->getApplication()->getIdentity()->getAuthorisedViewLevels()))
 		{
 			return;
 		}
@@ -369,10 +374,12 @@ class Engage extends CMSPlugin implements SubscriberInterface
 		 * @var   object      $params  The category parameters, computed through the categories' hierarchy
 		 * @var   int|null    $page    Page number for multi-page articles
 		 */
-		[$context, $row, $params, $page] = array_values($event->getArguments());
-		$result = $event->getArgument('result', []);
+		[$context, $row, $params, $page] = array_pad(array_values($event->getArguments()), 4, null);
+		$result  = $event->getArgument('result', []);
+		$context = is_string($context) ? $context : null;
 
-		if (($row->access ?? 0) > 0 && !in_array($row->access, $this->getApplication()->getIdentity()->getAuthorisedViewLevels()))
+		// 0.8.2: the comment COUNT is only supported for com_content (see renderCommentCount); other components' items are ignored here
+		if (!is_object($row) || (($row->access ?? 0) > 0 && !in_array($row->access, $this->getApplication()->getIdentity()->getAuthorisedViewLevels())))
 		{
 			return;
 		}
@@ -1127,11 +1134,13 @@ class Engage extends CMSPlugin implements SubscriberInterface
 			return '';
 		}
 
-		// We need to have a supported context
-		if ($context !== 'com_content.article')
-		{
-			return '';
-		}
+		/**
+		 * We support com_content articles and (0.8.2) the content of ANY component that raises this event with an item carrying an
+		 * integer `asset_id` which some plugin recognises through onAkeebaEngageGetAssetMeta. The asset decides, never the context
+		 * text: see getForeignAsset().
+		 */
+		$isArticle = ($context === 'com_content.article');
+		$foreign   = null;
 
 		/**
 		 * When Joomla is rendering an article in a Newsflash module it uses the same context as rendering an article
@@ -1146,40 +1155,56 @@ class Engage extends CMSPlugin implements SubscriberInterface
 			return '';
 		}
 
-		if (empty($row->id ?? 0))
+		if (!$isArticle)
 		{
-			return '';
+			$foreign = $this->getForeignAsset($row, $context);
+
+			if ($foreign === null)
+			{
+				return '';
+			}
+
+			$assetId       = $foreign['assetId'];
+			$commentParams = $foreign['params'];
+		}
+		else
+		{
+			if (empty($row->id ?? 0))
+			{
+				return '';
+			}
+
+			if (!property_exists($row, 'asset_id'))
+			{
+				$row->asset_id = $this->getAssetIdByArticleId($row->id);
+			}
+
+			if (empty($row->asset_id ?? 0))
+			{
+				return '';
+			}
+
+			/**
+			 * This neat trick allows me to speed up meta queries on the article.
+			 *
+			 * When this plugin event is called Joomla has already loaded the article for us. I can use this object to
+			 * populate the article meta cache so next time I query the article meta I don't have to go through Joomla's
+			 * article model which saves me a very expensive query.
+			 */
+			$this->cacheArticleRow($row, true);
+
+			// Am I supposed to display comments?
+			$commentParams = $this->getParametersForArticle($row);
+
+			if ($commentParams->get('comments_show', 1) != 1)
+			{
+				return '';
+			}
+
+			$assetId = $row->asset_id;
 		}
 
-		if (!property_exists($row, 'asset_id'))
-		{
-			$row->asset_id = $this->getAssetIdByArticleId($row->id);
-		}
-
-		if (empty($row->asset_id ?? 0))
-		{
-			return '';
-		}
-
-		/**
-		 * This neat trick allows me to speed up meta queries on the article.
-		 *
-		 * When this plugin event is called Joomla has already loaded the article for us. I can use this object to
-		 * populate the article meta cache so next time I query the article meta I don't have to go through Joomla's
-		 * article model which saves me a very expensive query.
-		 */
-		$this->cacheArticleRow($row, true);
-
-		// Am I supposed to display comments?
-		$commentParams = $this->getParametersForArticle($row);
-
-		if ($commentParams->get('comments_show', 1) != 1)
-		{
-			return '';
-		}
-
-		$input   = new Input($this->getApplication()->input->getArray());
-		$assetId = $row->asset_id;
+		$input = new Input($this->getApplication()->input->getArray());
 
 		$input->set('option', 'com_engage');
 		$input->set('view', 'comments');
@@ -1191,6 +1216,22 @@ class Engage extends CMSPlugin implements SubscriberInterface
 
 		// Is debug mode enabled?
 		$debug = defined('JDEBUG') && boolval(JDEBUG);
+
+		/**
+		 * 0.8.2: with Joomla's conservative cache the view cache key is built from the APPLICATION's input (the request), not from the
+		 * input we hand to the dispatcher. For an article the request already tells articles apart (option, view, id); for the content of
+		 * another component the request knows nothing of our asset_id, so two assets of the same URL pattern would share ONE cache entry
+		 * (the thread of one shown for another). While we dispatch, the request carries the asset_id too (it is part of the registered
+		 * URL parameters of Engage), and it is put back exactly as it was afterwards.
+		 */
+		$appInput   = $this->getApplication()->input;
+		$restoreKey = null;
+
+		if ($foreign !== null)
+		{
+			$restoreKey = $appInput->exists('asset_id') ? [true, $appInput->get('asset_id', null, 'raw')] : [false, null];
+			$appInput->set('asset_id', $assetId);
+		}
 
 		// Capture the output instead of pushing it to the browser
 		@ob_start();
@@ -1237,7 +1278,110 @@ HTML;
 
 		@ob_end_clean();
 
+		if ($restoreKey !== null)
+		{
+			if ($restoreKey[0])
+			{
+				$appInput->set('asset_id', $restoreKey[1]);
+			}
+			else
+			{
+				// Joomla's Input has no remove(): a NULL value is read back exactly like an absent parameter
+				$appInput->set('asset_id', null);
+			}
+		}
+
 		return $comments;
+	}
+
+	/**
+	 * Resolves the content item of ANOTHER component (0.8.2). Returns NULL, which means «show nothing», unless EVERYTHING checks out.
+	 *
+	 * Rules (all fail-closed):
+	 *  - the context is a short plain string and not one of com_content's (articles keep their own path; the lists and the
+	 *    featured view of com_content are not supported here);
+	 *  - the item is an object whose `asset_id` is a positive integer (see Meta::parseAssetId); nothing else in the item is used;
+	 *  - some plugin recognises the asset (type other than `unknown`; `article` is reserved for com_content) and that answer, already
+	 *    validated by Meta::sanitiseMeta, says the user can view it: published, category published, access and parent access levels
+	 *    (Meta::isAssetViewable). The context text never grants anything: who answers about the asset is the plugin that owns it;
+	 *  - #__content and the article parameters / category parameters / `attribs` are never read: the comment parameters are the ones
+	 *    in the metadata, and what they leave undefined comes from the component's options.
+	 *
+	 * @param   mixed        $row      The item the other component passes to the event
+	 * @param   string|null  $context  The context text (only checked for shape)
+	 *
+	 * @return  array{assetId:int, params:Registry}|null
+	 * @since   0.8.2
+	 */
+	private function getForeignAsset($row, ?string $context): ?array
+	{
+		if ($context === null || preg_match('/^[A-Za-z0-9_][A-Za-z0-9_.\-]{0,99}$/D', $context) !== 1 || stripos($context, 'com_content.') === 0)
+		{
+			return null;
+		}
+
+		if (!is_object($row) || !property_exists($row, 'asset_id'))
+		{
+			return null;
+		}
+
+		$assetId = Meta::parseAssetId($row->asset_id);
+
+		if ($assetId <= 0)
+		{
+			return null;
+		}
+
+		$meta = Meta::getAssetAccessMeta($assetId, true);
+
+		if (!is_string($meta['type'] ?? null) || $meta['type'] === 'unknown' || $meta['type'] === 'article')
+		{
+			return null;
+		}
+
+		try
+		{
+			$user = UserFetcher::getUser();
+		}
+		catch (Throwable $e)
+		{
+			return null;
+		}
+
+		if (!Meta::isAssetViewable($meta, $user))
+		{
+			return null;
+		}
+
+		$metaParams = ($meta['parameters'] ?? null) instanceof Registry ? $meta['parameters'] : new Registry();
+		$cParams    = ComponentHelper::getParams('com_engage');
+		$defaults   = null;
+		$effective  = new Registry();
+
+		foreach (['comments_show' => 1, 'comments_ordering' => 'asc'] as $key => $fallback)
+		{
+			$value = $metaParams->get($key);
+
+			if ($this->isUseGlobal($value))
+			{
+				$defaults = $defaults ?? new Registry($this->getParameterDefaults());
+				$value    = $cParams->get($key, $defaults->get($key, $fallback));
+			}
+
+			$effective->set($key, $value);
+		}
+
+		$show = $effective->get('comments_show');
+
+		if (!is_scalar($show) || !is_numeric($show) || (int) $show !== 1)
+		{
+			return null;
+		}
+
+		$order = $effective->get('comments_ordering');
+		$effective->set('comments_ordering', in_array($order, ['asc', 'desc'], true) ? $order : 'asc');
+
+		return ['assetId' => $assetId, 'params' => $effective];
 	}
 
 	/**
@@ -1310,4 +1454,4 @@ HTML;
 
 		return $item;
 	}
-}
+}
