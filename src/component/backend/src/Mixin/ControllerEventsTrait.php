@@ -36,6 +36,9 @@ trait ControllerEventsTrait
 
 		$task = strtolower($task);
 
+		// 0.8.3: closed list of tasks (fail-closed), before anything else runs
+		$this->assertEngageTaskAllowed($task);
+
 		if (isset($this->taskMap[$task]))
 		{
 			$doTask = $this->taskMap[$task];
@@ -56,6 +59,8 @@ trait ControllerEventsTrait
 		$this->triggerEvent($eventName);
 
 		// The task may have changed, so let's try that once again.
+		$this->assertEngageTaskAllowed($task);
+
 		if (isset($this->taskMap[$task]))
 		{
 			$doTask = $this->taskMap[$task];
@@ -80,6 +85,36 @@ trait ControllerEventsTrait
 		$this->triggerEvent('onAfterExecute', [$task]);
 
 		return $result;
+	}
+
+	/**
+	 * 0.8.3: the closed list of tasks that the URL may reach in this controller, in lowercase; NULL = no restriction.
+	 *
+	 * Joomla's controllers register EVERY public method as a task and send any unknown task to the default one. On the public side
+	 * (frontend controllers) that exposed methods which were never meant to be called by URL (getModel, redirect, loadhistory,
+	 * runTransition...), and the default task showed whatever the view showed. The frontend controllers override this method with the
+	 * handful of tasks the pages actually use; everything else answers 403, the same as any other denied request.
+	 *
+	 * @return  string[]|null
+	 * @since   0.8.3
+	 */
+	protected function engageAllowedTasks(): ?array
+	{
+		return null;
+	}
+
+	/**
+	 * @throws  RuntimeException  403 when the task is not in the closed list
+	 * @since   0.8.3
+	 */
+	private function assertEngageTaskAllowed(string $task): void
+	{
+		$allowed = $this->engageAllowedTasks();
+
+		if ($allowed !== null && !in_array($task, $allowed, true))
+		{
+			throw new RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
+		}
 	}
 
 }
