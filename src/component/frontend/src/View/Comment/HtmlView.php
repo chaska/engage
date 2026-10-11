@@ -9,15 +9,10 @@ namespace Akeeba\Component\Engage\Site\View\Comment;
 
 defined('_JEXEC') or die;
 
-use Akeeba\Component\Engage\Administrator\Helper\UserFetcher;
 use Akeeba\Component\Engage\Administrator\Table\CommentTable;
-use Akeeba\Component\Engage\Site\Helper\CommentAccess;
 use Akeeba\Component\Engage\Site\Mixin\ModuleRenderAware;
-use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
-use RuntimeException;
 
 class HtmlView extends BaseHtmlView
 {
@@ -67,14 +62,6 @@ class HtmlView extends BaseHtmlView
 		$this->_setPath('helper', [
 			JPATH_SITE . '/components/com_engage/helpers'
 		]);
-
-		// 0.8.3: belt and braces; the controller has already decided, the view does not trust that it was the one called
-		$requestedId = CommentAccess::requestedId(Factory::getApplication()->getInput());
-
-		if (!CommentAccess::mayOpen($requestedId, UserFetcher::getUser(), !empty(Factory::getApplication()->getUserState('com_engage.edit.comment.data', []))))
-		{
-			throw new RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
-		}
 
 		$this->form = $this->getForm();
 		$this->item = $this->get('Item');
