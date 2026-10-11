@@ -65,6 +65,9 @@ class HtmlView extends BaseHtmlView
 	 */
 	public function display($tpl = null)
 	{
+		// 0.8.3: this view only has the edit layout; any other layout used to end in a 500 (missing template)
+		$this->setLayout('edit');
+
 		/** @var CommentModel $model */
 		$model       = $this->getModel();
 		$this->item  = $model->getItem();

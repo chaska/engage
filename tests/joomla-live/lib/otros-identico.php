@@ -49,6 +49,9 @@ $cl = ['invitado' => new Cliente($BASE, "$WORK/tmp", 'oid-g'), 'registered' => n
 if (!$cl['registered']->login('otrosreg', $PASS) || !$cl['manager']->login('otrosmgr', $PASS)) { die("No se pudo iniciar sesion\n"); }
 $norm = function (string $h): string {
 	$h = preg_replace(['/"userInteractionCount":\d+/', '/UserPageVisits:\d+/', '/Hits: \d+/'], ['"userInteractionCount":N', 'UserPageVisits:N', 'Hits: N'], $h); // contador de visitas del articulo
+	// 0.8.3 (H4): las DOS diferencias esperadas respecto a la 0.8.1 son el atributo data-engage-gravatar (antes la URL con el hash del correo, ahora una referencia opaca)
+	// y la opcion de script del endpoint de Gravatar; se normalizan y todo lo demas tiene que seguir siendo identico byte a byte
+	$h = preg_replace(['/data-engage-gravatar="[^"]*"/', '/,?"akeeba\.Engage\.Gravatar\.endpoint":"[^"]*"/'], ['data-engage-gravatar="X"', ''], $h);
 	return preg_replace(['/name="[0-9a-f]{32}" value="1"/', '/"csrf\.token":"[0-9a-f]{32}"/', '/[?&]([0-9a-f]{32})=1/', '/([A-Za-z0-9_\/.\-]+\.(?:css|js))\?[0-9a-f]{6,}/', '/(returnurl=)[A-Za-z0-9+\/=_%-]+/', '/("akeeba\.Engage\.Comments\.[A-Za-z]+URL":")[A-Za-z0-9+\/=_-]+/'], ['name="T" value="1"', '"csrf.token":"T"', '', '$1?V', '$1R', '$1U'], $h);
 };
 $total = 0; $dif = 0; $falta = 0;

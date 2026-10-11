@@ -41,7 +41,7 @@ final class SettingsLayout
 				['plg_engage_akismet', 'key', '', 'akismet'], ['plg_engage_akismet', 'check', '', 'akismet'], ['plg_engage_akismet', 'discard_blatant', '', 'akismet'],
 			]],
 			['id' => 'notifications', 'icon' => 'bell', 'tone' => 'orange', 'items' => [
-				[$c, 'comments_notify_author'], [$c, 'comments_notify_users'],
+				[$c, 'comments_notify_author'], [$c, 'comments_notify_users'], [$c, 'email_include_links'],
 				['plg_engage_email', 'managers_notify', '', 'email'], ['plg_engage_email', 'managers_notify_spam', '', 'email'],
 			]],
 			['id' => 'privacy', 'icon' => 'eye', 'tone' => 'blue', 'items' => [

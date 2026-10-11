@@ -247,7 +247,7 @@ $cfg('set', '0', '0', '1', '1');
 clearstatcache();
 $nuevoLog = is_file($log) ? substr((string) file_get_contents($log), $logAntes) : '';
 // Todo salvo los avisos del propio Joomla 6.1 (libraries/src/Access/Access.php, null en strpos), que no son de este cambio
-$lineas = array_values(array_filter(explode("\n", trim($nuevoLog)), fn($l) => !str_contains($l, 'libraries/src/Access/Access.php')));
+$lineas = array_values(array_filter(explode("\n", trim($nuevoLog)), fn($l) => trim($l) !== '' && !str_contains($l, 'libraries/src/Access/Access.php')));
 r('O-S', 'el registro de PHP (error_reporting=-1) no tiene avisos, deprecations ni errores nuevos de Engage ni de los plugins de prueba', !$lineas, implode(' || ', array_slice($lineas, 0, 3)));
 
 file_put_contents("$WORK/resultados-otros-http.json", json_encode($RES, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));

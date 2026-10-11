@@ -33,6 +33,12 @@ class SettingsController extends BaseController
 {
 	use ControllerEventsTrait;
 
+	/** 0.8.3: closed list of tasks. */
+	protected function engageAllowedTasks(): ?array
+	{
+		return ['main', 'display', 'save'];
+	}
+
 	/** @inheritdoc */
 	protected $default_view = 'settings';
 

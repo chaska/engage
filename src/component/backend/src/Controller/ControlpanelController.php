@@ -22,6 +22,12 @@ class ControlpanelController extends BaseController
 {
 	use ControllerEventsTrait;
 
+	/** 0.8.3: closed list of tasks. */
+	protected function engageAllowedTasks(): ?array
+	{
+		return ['main', 'display'];
+	}
+
 	/** @inheritdoc */
 	protected $default_view = 'controlpanel';
 }

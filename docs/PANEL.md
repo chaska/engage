@@ -16,7 +16,7 @@ Desde la 0.6.24, al pulsar **Akeeba Engage** en el menú de administración de J
 | Punto | Rojo | Ámbar |
 |---|---|---|
 | Plugin de contenido (comentarios en los artículos) | desactivado o no instalado | |
-| Plugin de correo (avisos) | | desactivado o no instalado |
+| Plugin de correo (avisos) | | desactivado o no instalado, **o activo pero sin `live_site` en `configuration.php` (0.8.3): los correos salen sin enlaces de moderación, de baja ni al comentario, porque la dirección del sitio nunca se toma de la petición** |
 | Caché de página | | caché de Joomla activa y plugin de caché de Engage apagado |
 | Protección contra spam | | sin CAPTCHA válido ni Akismet con clave |
 | Moderación | publicación inmediata y sin ninguna protección contra spam | |
@@ -77,7 +77,7 @@ La pantalla **Opciones** (menú de Engage > Opciones, o la tarjeta «Opciones» 
 | **Moderación** | Publicación inmediata o con aprobación, comentarios abiertos o cerrados, cierre automático, longitud mínima y máxima, elementos por página |
 | **Reacciones** (0.7.0) | Botones de reacción sí/no, botón de no me gusta sí/no, botón de favorito sí/no (interruptores) y quién puede reaccionar (control segmentado: usuarios registrados / solo quien puede comentar). Icono de corazón; se guardan al instante y el servidor valida cada valor como 0/1 o lista cerrada. Ver [`REACCIONES.md`](REACCIONES.md). |
 | **Protección contra spam** | CAPTCHA (los plugins de captcha activados) y a quién se exige, aceptación de condiciones y su texto, y Akismet (clave, a quién se comprueba, descartar spam evidente) |
-| **Notificaciones** | Aviso al autor del contenido y a quienes participan; correo a los gestores (plugin de correo) |
+| **Notificaciones** | Aviso al autor del contenido y a quienes participan; correo a los gestores (plugin de correo); **«Incluir enlaces en los correos»** (0.8.3, `email_include_links`, Sí por defecto) |
 | **Privacidad y Gravatar** | Modo de Gravatar (preguntar, apagado, siempre), aviso, origen del consentimiento (aviso de Engage o JBCookies) y grupo de JBCookies, enlace al perfil, calificación e imagen por defecto |
 | **Seguridad del HTML** | Modo de filtrado, uso del filtrado de Joomla, lista de etiquetas permitidas de HTML Purifier, modo de inclusión |
 | **Avanzado** | Solución de plantillas de correo, URL de búsqueda de IP, antigüedad del spam, CSS personalizado y otros |
@@ -127,3 +127,13 @@ El apilado ya no depende del número de opciones sino del ancho real del texto (
 ![Opciones de Diseño con los segmentados cortos](img/config-segmentados.png)
 
 Prueba: `tests/joomla-live/14-opciones-segmentados.sh`.
+
+## Correos sin enlaces (0.8.3)
+
+La opción **Incluir enlaces en los correos** (Opciones > Notificaciones; clave `email_include_links`; lista cerrada Sí/No, **Sí por defecto**: nada cambia al actualizar) permite que los correos de aviso no lleven ningún enlace. Con **No**:
+
+- Los correos **no llevan ninguna URL de moderación** (publicar, despublicar, borrar, posible spam, spam, no es spam) **ni enlace al contenido o al comentario**, ni al sitio; solo informan de quién escribió qué, en qué contenido (título como texto plano) y cuándo. Esas direcciones **ni se calculan**: no se firma ningún enlace, así que no quedan «tokens huérfanos».
+- **Excepción obligatoria: el enlace de baja** de los correos que lo llevan (los que reciben el autor del contenido y quienes participan en el hilo) **se mantiene**, porque quien los recibe debe poder darse de baja. Va firmado y construido con la base fiable (`live_site` de `configuration.php`); si no hay base fiable tampoco se pone (y el semáforo de los correos ya avisa).
+- Plantillas por defecto **y personalizadas**: las etiquetas `{PUBLISH_URL}`, `{UNPUBLISH_URL}`, `{DELETE_URL}`, `{POSSIBLESPAM_URL}`, `{SPAM_URL}`, `{UNSPAM_URL}`, `{UNSUBSCRIBE_URL}`, `{CONTENT_LINK}`, `{COMMENT_LINK}` y `{SITEURL}` quedan vacías y Engage **quita después de sustituirlas** los botones (`<a class="engageemail-button…">`) y los enlaces cuyo `href` queda vacío (los enlaces de texto, como el título del contenido, se quedan como texto) y, en la parte de texto plano, las líneas «URL del comentario:» o «darse de baja:» sin valor. Así no queda ningún `href=""` ni `href="#"`. (En Joomla 5.2.0–5.2.1 con la solución alternativa de plantillas activa esa limpieza no se aplica; el resto sí.)
+- Con **Sí** el correo es exactamente el de antes.
+- Guardar la opción exige los mismos permisos que el resto de opciones del panel moderno (`core.admin` o `core.options` de `com_engage`) y un token; cualquier valor distinto de 0/1 se rechaza (422) y, si llegara a la base de datos, cuenta como Sí.

@@ -57,7 +57,7 @@ t_ok(preg_match('/function getAbsoluteSignedURL.*?TrustedBase::available\(\).*?r
 t_ok(!preg_match('/Route::_\([^;]*,\s*true\s*\)\s*;/', $su) && !str_contains($su, 'Uri::base') && !str_contains($su, 'Uri::root'), 'SignedURL no usa Uri::base, Uri::root ni la URL absoluta de Route::_');
 $em = $lee("$root/plugins/engage/email/src/Extension/Email.php");
 t_ok(!str_contains($em, 'Uri::base()') && !str_contains($em, "'SITEURL'           => Uri::"), 'el plugin Email ya no usa Uri::base()');
-t_ok(str_contains($em, "'SITEURL'           => TrustedBase::root()") && str_contains($em, "TrustedBase::absolute((string) (\$meta['public_url'] ?? ''))"), 'SITEURL y enlaces al contenido salen de la base fiable (public_url nulo = cadena vacia, sin deprecations)');
+t_ok(str_contains($em, "'SITEURL'           => \$includeLinks ? TrustedBase::root() : ''") && str_contains($em, "TrustedBase::absolute((string) (\$meta['public_url'] ?? ''))"), 'SITEURL y enlaces al contenido salen de la base fiable (public_url nulo = cadena vacia, sin deprecations)');
 t_ok(str_contains($em, "strip_tags((string) (\$meta['title'] ?? ''))") && str_contains($em, "strip_tags((string) (\$meta['category'] ?? ''))"), 'titulo y categoria nulos (fichas de terceros) se convierten a cadena antes de strip_tags (PHP 8.1: sin deprecations)');
 $ph = $lee("$root/component/backend/src/Helper/PanelHealth.php");
 t_ok(preg_match("/array_key_exists\('trusted_base', \\\$f\) && !\\\$f\['trusted_base'\].*?'state' => 'nobase'/s", $ph) === 1, 'el semaforo de los correos avisa (ambar) si no hay base fiable');

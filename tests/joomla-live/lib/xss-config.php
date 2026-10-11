@@ -22,7 +22,7 @@ if ($cmd === 'set') {
 	file_put_contents($cfgPath, $cfg);
 	$db->query("UPDATE jos_extensions SET enabled=$page, params='{\"browsercache\":\"0\",\"cachetime\":\"15\"}' WHERE element='cache' AND folder='system'");
 	$db->query("UPDATE jos_extensions SET enabled=$ecache WHERE element='engagecache' AND folder='system'");
-	$limpia(); usleep(2500000);
+	$limpia(); usleep(4500000);
 } elseif ($cmd === 'seed') {
 	$db->query("DELETE FROM jos_engage_comments WHERE asset_id=$ASSET");
 	$id = [];
