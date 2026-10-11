@@ -260,16 +260,12 @@ final class BBCode
 
 						case 'IMG':
 							$newText = '';
-							$imgURL  = trim($innerText);
+							// 0.8.3: only http and https (whatever the filter mode: in "joomla" mode nothing else cleaned this)
+							$imgURL  = self::safeUrl(trim($innerText), ['http', 'https']);
 
-							if (!empty($imgURL))
+							if ($imgURL !== null)
 							{
-								$imgURL = filter_var($imgURL, FILTER_SANITIZE_URL);
-							}
-
-							if (!empty($imgURL))
-							{
-								$newText = '<img src="' . htmlspecialchars($imgURL, ENT_COMPAT) . '" />';
+								$newText = '<img src="' . htmlspecialchars($imgURL, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" />';
 							}
 
 							$processedTag = true;
@@ -285,23 +281,26 @@ final class BBCode
 								$url = trim($innerText);
 							}
 
-							if (!empty($url))
-							{
-								$url = filter_var($url, FILTER_SANITIZE_URL);
-							}
+							// 0.8.3: only http, https and mailto (or a relative address), whatever the filter mode
+							$safe = self::safeUrl($url, ['http', 'https', 'mailto']);
 
-							if (!empty($url))
+							if ($safe !== null)
 							{
 								$anchorText = trim($innerText);
 
 								if (empty($anchorText))
 								{
-									$anchorText = $url;
+									$anchorText = htmlspecialchars($safe, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 								}
 
 								// Do not encode the anchor text. This leads to double encoding of the anchor text, ending up showing things like &mu; instead of μ.
 								// $anchorText = htmlentities($anchorText, ENT_QUOTES);
-								$newText = '<a rel="nofollow ugc noreferrer" href="' . htmlentities($url, ENT_COMPAT) . '">' . $anchorText . '</a>';
+								$newText = '<a rel="nofollow ugc noreferrer" href="' . htmlspecialchars($safe, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '">' . $anchorText . '</a>';
+							}
+							elseif (trim($innerText) !== '')
+							{
+								// A link with a protocol that is not allowed (javascript:, data:, vbscript:...) is NOT a link: only its text remains, as inert text
+								$newText = htmlspecialchars(trim($innerText), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 							}
 							else
 							{
@@ -371,6 +370,66 @@ final class BBCode
 
 		// Finally, return the converted text
 		return $text;
+	}
+
+	/**
+	 * Validates a URL typed by the commenter (0.8.3). Returns the URL ready for an attribute (entities decoded, control characters removed) or
+	 * NULL when it must not be used.
+	 *
+	 * The scheme is read the way a browser reads it: HTML entities are decoded (`&#106;avascript:`, `&colon;`), and tabs, line breaks and every other
+	 * control character or space are discarded wherever they are (`java<TAB>script:`), also at the start. Only the listed schemes pass; a URL without
+	 * a scheme (relative: `/x`, `x.html`, `//host/x`) passes only if it has no colon before the first `/`, `?` or `#`. Anything with a quote, angle
+	 * bracket or backslash is refused.
+	 *
+	 * @param   string    $url      The URL as typed
+	 * @param   string[]  $schemes  Allowed schemes, in lowercase
+	 *
+	 * @return  string|null
+	 * @since   0.8.3
+	 */
+	public static function safeUrl(string $url, array $schemes): ?string
+	{
+		// Entities can be nested (&amp;#106;): decode until nothing changes (at most 5 rounds, then refuse)
+		for ($i = 0; $i < 5; $i++)
+		{
+			$decoded = html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+			// Browsers also decode numeric references WITHOUT the closing semicolon (&#106avascript:); PHP does not
+			$decoded = preg_replace_callback('/&#(?:x([0-9a-f]{1,6})|([0-9]{1,7}));?/i', static function (array $m): string {
+				$cp = ($m[1] !== '') ? hexdec($m[1]) : (int) ($m[2] ?? 0);
+
+				return (($cp > 0) && ($cp <= 0x10ffff) && !($cp >= 0xd800 && $cp <= 0xdfff)) ? mb_chr($cp, 'UTF-8') : '';
+			}, $decoded) ?? $decoded;
+
+			if ($decoded === $url)
+			{
+				break;
+			}
+
+			$url = $decoded;
+		}
+
+		if (($i === 5) && (html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8') !== $url))
+		{
+			return null;
+		}
+
+		// Control characters, spaces, DEL, NBSP-like invisible characters and the BOM are not part of any URL: a browser drops the tabs and breaks
+		$url = preg_replace('/[\x00-\x20\x7f-\x9f\x{00a0}\x{1680}\x{2000}-\x{200f}\x{2028}-\x{202f}\x{205f}-\x{206f}\x{3000}\x{feff}]+/u', '', $url);
+
+		if (!is_string($url) || ($url === '') || (strlen($url) > 2048) || preg_match('/["\'<>\\\\`]/', $url))
+		{
+			return null;
+		}
+
+		if (preg_match('/^([a-z][a-z0-9+.\-]*):/i', $url, $m))
+		{
+			return in_array(strtolower($m[1]), $schemes, true) ? $url : null;
+		}
+
+		// No scheme: a colon before the first / ? # would still be read as a scheme by a browser
+		$head = preg_split('/[\/?#]/', $url, 2)[0];
+
+		return (strpos($head, ':') === false) ? $url : null;
 	}
 
 	/**

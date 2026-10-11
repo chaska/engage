@@ -164,4 +164,10 @@ r('H1-19', "Panel como Manager: $nA peticiones (vistas y tareas publicas de los 
 $nuevoLog = logNuevo($log0);
 $graves = array_filter(explode("\n", $nuevoLog), fn($l) => preg_match('/(Fatal|TypeError|Deprecated|Warning|Notice|Uncaught|ArgumentCountError)/', $l));
 r('H1-20', 'El registro de PHP (error_reporting=-1) no recibe errores fatales, TypeError, avisos ni deprecations durante todo el barrido', !$graves, count($graves) . ': ' . implode(' | ', array_map(fn($l) => substr($l, 0, 160), array_slice($graves, 0, 3))));
+// La pagina publica del articulo: ni correo, ni IP ni navegador para quien no modera; ni spam ni sin publicar
+$pg = $g->get($PAGE)['body']; $pr = $reg2->get($PAGE)['body']; $pm = $mgr->get($PAGE)['body'];
+$pii = []; foreach (['publicado', 'spam', 'sinpublicar', 'papelera', 'delregistrado'] as $k) { $n = strtoupper($k); foreach (["r3mail-$k@privado.invalid", "R3UA-$n", '198.51.100.'] as $m) { if (stripos($pg, $m) !== false) { $pii[] = "invitado $m"; } if (stripos($pr, $m) !== false) { $pii[] = "registrado $m"; } } }
+$ocultos = array_filter(['SPAM', 'SINPUBLICAR', 'PAPELERA'], fn($n) => str_contains($pg, "R3B-$n") || str_contains($pr, "R3B-$n"));
+r('H1-21', 'Pagina publica del articulo: invitado y Registered no ven correo, IP ni navegador de nadie, ni comentarios spam, sin publicar o en la papelera', !$pii && !$ocultos, implode(' | ', array_merge($pii, $ocultos)));
+r('H1-22', 'Control positivo: el Manager ve en la misma pagina el correo del invitado y los comentarios sin publicar/spam', str_contains($pm, 'r3mail-publicado@privado.invalid') && str_contains($pm, 'R3B-SPAM'), '');
 resumen('h1');
