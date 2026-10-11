@@ -6,7 +6,7 @@ source "$(dirname "$0")/config.sh"
 PKG="${1:-}"
 if [ -z "$PKG" ]; then
 	[ -n "$(ls "$REPO"/dist/pkg_engage-*.zip 2>/dev/null)" ] || php "$REPO/build/build.php" >/dev/null
-	PKG="$(ls "$REPO"/dist/pkg_engage-*.zip | head -1)"
+	PKG="$(ls "$REPO"/dist/pkg_engage-*.zip | sort -V | tail -1)"   # 0.8.2: el de version mas alta (dist/ puede conservar ZIP de versiones anteriores)
 fi
 cp "$PKG" "$WORK/pkg-actual.zip"
 cd "$WORK/$SITE_DIR"

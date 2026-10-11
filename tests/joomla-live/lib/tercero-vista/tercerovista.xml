@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Plugin de PRUEBA (grupo system) que hace de «vista de un componente de terceros»: lo instala tests/joomla-live/21-otros-componentes.sh. NO forma parte del paquete de Engage. -->
+<extension version="4.0.0" type="plugin" group="system" method="upgrade">
+    <name>Tercero vista de prueba</name>
+    <description>Hace de vista de un componente de terceros que muestra un elemento y pide los comentarios a Engage (solo pruebas)</description>
+    <version>1.0.0</version>
+    <creationDate>2026-10-11</creationDate>
+    <author>Fork comunitario de Engage</author>
+    <license>GNU/GPL v3 or any later version</license>
+    <namespace path="src">Prueba\Plugin\System\Tercerovista</namespace>
+
+    <files>
+        <folder>services</folder>
+        <folder plugin="tercerovista">src</folder>
+    </files>
+</extension>

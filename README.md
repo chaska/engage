@@ -8,11 +8,11 @@ Engage es un sistema de comentarios para los artículos de Joomla. Este reposito
 
 ## Estado
 
-- **Versión del fork:** 0.8.1. **Versión del paquete:** 3.4.3 (mayor que la 3.4.2 original y que la 3.4.2.1 ya publicada, para que Joomla la trate como una actualización en el mismo sitio).
+- **Versión del fork:** 0.8.2. **Versión del paquete:** 3.4.4 (mayor que la 3.4.2 original, la 3.4.2.1 y la 3.4.3 ya publicadas, para que Joomla la trate como una actualización en el mismo sitio).
 - **Requisitos:** Joomla 5.0 o superior (incluido Joomla 6), PHP 8.1 o superior, MySQL 8.0.13 / MariaDB 10.4. No admite PostgreSQL (el esquema es solo MySQL/MariaDB).
 - **Probado en:** Joomla 6.1.4 con PHP 8.3 y MariaDB 10.11, instalando el paquete limpio y **actualizando encima de una 3.4.2 original y del paquete 3.4.2.1 ya publicado, con datos de ejemplo** (comentarios, ajustes y permisos idénticos antes y después; la tabla de reacciones se crea sola). Resultados en [`docs/RESULTADOS-PRUEBAS-JOOMLA-REAL.md`](docs/RESULTADOS-PRUEBAS-JOOMLA-REAL.md).
 - **No probado:** Joomla 5.x, PHP 8.1/8.4/8.5, MySQL, otros navegadores distintos de Chromium y otros temas de administración distintos de Atum.
-- **Releases en GitHub:** la **v3.4.2.1 está publicada** (inmutable). La **v3.4.3** (reacciones a los comentarios, orden, favoritos, copiar enlace e insignias) todavía **no está publicada**: el servidor de actualizaciones de esta rama (`updates/pkgengage.xml`) ya apunta a ella, pero su descarga solo existirá cuando se publique (ver [`docs/PUBLICAR-RELEASE.md`](docs/PUBLICAR-RELEASE.md)); `main` no debe actualizarse antes. Hasta entonces se instala subiendo el ZIP a mano.
+- **Releases en GitHub:** las **v3.4.2.1 y v3.4.3 están publicadas** (inmutables). La **v3.4.4** (comentarios en el contenido de otros componentes, véase abajo) todavía **no está publicada**: el servidor de actualizaciones de esta rama (`updates/pkgengage.xml`) ya apunta a ella, pero su descarga solo existirá cuando se publique (ver [`docs/PUBLICAR-RELEASE.md`](docs/PUBLICAR-RELEASE.md)); `main` no debe actualizarse antes. Hasta entonces se instala subiendo el ZIP a mano.
 
 ## Novedades respecto a Engage 3.4.2
 
@@ -29,6 +29,7 @@ Engage es un sistema de comentarios para los artículos de Joomla. Este reposito
 | **Móvil** | Avatar visible y reducido en pantallas estrechas con los temas nuevos (opción «Avatar en móvil»). |
 | **Reacciones** | Botones de **me gusta**, **no me gusta** (con contador) y **favorito** (estrella; el comentario favorito se ve en amarillo suave, solo para quien lo marca), de contorno y rellenos al pulsarlos, en la fila de «Responder». Solo usuarios con sesión, no sobre el propio comentario, con límite de frecuencia, compatibles con la caché de página y con exportación y supresión por RGPD. Tabla nueva `#__engage_reactions`. Ver [`docs/REACCIONES.md`](docs/REACCIONES.md). |
 | **Ordenar, favoritos, copiar e insignias** (0.8.0) | Selector **Ordenar por** (Más recientes / Más antiguos / Más valorados, con las respuestas siempre debajo de su comentario y compatible con la paginación y la caché), botón **Solo mis favoritos** (lista plana y privada de los comentarios que la persona marcó con la estrella), botón **Copiar enlace** al comentario (con aviso accesible «Enlace copiado») e insignias **Autor** y **Moderador** junto al nombre. Cuatro opciones nuevas (`sort_selector`, `default_sort`, `copy_link`, `show_badges`); con ellas apagadas el HTML es el de la 0.7.1. Ver [`docs/ORDEN-Y-FAVORITOS.md`](docs/ORDEN-Y-FAVORITOS.md). |
+| **Comentarios en otros componentes** (0.8.2) | Cualquier componente de Joomla puede dar comentarios a su contenido de forma genérica: su vista lanza `onContentAfterDisplay` con un elemento que trae `asset_id` y un plugin suyo responde a `onAkeebaEngageGetAssetMeta` con la ficha (tipo, título, acceso, publicado, opciones). Engage no consulta `#__content` para esos elementos, trata la ficha como datos no confiables y, ante cualquier duda, no muestra nada. Sin opciones ni permisos nuevos. El contador no está soportado fuera de `com_content`. Guía para desarrolladores, ejemplo probado y lista de seguridad en [`docs/COMENTARIOS-EN-OTROS-COMPONENTES.md`](docs/COMENTARIOS-EN-OTROS-COMPONENTES.md). |
 | **Fallos del original** | Filtro de fechas del panel, comando `engage:cleanspam`, enlace de baja de correos en texto plano, varios avisos de PHP. |
 
 ![Panel de control en el diseño Claro](docs/img/panel-claro.png)
@@ -40,7 +41,7 @@ El detalle de cada cambio, con sus archivos e impacto, está en [`CHANGELOG.md`]
 ## Instalación
 
 1. **Haga copia de seguridad** del sitio y de la base de datos.
-2. En Joomla: *Sistema → Instalar → Extensiones → Subir archivo* y suba `pkg_engage-3.4.3.zip`. Se instala **encima** de una instalación existente de Engage, sin desinstalarla antes.
+2. En Joomla: *Sistema → Instalar → Extensiones → Subir archivo* y suba `pkg_engage-3.4.4.zip`. Se instala **encima** de una instalación existente de Engage, sin desinstalarla antes.
 3. Pulse **Akeeba Engage** en el menú de administración (abre el panel de control).
 4. Revise el **semáforo de estado** del panel y las **Opciones** (tema visual, Gravatar, antispam, moderación).
 
@@ -68,6 +69,7 @@ Para generar el ZIP usted mismo, vea «Compilar» más abajo.
 - [`docs/RESPUESTAS-DISENO.md`](docs/RESPUESTAS-DISENO.md): respuestas anidadas y su diseño.
 - [`docs/REACCIONES.md`](docs/REACCIONES.md): me gusta, no me gusta y favorito: uso, opciones, privacidad, caché, seguridad y texto para la política de privacidad.
 - [`docs/ORDEN-Y-FAVORITOS.md`](docs/ORDEN-Y-FAVORITOS.md): ordenar comentarios, «Solo mis favoritos», copiar enlace e insignias: uso, opciones, caché, rendimiento medido y seguridad.
+- [`docs/COMENTARIOS-EN-OTROS-COMPONENTES.md`](docs/COMENTARIOS-EN-OTROS-COMPONENTES.md): comentarios en el contenido de cualquier componente (para desarrolladores de terceros): eventos, ficha, qué se valida, límites, ejemplo de plugin probado y lista de seguridad.
 - [`docs/GRAVATAR-CONSENTIMIENTO.md`](docs/GRAVATAR-CONSENTIMIENTO.md): consentimiento de Gravatar y conexión con JBCookies.
 - [`docs/INFORME-FASE2-JOOMLA6.md`](docs/INFORME-FASE2-JOOMLA6.md) y [`docs/PRUEBAS-SEGURIDAD-JOOMLA6.md`](docs/PRUEBAS-SEGURIDAD-JOOMLA6.md): compatibilidad, seguridad y pruebas.
 - [`docs/RESULTADOS-PRUEBAS-JOOMLA-REAL.md`](docs/RESULTADOS-PRUEBAS-JOOMLA-REAL.md): resultados reales de las pruebas.
@@ -97,7 +99,7 @@ La versión se lee de `src/package/pkg_engage.xml`. Los ZIP son reproducibles (o
 
 ## Limitaciones conocidas
 
-- La release v3.4.3 en GitHub no está publicada todavía (ver «Estado»).
+- La release v3.4.4 en GitHub no está publicada todavía (ver «Estado»).
 - Las reacciones necesitan JavaScript (sin él los botones no se muestran) y vienen activadas por defecto; se desactivan en Opciones > Reacciones.
 - El botón «Copiar enlace» y el conmutador «Solo mis favoritos» también necesitan JavaScript (el selector de orden no). Con la caché conservadora de Joomla hace falta el plugin «System - Engage cache» activado para que el orden y la paginación entren en la clave de la caché.
 - Gravatar, el aviso de cookies de JBCookies y otros servicios de terceros no se distribuyen con el fork. JBCookies tiene una inconsistencia de licencia (README «Non-Commercial» frente a GPL v3 en su archivo de licencia) documentada en [`docs/GRAVATAR-CONSENTIMIENTO.md`](docs/GRAVATAR-CONSENTIMIENTO.md).
