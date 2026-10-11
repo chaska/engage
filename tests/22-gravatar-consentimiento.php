@@ -41,6 +41,9 @@ namespace {
 	require __DIR__ . '/aserciones.php';
 	if (!defined('_JEXEC')) { define('_JEXEC', 1); }
 	$root = dirname(__DIR__) . '/src';
+	require $root . '/component/backend/src/Helper/TrustedBase.php';
+	require $root . '/component/backend/src/Helper/AvatarResolver.php';
+	\Akeeba\Component\Engage\Administrator\Helper\TrustedBase::$configOverride = ['https://sitio.example', 0];
 	require $root . '/plugins/engage/gravatar/src/Extension/Gravatar.php';
 	use Akeeba\Plugin\Engage\Gravatar\Extension\Gravatar;
 
@@ -67,7 +70,9 @@ namespace {
 		$m->setAccessible(true);
 		$d = $m->invoke(null, ['results' => $res[0], 'deferred' => $res[1]]);
 		$h = fn($s) => htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-		$attrs = $d['deferred'] === '' ? '' : (' data-engage-gravatar="' . $h($d['deferred']) . '"' . ($d['notice'] ? '' : ' data-engage-gravatar-notice="0"'));
+		// 0.8.3: lo que imprime la plantilla es la referencia opaca (Avatar::getUserAvatarData), NUNCA la URL de Gravatar
+		$ref = $d['deferred'] === '' ? '' : \Akeeba\Component\Engage\Administrator\Helper\AvatarResolver::reference('secreto-del-sitio', 7, 48);
+		$attrs = $ref === '' ? '' : (' data-engage-gravatar="' . $h($ref) . '"' . ($d['notice'] ? '' : ' data-engage-gravatar-notice="0"'));
 		return '<img src="' . $h($d['src']) . '"' . $attrs . ' alt="">';
 	}
 	/** Contenido de atributos que el navegador carga solo (src, srcset, href, poster...) con gravatar.com. */
@@ -92,7 +97,10 @@ namespace {
 		$h = html($r);
 		t_ok($r[0][0] === '/sub/media/com_engage/images/avatar-generico.svg', "ask ($nombre): el avatar servido es el SVG local del componente");
 		t_ok(cargables($h) === [], "ask ($nombre): ningun src/srcset/href cargable contiene gravatar.com");
-		t_ok(preg_match('#data-engage-gravatar="https://www\.gravatar\.com/avatar/' . $hash . '\?s=48&amp;r=g&amp;d=identicon&amp;f=y"#', $h) === 1, "ask ($nombre): la URL de Gravatar va en data-engage-gravatar (escapada)");
+		t_ok(preg_match('#data-engage-gravatar="7\.48\.[0-9a-f]{32}"#', $h) === 1, "ask ($nombre): el HTML lleva solo una referencia opaca en data-engage-gravatar");
+		t_ok(stripos($h, 'gravatar.com') === false && stripos($h, $hash) === false && stripos($h, md5('persona@ejemplo.com')) === false && stripos($h, 'persona') === false && stripos($h, 'ejemplo') === false, "ask ($nombre): el HTML no contiene ni la URL de Gravatar, ni el hash del correo (sha256 o md5), ni el correo");
+		t_ok(preg_match('/[0-9a-f]{40,}/i', $h) === 0, "ask ($nombre): ninguna cadena hexadecimal larga que pueda ser el hash (solo el token de 32 caracteres de la referencia)");
+		t_ok(preg_match('#^https://www\.gravatar\.com/avatar/' . $hash . '\?s=48&r=g&d=identicon&f=y$#', array_values($r[1])[0]['url']) === 1, "ask ($nombre): la URL real sigue en el evento del servidor (la usara el endpoint tras el consentimiento)");
 		t_ok(stripos($h, '<link') === false && stripos($h, 'srcset') === false && stripos($h, '<picture') === false, "ask ($nombre): sin link, srcset ni picture");
 		t_ok(perfil(plugin($params)) === [null], "ask ($nombre): no se emite el enlace de perfil (nunca)");
 	}
@@ -133,7 +141,11 @@ namespace {
 	t_ok(perfil(plugin(['mode' => 'always'])) === ["https://www.gravatar.com/$hash"], 'always: enlace de perfil como antes');
 	t_ok(perfil(plugin(['mode' => 'always', 'profile_link' => 0])) === [null], 'always con profile_link=0: sin enlace');
 	$r = avatar(plugin(['mode' => 'always', 'default_image' => 'custom', 'custom_default' => 'images/x.png']));
-	t_ok(strpos($r[0][0], '&d=' . urlencode('https://sitio.example/images/x.png')) !== false, 'always con custom: d= como antes');
+	t_ok(strpos($r[0][0], '&d=' . urlencode('https://sitio.example/images/x.png')) !== false, 'always con custom: d= como antes (con la base fiable de configuracion)');
+	\Akeeba\Component\Engage\Administrator\Helper\TrustedBase::$configOverride = ['', 0];
+	$r = avatar(plugin(['mode' => 'always', 'default_image' => 'custom', 'custom_default' => 'images/x.png']));
+	t_ok(strpos($r[0][0], 'sitio.example') === false && strpos($r[0][0], '&d=mp') !== false, '0.8.3: always con custom SIN live_site: la imagen por defecto de Gravatar (nunca una direccion sacada del Host de la peticion)');
+	\Akeeba\Component\Engage\Administrator\Helper\TrustedBase::$configOverride = ['https://sitio.example', 0];
 	$r = avatar(plugin(['mode' => 'always', 'rating' => 'PG', 'default_image' => 'zzz']));
 	t_ok(strpos($r[0][0], '&r=pg&d=mp') !== false, 'valores raros (default_image) caen en valores permitidos');
 	$r = avatar(plugin(['mode' => 'always', 'rating' => 'x" onerror="1']));
@@ -155,6 +167,7 @@ namespace {
 	t_ok($normJs !== '' && $normJs === $normPhp, 'la expresion de lista blanca es la misma en PHP y en gravatar.js');
 	t_ok(preg_match('/\.src\s*=|innerHTML|eval\(|new Function|document\.write|outerHTML|insertAdjacentHTML/', $js) === 0, 'gravatar.js: sin eval, innerHTML ni asignaciones directas a .src');
 	t_ok(substr_count($js, 'setAttribute("src", url)') === 1 && strpos($js, 'ALLOWED_URL.test(url)') < strpos($js, 'setAttribute("src", url)'), 'gravatar.js: la unica asignacion de una URL externa va tras la lista blanca');
+	t_ok(substr_count($js, 'ALLOWED_URL.test(value)') === 1 && strpos($js, 'resolved[key] = (typeof value === "string" && ALLOWED_URL.test(value))') !== false, 'gravatar.js: la URL que devuelve el servidor tambien pasa por la lista blanca antes de guardarse');
 	t_ok(strpos($js, 'engage_gravatar_consent') !== false && strpos($js, 'engage:gravatar-consent') !== false && strpos($js, 'window.AkeebaEngageGravatar') !== false && preg_match('/document\.cookie\s*=(?!=)/', $js) === 0, 'gravatar.js: clave de localStorage, evento y API; nunca escribe cookies (0.6.19: solo lee la de JBCookies)');
 	$rc = 0; $out = [];
 	if (trim((string) shell_exec('command -v node'))) { exec('node --check ' . escapeshellarg($root . '/component/media/js/gravatar.js') . ' 2>&1', $out, $rc); t_ok($rc === 0, 'gravatar.js: node --check'); }

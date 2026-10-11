@@ -7,10 +7,13 @@
 /**
  * Opt-in consent for Gravatar photos (Gravatar plugin, mode "ask").
  *
- * The server sends a generic local avatar in every img src and, in the data-engage-gravatar attribute, the Gravatar
- * URL. NOTHING is requested from gravatar.com until the visitor accepts. The decision is always made here, in the
- * browser (localStorage key engage_gravatar_consent = "1"; no cookies, nothing is sent to the server), so it works with
- * Joomla's page cache.
+ * The server sends a generic local avatar in every img src and, in the data-engage-gravatar attribute, an OPAQUE
+ * reference (`<comment id>.<size>.<token>`, 0.8.3: it contains nothing of the commenter's e-mail address; before, the
+ * attribute held the Gravatar URL with the hash of the address, public to everybody). NOTHING is requested from
+ * gravatar.com until the visitor accepts. The decision is always made here, in the browser (localStorage key
+ * engage_gravatar_consent = "1"; no cookies), so it works with Joomla's page cache. Only AFTER the visitor accepts, this
+ * script asks the component (task avatar.token, then avatar.resolve with the CSRF token) for the real Gravatar URL of the
+ * comments on the page; the server answers only for comments the visitor can see.
  *
  * API: window.AkeebaEngageGravatar = {grant(), revoke(), isGranted()}. Cookie managers can also dispatch on document
  * the event "engage:gravatar-consent" with detail: {granted: true|false}. See docs/GRAVATAR-CONSENTIMIENTO.md.
@@ -41,6 +44,14 @@
 
     // Strict whitelist: the only thing which may ever be assigned to an img src by this script.
     var ALLOWED_URL = /^https:\/\/www\.gravatar\.com\/avatar\/[0-9a-f]{32,64}(\?[A-Za-z0-9_=&%.+\-]*)?$/;
+
+    // 0.8.3: the opaque reference printed in the page, and the endpoint (same site, relative) that trades it for the Gravatar URL
+    var REF_FORMAT = /^[1-9][0-9]{0,17}\.[1-9][0-9]{0,3}\.[0-9a-f]{32}$/;
+    var TOKEN_FORMAT = /^[0-9a-f]{32}$/;
+    var MAX_REFS = 100;
+    var resolved = Object.create(null);   // "id.size" -> Gravatar URL (already checked against ALLOWED_URL)
+    var tried = Object.create(null);      // "id.size" -> true while asked or answered
+    var pending = false;
 
     var granted = false;
     var noticeEl = null;
@@ -253,6 +264,146 @@
         return document.querySelectorAll("img[" + ATTR_URL + "]");
     }
 
+    function refKey(ref)
+    {
+        var parts = ref.split(".");
+
+        return parts[0] + "." + parts[1];
+    }
+
+    /** The endpoint of the component: a path of this site (never another host). */
+    function endpointUrl(task)
+    {
+        var base = "";
+
+        try
+        {
+            base = window.Joomla && typeof window.Joomla.getOptions === "function" ? window.Joomla.getOptions("akeeba.Engage.Gravatar.endpoint") : "";
+        }
+        catch (e)
+        {
+            base = "";
+        }
+
+        if (typeof base !== "string" || base.charAt(0) !== "/" || base.charAt(1) === "/" || base.length > 500 || /[\s"'<>\\]/.test(base))
+        {
+            return "";
+        }
+
+        return base + (base.indexOf("?") === -1 ? "?" : "&") + "task=" + task;
+    }
+
+    /**
+     * Asks the server for the Gravatar URL of the comments whose photo is still unknown. Only runs with consent. Every URL which comes back
+     * goes through ALLOWED_URL before it is kept; anything else is ignored (the local avatar stays).
+     */
+    function resolvePending()
+    {
+        if (!granted || pending || typeof window.fetch !== "function")
+        {
+            return;
+        }
+
+        var images = getImages();
+        var refs = [];
+        var keys = [];
+
+        for (var i = 0; i < images.length && refs.length < MAX_REFS; i++)
+        {
+            var ref = images[i].getAttribute(ATTR_URL) || "";
+
+            if (!REF_FORMAT.test(ref))
+            {
+                continue;
+            }
+
+            var key = refKey(ref);
+
+            if (resolved[key] !== undefined || tried[key] || keys.indexOf(key) !== -1)
+            {
+                continue;
+            }
+
+            refs.push(ref);
+            keys.push(key);
+        }
+
+        var tokenUrl = endpointUrl("avatar.token");
+        var resolveUrl = endpointUrl("avatar.resolve");
+
+        if (refs.length === 0 || tokenUrl === "" || resolveUrl === "")
+        {
+            return;
+        }
+
+        pending = true;
+        keys.forEach(function (key) {
+            tried[key] = true;
+        });
+
+        var ok = false;
+
+        window.fetch(tokenUrl, {credentials: "same-origin", cache: "no-store", headers: {"Accept": "application/json"}})
+            .then(function (response) {
+                return response.ok ? response.json() : null;
+            })
+            .then(function (data) {
+                if (!isPlainObject(data) || typeof data.token !== "string" || !TOKEN_FORMAT.test(data.token))
+                {
+                    return null;
+                }
+
+                var body = new URLSearchParams();
+                body.set("c", refs.join(","));
+                body.set(data.token, "1");
+
+                return window.fetch(resolveUrl, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    cache: "no-store",
+                    headers: {"Accept": "application/json"},
+                    body: body
+                }).then(function (response) {
+                    return response.ok ? response.json() : null;
+                });
+            })
+            .then(function (data) {
+                if (!isPlainObject(data) || data.ok !== true || !isPlainObject(data.urls))
+                {
+                    return;
+                }
+
+                ok = true;
+                keys.forEach(function (key) {
+                    var value = Object.prototype.hasOwnProperty.call(data.urls, key) ? data.urls[key] : null;
+
+                    // A photo that the server does not give (null) stays the local avatar for good; anything unexpected is also "none"
+                    resolved[key] = (typeof value === "string" && ALLOWED_URL.test(value)) ? value : "";
+                });
+            })
+            .catch(function () {
+                // Network or server error: the local avatars stay; a later consent change tries again
+            })
+            .then(function () {
+                pending = false;
+
+                if (!ok)
+                {
+                    keys.forEach(function (key) {
+                        delete tried[key];
+                    });
+
+                    return;
+                }
+
+                if (granted)
+                {
+                    applyToImages();
+                    resolvePending();
+                }
+            });
+    }
+
     function applyToImages()
     {
         var images = getImages();
@@ -263,9 +414,10 @@
 
             if (granted)
             {
-                var url = img.getAttribute(ATTR_URL) || "";
+                var ref = img.getAttribute(ATTR_URL) || "";
+                var url = REF_FORMAT.test(ref) ? resolved[refKey(ref)] : "";
 
-                if (!ALLOWED_URL.test(url))
+                if (typeof url !== "string" || !ALLOWED_URL.test(url))
                 {
                     continue;
                 }
@@ -396,6 +548,7 @@
 
         granted = on;
         applyToImages();
+        resolvePending();
 
         if (changed)
         {
@@ -442,6 +595,7 @@
         granted = true;
         writeStored(true);
         applyToImages();
+        resolvePending();
         renderNotice(true);
         announce(true);
     }
@@ -539,6 +693,7 @@
         if (granted)
         {
             applyToImages();
+            resolvePending();
             renderNotice(false);
         }
     }

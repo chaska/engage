@@ -15,13 +15,29 @@ const LOCAL = '/media/com_engage/images/avatar-generico.svg';
 let ok = 0, ko = 0;
 function t(cond, msg) { if (cond) { ok++; console.log('  OK    ' + msg); } else { ko++; console.log('  FALLO ' + msg); } }
 
+// 0.8.3: el atributo ya no lleva la URL de Gravatar sino una REFERENCIA opaca `<id>.<tamano>.<token>`; la URL real la da el servidor tras el consentimiento
+const REF = '7.48.' + 'b'.repeat(32);
 class FakeImg {
-    constructor(attrs) { this.a = Object.assign({src: LOCAL, 'data-engage-gravatar': GURL}, attrs); }
+    constructor(attrs) { this.a = Object.assign({src: LOCAL, 'data-engage-gravatar': REF}, attrs); }
     getAttribute(n) { return Object.prototype.hasOwnProperty.call(this.a, n) ? this.a[n] : null; }
     setAttribute(n, v) { this.a[n] = String(v); }
     hasAttribute(n) { return Object.prototype.hasOwnProperty.call(this.a, n); }
     removeAttribute(n) { delete this.a[n]; }
     closest() { return null; }
+}
+
+/** Promesa SINCRONA minima (solo then/catch): permite probar gravatar.js sin esperar a microtareas. */
+class SP {
+    constructor(v, err) { this.v = v; this.err = err; }
+    static of(x) { return x instanceof SP ? x : new SP(x); }
+    static rej(e) { const p = new SP(undefined, e); p.failed = true; return p; }
+    then(f, g) {
+        try {
+            if (this.failed) { return g ? SP.of(g(this.err)) : this; }
+            return f ? SP.of(f(this.v)) : this;
+        } catch (e) { return SP.rej(e); }
+    }
+    catch(g) { return this.then(null, g); }
 }
 
 /** Crea una pagina con 2 avatares y carga gravatar.js. opts.attrs: atributos de las imagenes; opts.imgs: imagenes propias. */
@@ -48,12 +64,25 @@ function pagina(cookie, opts = {}) {
             removeItem: (k) => { storageCalls.push('remove'); delete store[k]; },
         },
     };
-    const ctx = vm.createContext({window: win, document: doc, CustomEvent: CE, setTimeout, console});
+    // 0.8.3: servidor simulado (avatar.token y avatar.resolve). opts.resolveUrl cambia lo que devuelve; opts.failFetch simula un error de red.
+    const fetchCalls = [];
+    win.Joomla = {getOptions: (k) => (k === 'akeeba.Engage.Gravatar.endpoint' ? (opts.endpoint !== undefined ? opts.endpoint : '/index.php/component/engage') : null)};
+    win.fetch = (url, init) => {
+        fetchCalls.push({url, init});
+        if (opts.failFetch) { return SP.rej(new Error('red')); }
+        if (String(url).indexOf('task=avatar.token') !== -1) { return SP.of({ok: true, json: () => SP.of({ok: true, token: 'c'.repeat(32)})}); }
+        const c = init && init.body ? init.body.get('c') : '';
+        const urls = {};
+        String(c).split(',').forEach((r) => { const q = r.split('.'); urls[q[0] + '.' + q[1]] = opts.resolveUrl || GURL; });
+        return SP.of({ok: true, json: () => SP.of({ok: true, urls})});
+    };
+    win.URLSearchParams = URLSearchParams;
+    const ctx = vm.createContext({window: win, document: doc, CustomEvent: CE, setTimeout, console, URLSearchParams, Object, Array, JSON});
     vm.runInContext(SRC, ctx, {filename: 'gravatar.js'});
     const changes = [];
     doc.addEventListener('engage:gravatar-changed', (e) => changes.push(e.detail.granted));
     return {
-        doc, win, imgs, api: win.AkeebaEngageGravatar, storageCalls, store, changes,
+        doc, win, imgs, api: win.AkeebaEngageGravatar, storageCalls, store, changes, fetchCalls,
         srcs: () => imgs.map((i) => i.getAttribute('src')),
         todasGravatar: () => imgs.every((i) => i.getAttribute('src') === GURL),
         todasLocales: () => imgs.every((i) => i.getAttribute('src') === LOCAL),
@@ -199,8 +228,27 @@ function seguir() {
     q.emitDoc('engage:gravatar-consent', {granted: 'si'}); q.emitDoc('engage:gravatar-consent', null);
     t(!q.api.isGranted(), 'eventos engage:gravatar-consent con detail invalido se ignoran');
     // lista blanca
-    q = pagina(ck('allow', {}), {imgs: [new FakeImg({'data-engage-gravatar-source': 'jbcookies', 'data-engage-gravatar-group': '', 'data-engage-gravatar': 'https://www.gravatar.com.evil.example/avatar/' + HASH})]});
-    t(q.imgs[0].getAttribute('src') === LOCAL, 'lista blanca: una URL manipulada en data-engage-gravatar nunca se asigna a src (tambien con consentimiento)');
+    q = pagina(ck('allow', {}), {resolveUrl: 'https://www.gravatar.com.evil.example/avatar/' + HASH, imgs: [new FakeImg({'data-engage-gravatar-source': 'jbcookies', 'data-engage-gravatar-group': ''})]});
+    t(q.imgs[0].getAttribute('src') === LOCAL, 'lista blanca: una URL manipulada que devolviera el servidor nunca se asigna a src (tambien con consentimiento)');
+    q = pagina(ck('allow', {}), {imgs: [new FakeImg({'data-engage-gravatar-source': 'jbcookies', 'data-engage-gravatar-group': '', 'data-engage-gravatar': 'https://www.gravatar.com/avatar/' + HASH})]});
+    t(q.imgs[0].getAttribute('src') === LOCAL && q.fetchCalls.length === 0, 'una URL (no una referencia) en data-engage-gravatar se ignora: ni se asigna ni se pide nada');
+    // 0.8.3: privacidad y peticiones
+    q = pagina('', {attrs: {'data-engage-gravatar-notice': '0'}});
+    t(q.fetchCalls.length === 0 && q.todasLocales(), '0.8.3: sin consentimiento NO se hace ninguna peticion (ni al servidor ni a Gravatar) y no hay URL de Gravatar en la pagina');
+    q.api.grant();
+    t(q.fetchCalls.length === 2 && /task=avatar\.token$/.test(q.fetchCalls[0].url) && /task=avatar\.resolve$/.test(q.fetchCalls[1].url) && q.fetchCalls[1].init.method === 'POST', '0.8.3: tras el consentimiento: 1 peticion de token (GET) y 1 de resolucion (POST), las dos al propio sitio');
+    t(q.fetchCalls[1].init.body.get('c') === REF && q.fetchCalls[1].init.body.get('c' .repeat(0) + 'c'.repeat(32)) === '1' && q.fetchCalls[1].init.credentials === 'same-origin', '0.8.3: se envia la referencia (una vez, aunque haya dos imagenes iguales) y el token CSRF');
+    t(q.todasGravatar(), '0.8.3: la foto se carga con la URL que da el servidor');
+    q.api.revoke(); q.api.grant();
+    t(q.fetchCalls.length === 2 && q.todasGravatar(), '0.8.3: revocar y volver a conceder reutiliza lo ya resuelto (sin nuevas peticiones)');
+    for (const ep of ['https://evil.example/x', '//evil.example/x', '', 'javascript:alert(1)', '/a b']) {
+        q = pagina('', {endpoint: ep, attrs: {'data-engage-gravatar-notice': '0'}}); q.api.grant();
+        t(q.fetchCalls.length === 0 && q.todasLocales(), '0.8.3: endpoint no permitido ' + JSON.stringify(ep) + ': no se pide nada');
+    }
+    q = pagina('', {failFetch: true, attrs: {'data-engage-gravatar-notice': '0'}}); q.api.grant();
+    t(q.api.isGranted() && q.todasLocales(), '0.8.3: si la red falla se queda el avatar local (sin errores)');
+    q = pagina('', {imgs: [new FakeImg({'data-engage-gravatar': 'no-es-una-referencia', 'data-engage-gravatar-notice': '0'}), new FakeImg({'data-engage-gravatar': '7.48.' + 'B'.repeat(32), 'data-engage-gravatar-notice': '0'})]}); q.api.grant();
+    t(q.fetchCalls.length === 0 && q.todasLocales(), '0.8.3: referencias mal formadas (texto, mayusculas) no se envian');
     // mezcla de imagenes: una sin marcador => modo engage (localStorage), la cookie de JBCookies se ignora
     q = pagina(ck('allow', {}), {imgs: [new FakeImg({'data-engage-gravatar-source': 'jbcookies', 'data-engage-gravatar-notice': '0'}), new FakeImg({'data-engage-gravatar-notice': '0'})]});
     t(q.todasLocales() && !q.api.isGranted(), 'una imagen sin marcador jbcookies deja la pagina en modo engage: la cookie allow se ignora');

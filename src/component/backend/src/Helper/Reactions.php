@@ -302,6 +302,12 @@ final class Reactions
 		]];
 	}
 
+	/** 0.8.3: la misma regla de cadena visible para otros consumidores (avatares): id => toda la cadena de padres publicada. */
+	public function chainVisibility(array $rows): array
+	{
+		return $this->visibleChain($rows);
+	}
+
 	/** Profundidad maxima de la cadena de padres que se recorre (los comentarios anidan como mucho 6 niveles; el tope evita bucles en datos corruptos). */
 	private const MAX_CHAIN = 12;
 

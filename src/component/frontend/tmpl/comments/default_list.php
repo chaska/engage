@@ -18,6 +18,7 @@ use Akeeba\Component\Engage\Administrator\Helper\UserFetcher;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\User;
 
@@ -66,9 +67,10 @@ else: ?>
 
 <?php
 $previousLevel = $comment->depth;
-$avatarData    = Avatar::getUserAvatarData($comment->created_by, $maxAvatarWidth, $comment->email);
+$avatarData    = Avatar::getUserAvatarData($comment->created_by, $maxAvatarWidth, $comment->email, (int) $comment->id);
 $avatar        = $avatarData['src'];
-// Gravatar URL to load only after the visitor consents (plugin mode "ask"); empty otherwise.
+// 0.8.3: OPAQUE reference (`<comment id>.<size>.<token>`) that gravatar.js trades for the Gravatar URL after the visitor consents (plugin mode "ask"); empty
+// otherwise. The page never carries the Gravatar URL (it holds the hash of the commenter's e-mail address).
 $avatarDeferred = $avatarData['deferred'];
 $avatarAttrs    = ($avatarDeferred === '') ? '' : (' data-engage-gravatar="' . htmlspecialchars($avatarDeferred, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"'
 	. ($avatarData['notice'] ? '' : ' data-engage-gravatar-notice="0"')
@@ -87,6 +89,7 @@ if ($avatarDeferred !== '')
 	Text::script('COM_ENGAGE_GRAVATAR_BTN_REVOKE');
 	Text::script('COM_ENGAGE_GRAVATAR_STATUS_ON');
 	Text::script('COM_ENGAGE_GRAVATAR_NOTICE_LABEL');
+	$gravatarApp->getDocument()->addScriptOptions('akeeba.Engage.Gravatar.endpoint', Route::_('index.php?option=com_engage', false));
 	$gravatarApp->getDocument()->getWebAssetManager()->useScript('com_engage.gravatar');
 }
 $profile       = Avatar::getProfileURL($user);
