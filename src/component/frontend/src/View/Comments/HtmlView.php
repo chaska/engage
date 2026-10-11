@@ -35,7 +35,6 @@ use Joomla\CMS\User\User;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
-use RuntimeException;
 use Throwable;
 
 class HtmlView extends BaseHtmlView
@@ -276,12 +275,6 @@ class HtmlView extends BaseHtmlView
 	/** @inheritDoc */
 	public function display($tpl = null)
 	{
-		// 0.8.3: without the asset ID that the controller sets (only when the content plugin asks for it) there is nothing to show: 403, never a TypeError (500)
-		if (!is_int($this->assetId) || $this->assetId <= 0)
-		{
-			throw new RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
-		}
-
 		$this->setLayout('default');
 
 		// The view object can be reused for several articles in the same request (blog layouts): nothing of the previous one may stay
