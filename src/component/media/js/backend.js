@@ -2,6 +2,9 @@
  * @package   AkeebaEngage
  * @copyright Copyright (c)2020-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
  * @license   GNU General Public License version 3, or later
+ *
+ * 0.9.2: no depende de akeeba.System (que Joomla no carga: daba «Cannot read properties of undefined (reading 'documentReady')» en la lista) y envia el
+ * formulario con la tarea vacia, la que acepta la lista cerrada de tareas.
  */
 
 "use strict";
@@ -25,20 +28,43 @@ akeeba.Engage.AdminComments.onReset = function (event)
 {
     event.preventDefault();
 
-    document.getElementById("filter_body").value         = "";
-    document.getElementById("filter_asset_title").value  = "";
-    document.getElementById("filter_filter_email").value = "";
-    document.getElementById("filter_ip").value           = "";
-    document.getElementById("filter_asset_id").value     = "";
-    document.getElementById("filter_published").value    = "";
+    ["filter_search", "filter_enabled", "filter_itemtype", "filter_from", "filter_to"].forEach(function (id) {
+        var el = document.getElementById(id);
 
-    akeeba.System.submitForm("browse", document.getElementById("adminForm"));
+        if (el)
+        {
+            el.value = "";
+        }
+    });
+
+    var form = document.getElementById("adminForm");
+
+    if (form)
+    {
+        form.submit();
+    }
 
     return false;
-}
+};
 
-akeeba.System.documentReady(function ()
+(function ()
 {
-    akeeba.System.addEventListener("comEngageResetFilters", "click", akeeba.Engage.AdminComments.onReset);
+    var init = function ()
+    {
+        var button = document.getElementById("comEngageResetFilters");
 
-});
+        if (button)
+        {
+            button.addEventListener("click", akeeba.Engage.AdminComments.onReset);
+        }
+    };
+
+    if (document.readyState === "loading")
+    {
+        document.addEventListener("DOMContentLoaded", init);
+    }
+    else
+    {
+        init();
+    }
+})();
