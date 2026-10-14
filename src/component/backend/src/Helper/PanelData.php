@@ -25,7 +25,7 @@ use Throwable;
 final class PanelData
 {
 	/** Version del fork segun el CHANGELOG (la prueba tests/28 comprueba que coincide con su primera entrada). */
-	public const FORK_VERSION = '0.9.3';
+	public const FORK_VERSION = '0.9.4';
 
 	public const REPO_URL      = 'https://github.com/chaska/engage';
 	public const CHANGELOG_URL = 'https://github.com/chaska/engage/blob/main/CHANGELOG.md';
@@ -446,6 +446,23 @@ final class PanelData
 		catch (Throwable $e)
 		{
 			$facts['purifier_cache'] = null;
+		}
+
+		// 0.9.4: el elemento con mas comentarios publicados (para el semaforo del rastreo de robots): una consulta, solo lectura
+		try
+		{
+			$q = self::query($db);
+			$q->select([$db->quoteName('c.asset_id'), 'COUNT(*) AS ' . $db->quoteName('n')])
+				->from($db->quoteName('#__engage_comments', 'c'))
+				->where($db->quoteName('c.enabled') . ' = 1')
+				->group($db->quoteName('c.asset_id'))
+				->order('COUNT(*) DESC');
+			$top = $db->setQuery($q, 0, 1)->loadAssoc();
+			$facts['crawl_comments'] = (int) ($top['n'] ?? 0);
+			$facts['crawl_page']     = (int) ($params['default_limit'] ?? 20);
+		}
+		catch (Throwable $e)
+		{
 		}
 
 		// Sitios de actualizacion del paquete

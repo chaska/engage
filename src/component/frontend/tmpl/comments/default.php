@@ -68,7 +68,7 @@ $headerHtml  = $favView
 		<?php if ($this->pagination->pagesTotal > 1): ?>
 		<div class="akengage-pagination">
 			<div class="akengage-pagination-pages pagination" itemscope itemtype="http://www.schema.org/SiteNavigationElement">
-				<?= $this->pagination->getPagesLinks() ?>
+				<?= $this->paginationLinksHtml() ?>
 			</div>
 		</div>
 		<?php endif; ?>

@@ -45,6 +45,7 @@ final class PanelHealth
 			self::pluginCache($f),
 			self::antispam($f),
 			self::moderation($f),
+			self::crawl($f),
 			self::gravatar($f),
 			self::htmlFilter($f),
 			self::purifierCache($f),
@@ -283,6 +284,38 @@ final class PanelHealth
 
 		// Publicacion inmediata y sin ningun antispam: el spam saldria publicado en la web.
 		return self::item('moderation', self::BAD, ['state' => 'instant_open'], $fix);
+	}
+
+	/** Mas de estas URLs rastreables en una sola pagina de artículo se considera desmesurado (cada una suma una visita al contador de Joomla). */
+	public const CRAWL_MANY = 250;
+
+	/**
+	 * 0.9.4: rastreo de robots. Cuenta las URLs distintas que ofrece la pagina del elemento con mas comentarios (CommentTools::crawlUrls) y
+	 * avisa si son muchas y la opcion «Reducir el rastreo de robots» esta apagada (o, encendida, que conviene el robots.txt del manual).
+	 * Sin el dato (falta el hecho o no hay comentarios) no avisa.
+	 */
+	private static function crawl(array $f): array
+	{
+		$fix    = ['kind' => 'settings', 'section' => 'advanced'];
+		$reduce = (int) ($f['params']['crawl_reduce'] ?? 1) !== 0;
+		$n      = (int) ($f['crawl_comments'] ?? 0);
+
+		if ($n <= 0)
+		{
+			return self::item('crawl', self::OK, ['state' => $reduce ? 'on' : 'off_few', 'a' => 0, 'b' => 0], $reduce ? null : $fix);
+		}
+
+		$u    = CommentTools::crawlUrls($n, (int) ($f['crawl_page'] ?? 20) ?: 20, true, (int) ($f['params']['sort_selector'] ?? 1) !== 0);
+		$many = $u['total'] > self::CRAWL_MANY;
+
+		if ($reduce)
+		{
+			return self::item('crawl', $many ? self::WARN : self::OK, ['state' => $many ? 'on_many' : 'on', 'a' => $n, 'b' => $u['total']]);
+		}
+
+		return $many
+			? self::item('crawl', self::WARN, ['state' => 'off_many', 'a' => $n, 'b' => $u['total']], $fix)
+			: self::item('crawl', self::OK, ['state' => 'off_few', 'a' => $n, 'b' => $u['total']], $fix);
 	}
 
 	private static function gravatar(array $f): array

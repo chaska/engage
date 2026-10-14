@@ -150,7 +150,7 @@ class HtmlView extends BaseHtmlView
 	 * @var   array
 	 * @since 0.8.0
 	 */
-	public $tools = ['sort_selector' => false, 'default_sort' => 'auto', 'copy_link' => false, 'show_badges' => false];
+	public $tools = ['sort_selector' => false, 'default_sort' => 'auto', 'copy_link' => false, 'show_badges' => false, 'crawl_reduce' => false];
 
 	/**
 	 * What CommentTools::resolve() decided for this request (sort mode, favourites filter, buttons). Set by the controller; when the
@@ -717,16 +717,30 @@ class HtmlView extends BaseHtmlView
 	{
 		try
 		{
-			$state = $this->listState ?? [];
+			$state     = $this->listState ?? [];
+			$reduce    = !empty($this->tools['crawl_reduce']);
+			$favorites = !empty($state['favorites']);
+			// 0.9.4: variant = any akengage_* parameter in the request (only the NAMES are read, from the GET input: the Host header cannot hide them)
+			$variant   = $reduce ? CommentTools::isVariant(array_keys((array) Factory::getApplication()->getInput()->get->getArray())) : false;
+			$robots    = CommentTools::robotsValue($variant, $favorites, $reduce, (string) $doc->getMetaData('robots'));
 
-			if (!empty($state['favorites']))
+			if ($robots === null && !$favorites && empty($state['explicit']))
 			{
-				$doc->setMetaData('robots', 'noindex, nofollow');
-
 				return;
 			}
 
-			if (empty($state['explicit']))
+			if ($robots !== null)
+			{
+				$doc->setMetaData('robots', $robots);
+
+				// Same value in the HTTP header (also covers crawlers that do not read the HTML); a fixed string, nothing of the request in it
+				if ($reduce)
+				{
+					Factory::getApplication()->setHeader('X-Robots-Tag', $robots, true);
+				}
+			}
+
+			if ($favorites)
 			{
 				return;
 			}
@@ -740,6 +754,7 @@ class HtmlView extends BaseHtmlView
 				return;
 			}
 
+			// 0.9.4: cleanUrl() drops akengage_sort, _fav, _limitstart, _limit and _cid: the canonical of every variant is the base URL of the article
 			$canonical = $origin . CommentTools::cleanUrl(Uri::getInstance()->toString(['path', 'query']));
 
 			if (!CommentTools::isSafeAbsoluteUrl($canonical))
@@ -762,6 +777,20 @@ class HtmlView extends BaseHtmlView
 		{
 			// Without the extra head data the page is still correct
 		}
+	}
+
+	/** 0.9.4: ` rel="nofollow"` for the links to variants of the page (date permalinks, "in reply to", thread link) when "Reduce robot crawling" is on. */
+	public function crawlRel(): string
+	{
+		return !empty($this->tools['crawl_reduce']) ? ' rel="nofollow"' : '';
+	}
+
+	/** 0.9.4: the links of Joomla's pagination, with rel="nofollow" when "Reduce robot crawling" is on. */
+	public function paginationLinksHtml(): string
+	{
+		$html = (string) $this->pagination->getPagesLinks();
+
+		return !empty($this->tools['crawl_reduce']) ? CommentTools::addNofollow($html) : $html;
 	}
 
 	/**

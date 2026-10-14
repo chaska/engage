@@ -19,39 +19,39 @@ En un ordenador con PHP 8 (con las extensiones `zip` y `simplexml`), en la carpe
 php build/build.php
 ```
 
-Al final muestra `SHA-256 <número largo>` y deja el ZIP en `dist/pkg_engage-3.4.7.zip`. El SHA-256 debe ser **idéntico** al que figura en `updates/pkgengage.xml` (línea `<sha256>`). El de la versión preparada (3.4.7) es:
+Al final muestra `SHA-256 <número largo>` y deja el ZIP en `dist/pkg_engage-3.4.8.zip`. El SHA-256 debe ser **idéntico** al que figura en `updates/pkgengage.xml` (línea `<sha256>`). El de la versión preparada (3.4.8) es:
 
 ```
-533b13aedce4ea362375a3c7737191932cb041ad996a5060b26e45209948d75d
+32f238b1c1a398b29bd06435d9b00c813edf8685e1df68afcf64bf18dcdff63e
 ```
 
 Si no coincide, no subas el ZIP: avisa (puede deberse a otra versión de PHP o de zlib; el hash que cuenta es el del ZIP que se sube, y `updates/pkgengage.xml` tiene que llevar ese mismo).
 
 ## Pasos en GitHub (web)
 
-1. Asegúrate de que `main` ya contiene la versión 3.4.7 (el responsable sincroniza `main` justo DESPUÉS de crear la release; en `updates/pkgengage.xml` debe verse `<version>3.4.7</version>`).
+1. Asegúrate de que `main` ya contiene la versión 3.4.8 (el responsable sincroniza `main` justo DESPUÉS de crear la release; en `updates/pkgengage.xml` debe verse `<version>3.4.8</version>`).
 2. Entra en https://github.com/chaska/engage y pulsa **Releases** (columna derecha) y luego **Draft a new release** (Crear una nueva release).
-3. En **Choose a tag** (Elegir etiqueta) escribe exactamente `v3.4.7` y pulsa **Create new tag: v3.4.7 on publish**.
+3. En **Choose a tag** (Elegir etiqueta) escribe exactamente `v3.4.8` y pulsa **Create new tag: v3.4.8 on publish**.
 4. En **Target** (destino) deja seleccionada la rama `main`.
-5. **Release title**: `Engage 3.4.7 (fork comunitario)`. En la descripción puedes copiar la entrada 0.8.2 de `CHANGELOG.md` (y, si quiere, las 0.7.0 a 0.8.1 de la 3.4.3 ya publicada).
-6. Arrastra el archivo `pkg_engage-3.4.7.zip` a la zona **Attach binaries** (adjuntar archivos). El nombre debe ser exactamente ese; no lo renombres ni subas otros ZIP con otro nombre.
+5. **Release title**: `Engage 3.4.8 (fork comunitario)`. En la descripción puedes copiar la entrada 0.8.2 de `CHANGELOG.md` (y, si quiere, las 0.7.0 a 0.8.1 de la 3.4.3 ya publicada).
+6. Arrastra el archivo `pkg_engage-3.4.8.zip` a la zona **Attach binaries** (adjuntar archivos). El nombre debe ser exactamente ese; no lo renombres ni subas otros ZIP con otro nombre.
 7. Deja marcado **Set as the latest release**. No marques "pre-release".
-8. Pulsa **Save draft**. Comprueba: etiqueta `v3.4.7`, destino `main`, un solo archivo adjunto con ese nombre.
+8. Pulsa **Save draft**. Comprueba: etiqueta `v3.4.8`, destino `main`, un solo archivo adjunto con ese nombre.
 9. Pulsa **Publish release**.
 
 ## Comprobar después de publicar
 
-1. Abre en el navegador `https://github.com/chaska/engage/releases/download/v3.4.7/pkg_engage-3.4.7.zip`: debe descargarse el ZIP.
-2. (Opcional, con terminal) `sha256sum pkg_engage-3.4.7.zip` debe dar el hash de arriba.
-3. Abre `https://raw.githubusercontent.com/chaska/engage/main/updates/pkgengage.xml`: debe verse el XML con la versión 3.4.7. (GitHub puede tardar unos minutos en refrescar esa URL.)
-4. En un Joomla de pruebas con Engage 3.4.3 (o 3.4.2.1 o 3.4.2) instalado: Sistema > Actualizar > Extensiones > **Buscar actualizaciones**. Debe aparecer "Engage 3.4.7". Este paso (la oferta de actualización desde el servidor de GitHub) no se ha podido probar todavía en un Joomla real; sí se ha probado la instalación del ZIP 3.4.7 encima de la 3.4.3 y de la 3.4.2.1 publicadas y de la 3.4.2 original.
+1. Abre en el navegador `https://github.com/chaska/engage/releases/download/v3.4.8/pkg_engage-3.4.8.zip`: debe descargarse el ZIP.
+2. (Opcional, con terminal) `sha256sum pkg_engage-3.4.8.zip` debe dar el hash de arriba.
+3. Abre `https://raw.githubusercontent.com/chaska/engage/main/updates/pkgengage.xml`: debe verse el XML con la versión 3.4.8. (GitHub puede tardar unos minutos en refrescar esa URL.)
+4. En un Joomla de pruebas con Engage 3.4.3 (o 3.4.2.1 o 3.4.2) instalado: Sistema > Actualizar > Extensiones > **Buscar actualizaciones**. Debe aparecer "Engage 3.4.8". Este paso (la oferta de actualización desde el servidor de GitHub) no se ha podido probar todavía en un Joomla real; sí se ha probado la instalación del ZIP 3.4.8 encima de la 3.4.3 y de la 3.4.2.1 publicadas y de la 3.4.2 original.
 
 ## Sitio de actualizaciones antiguo de Akeeba (cdn.akeeba.com)
 
 El paquete 3.4.2 registró en Joomla un "sitio de actualización" que apunta a `https://cdn.akeeba.com/updates/pkgengage.xml`.
 
 - **No se desactiva por código en el instalador** (decisión documentada en la versión 0.6.2). Motivo: Joomla (plugin `extension/joomla`, función `addUpdateSite`) ejecuta su gestión de sitios de actualización **después** de terminar la actualización del paquete, y en ese momento, si el paquete tiene un único servidor, **reescribe la dirección (`location`) de la fila que ya existía** con la nueva. Un `enabled=0` puesto desde `postflight` quedaría aplicado a la fila ya apuntando al servidor del fork y lo dejaría **desactivado**, justo lo contrario de lo que se quiere. Además no se ha podido probar en un Joomla real.
-- Con la actualización normal (3.4.2, 3.4.2.1 o 3.4.3 a 3.4.7) Joomla reutiliza esa misma fila y la deja apuntando al servidor del fork, así que normalmente no queda ningún sitio de Akeeba. Solo el nombre mostrado seguirá siendo el antiguo ("Akeeba Engage Updates"); es solo cosmético.
+- Con la actualización normal (3.4.2, 3.4.2.1 o 3.4.3 a 3.4.8) Joomla reutiliza esa misma fila y la deja apuntando al servidor del fork, así que normalmente no queda ningún sitio de Akeeba. Solo el nombre mostrado seguirá siendo el antiguo ("Akeeba Engage Updates"); es solo cosmético.
 - Compruébalo a mano tras actualizar: Sistema > Gestionar > **Sitios de actualización**, y busca "engage" o "akeeba". Si sigue existiendo una fila cuya dirección sea `cdn.akeeba.com/updates/pkgengage.xml`, desactívala (clic en el icono de estado) o elimínala. Si lo prefieres por base de datos (cambia el prefijo `jos_` por el de tu sitio y haz copia antes):
 
 ```
@@ -62,7 +62,7 @@ UPDATE jos_update_sites SET enabled = 0 WHERE location LIKE '%cdn.akeeba.com/upd
 
 ## Qué cambia en la base de datos
 
-**La 3.4.7 no cambia el esquema** (no hay fichero SQL nuevo: el último sigue siendo `3.4.3-20261007.sql`). Actualizar desde la 3.4.3 no ejecuta SQL; desde la 3.4.2.1 y la 3.4.2 ejecuta el de la 3.4.3, que es el siguiente apartado.
+**La 3.4.8 no cambia el esquema** (no hay fichero SQL nuevo: el último sigue siendo `3.4.3-20261007.sql`). Actualizar desde la 3.4.3 no ejecuta SQL; desde la 3.4.2.1 y la 3.4.2 ejecuta el de la 3.4.3, que es el siguiente apartado.
 
 ### La 3.4.3
 

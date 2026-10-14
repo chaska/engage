@@ -142,7 +142,7 @@ $favView = $this->isFavoritesView();
 				<?php if (empty($profile)): ?>
 				<img src="<?= htmlspecialchars($avatar, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"<?= $avatarAttrs ?> alt="" class="akengage-commenter-avatar img-fluid rounded-3 shadow-sm" itemprop="image">
 				<?php else: ?>
-				<a href="<?= htmlspecialchars((string) $profile, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" class="akengage-commenter-profile" itemprop="url" rel="noopener">
+				<a href="<?= htmlspecialchars((string) $profile, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" class="akengage-commenter-profile" itemprop="url" rel="nofollow ugc noopener noreferrer">
 					<img src="<?= htmlspecialchars($avatar, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"<?= $avatarAttrs ?>
 							alt=""
 							class="akengage-commenter-avatar img-fluid rounded-3 shadow-sm" itemprop="image">
@@ -180,7 +180,7 @@ $favView = $this->isFavoritesView();
 					<div class="akengage-comment-permalink flex-grow-1">
 						<?php // 0.8.1: relative and validated link, escaped for the attribute (it used to print the whole request URL as-is: reflected XSS) ?>
 						<a href="<?= htmlspecialchars($this->commentPermalink((int) $comment->id), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"
-								class="text-body text-decoration-none"
+								class="text-body text-decoration-none"<?= $this->crawlRel() ?>
 						>
 							<?= $commentDate->format(Text::_('DATE_FORMAT_LC2'), true) ?>
 						</a>
@@ -291,7 +291,7 @@ $favView = $this->isFavoritesView();
 				}
 				?>
 				<?= Text::_('COM_ENGAGE_COMMENTS_FORM_INREPLYTO_LABEL') ?>
-				<a href="<?= htmlspecialchars($replyToHref, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" class="akengage-comment-replyto-link"><?= htmlspecialchars($replyTo['name'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></a>
+				<a href="<?= htmlspecialchars($replyToHref, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" class="akengage-comment-replyto-link"<?= $this->crawlRel() ?>><?= htmlspecialchars($replyTo['name'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></a>
 			<?php else: ?>
 				<?= Text::_('COM_ENGAGE_COMMENTS_INREPLYTO_GENERIC') ?>
 			<?php endif; ?>
@@ -320,7 +320,7 @@ $favView = $this->isFavoritesView();
 				</button>
 				<?php endif; ?>
 <?php if ($favView && ($ctxUrl = $this->commentPermalink((int) $comment->id)) !== ''): ?>
-				<a class="akengage-context-link" href="<?= htmlspecialchars($ctxUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"><?= Text::_('COM_ENGAGE_FAV_VIEW_IN_THREAD') ?></a>
+				<a class="akengage-context-link" href="<?= htmlspecialchars($ctxUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"<?= $this->crawlRel() ?>><?= Text::_('COM_ENGAGE_FAV_VIEW_IN_THREAD') ?></a>
 <?php endif; ?>
 <?php if ($copyHtml !== ''): ?>
 				<?= $copyHtml ?>
