@@ -103,6 +103,31 @@ class HtmlView extends BaseHtmlView
 	 * @see     self::loadTemplate()
 	 * @since   3.0.0
 	 */
+	/** Maximum number of DIFFERENT content items whose sheet is asked of the plugins for one page of the list (0.8.5). */
+	public const MAX_META_ASSETS = 50;
+
+	/** @var array<int,bool> */
+	private $metaSeen = [];
+
+	/**
+	 * Sheet of the content item of a row. Cached per asset by Meta (one plugin call per asset per request) and capped: past MAX_META_ASSETS
+	 * different items the rows show «item not available» instead of calling third-party plugins once more.
+	 */
+	public function itemMeta(int $assetId): array
+	{
+		if (!isset($this->metaSeen[$assetId]))
+		{
+			if (count($this->metaSeen) >= self::MAX_META_ASSETS)
+			{
+				return ['type' => 'unknown', 'title' => '', 'url' => null, 'public_url' => null];
+			}
+
+			$this->metaSeen[$assetId] = true;
+		}
+
+		return \Akeeba\Component\Engage\Site\Helper\Meta::getAssetAccessMeta($assetId, false);
+	}
+
 	public function display($tpl = null)
 	{
 		/** @var CommentsModel $model */

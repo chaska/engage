@@ -18,6 +18,7 @@ t_ok(!preg_match('/^\s*`created_on`/m', $sql), 'no existe una columna `created_o
 echo "B) CommentsModel::getListQuery\n";
 require "$root/component/backend/src/Helper/ListOrdering.php";
 require "$root/component/backend/src/Mixin/ModelPopulateStateTrait.php";
+require_once "$root/component/backend/src/Helper/CommentTypes.php";
 require "$root/component/backend/src/Model/CommentsModel.php";
 $rc = new ReflectionClass(\Akeeba\Component\Engage\Administrator\Model\CommentsModel::class);
 $gl = $rc->getMethod('getListQuery'); $gl->setAccessible(true);

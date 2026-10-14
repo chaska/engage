@@ -91,7 +91,7 @@ $i = 0;
 							// Author
 							$creator  = UserFetcher::getUser($item->created_by);
 							// Metadata
-							$meta        = Meta::getAssetAccessMeta($item->asset_id, false);
+							$meta        = $this->itemMeta((int) $item->asset_id);
 							$numComments = Meta::getNumCommentsForAsset($item->asset_id);
 							// IP and User Agent
 							$ipLookupUrl = HTMLHelper::_('engage.getIPLookupURL', $item->ip);
@@ -264,12 +264,21 @@ $i = 0;
 									<div class="small mb-1">
 										<strong><?= Text::_('COM_ENGAGE_COMMENT_FIELD_ASSET_ID') ?></strong>:
 										<?php if ($meta['type'] !== 'unknown'): ?>
+											<?php // 0.8.5: title and link come from the sanitised sheet (Meta::sanitiseMeta / cleanUrl); the link only if there is one ?>
+											<?php if (!empty($meta['url'])): ?>
 											<a href="<?= htmlspecialchars((string) $meta['url'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
-												<?= $this->escape($meta['title']) ?>
+												<?= $this->escape($meta['title'] !== '' ? $meta['title'] : Text::sprintf('COM_ENGAGE_COMMENTS_LBL_ITEM_UNAVAILABLE', (int) $item->asset_id)) ?>
 											</a>
+											<?php else: ?>
+												<?= $this->escape($meta['title'] !== '' ? $meta['title'] : Text::sprintf('COM_ENGAGE_COMMENTS_LBL_ITEM_UNAVAILABLE', (int) $item->asset_id)) ?>
+											<?php endif; ?>
+										<?php elseif (!empty($item->article_title)): ?>
+											<?php // the article exists (LEFT JOIN with #__content) but its plugin is not answering: title without link ?>
+											<?= $this->escape($item->article_title) ?>
+											<span class="badge bg-warning text-dark"><?= Text::sprintf('COM_ENGAGE_COMMENTS_LBL_ITEM_UNAVAILABLE', (int) $item->asset_id) ?></span>
 										<?php else: ?>
 											<span class="badge bg-danger">
-												<?= Text::_('COM_ENGAGE_COMMENTS_LBL_INVALIDORDELETED') ?>
+												<?= Text::sprintf('COM_ENGAGE_COMMENTS_LBL_ITEM_UNAVAILABLE', (int) $item->asset_id) ?>
 											</span>
 										<?php endif; ?>
 									</div>
