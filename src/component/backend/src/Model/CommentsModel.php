@@ -9,6 +9,7 @@ namespace Akeeba\Component\Engage\Administrator\Model;
 
 defined('_JEXEC') or die;
 
+use Akeeba\Component\Engage\Administrator\Helper\CommentTypes;
 use Akeeba\Component\Engage\Administrator\Helper\ListOrdering;
 use Akeeba\Component\Engage\Administrator\Helper\Reactions;
 use Akeeba\Component\Engage\Administrator\Helper\Timer;
@@ -60,7 +61,7 @@ class CommentsModel extends ListModel
 				// Sort–only fields
 				'c.id', 'user_name', 'c.enabled', 'c.created',
 				// Filter–only fields
-				'search', 'from', 'to',
+				'search', 'from', 'to', 'itemtype',
 			];
 
 		parent::__construct($config, $factory);
@@ -73,6 +74,7 @@ class CommentsModel extends ListModel
 				'to'                 => 'string',
 				'created_by'         => 'int',
 				'enabled'            => 'int',
+				'itemtype'           => 'string',
 
 				// Internal filters
 				'asset_id'           => 'int',
@@ -660,6 +662,17 @@ class CommentsModel extends ListModel
 		{
 			$query->where($db->quoteName('c.asset_id') . ' = :asset_id')
 				->bind(':asset_id', $fltAssetId, ParameterType::INTEGER);
+		}
+
+		// 0.8.5: item type filter (closed list of the types that really have comments; anything else is ignored)
+		$fltType = CommentTypes::validate($this->getState('filter.itemtype'), CommentTypes::available($db));
+
+		if ($fltType !== '')
+		{
+			$typeLike = CommentTypes::likePattern($fltType);
+			$query->join('INNER', $db->quoteName('#__assets', 'ast'), $db->quoteName('ast.id') . ' = ' . $db->quoteName('c.asset_id'))
+				->where($db->quoteName('ast.name') . ' LIKE :itemtype')
+				->bind(':itemtype', $typeLike, ParameterType::STRING);
 		}
 
 		// Parent ID filter

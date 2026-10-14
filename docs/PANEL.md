@@ -128,6 +128,13 @@ El apilado ya no depende del número de opciones sino del ancho real del texto (
 
 Prueba: `tests/joomla-live/14-opciones-segmentados.sh`.
 
+## Lista de comentarios del administrador (0.8.5)
+
+- **Tipo de elemento:** filtro con los tipos que realmente tienen comentarios (Artículos y, de cada tercero, `com_xxx.tipo (de terceros)`). Lista cerrada: un valor que no esté en ella se ignora.
+- **Estado:** «Todos (publicados, sin publicar y spam)» es el valor por defecto; también se puede filtrar por publicado, sin publicar, posible spam y spam. Un comentario de un tercero guardado con `enabled` 0, -3 o -2 se localiza ahí.
+- **Elemento de cada fila:** título (como texto) y enlace de la ficha que devuelve el plugin del tercero (ya saneada: URL solo relativa o del propio sitio). La ficha se pide una vez por activo y solo a los 50 primeros activos distintos de la página.
+- **«Elemento no disponible (asset N)»:** plugin del tercero desactivado, elemento borrado o activo inexistente. El comentario sigue en la lista y se puede moderar.
+
 ## Dirección base de los enlaces de los correos (0.8.4: ya no hay que tocar `configuration.php`)
 
 Los enlaces absolutos de los correos (moderación firmada, baja, enlace al comentario) se construyen **siempre** sobre una «base fiable», **nunca sobre la cabecera `Host` de una petición pública** (con un `Host` falsificado el correo llevaría enlaces firmados a otra web). La 0.8.3 solo aceptaba `live_site` de `configuration.php`; **desde la 0.8.4 no hay que pedir nada al administrador**. Orden de prioridad:

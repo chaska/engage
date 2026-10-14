@@ -24,9 +24,19 @@
                 class="engageCommonEventsOnChangeSubmit"
                 default=""
         >
-            <option value="">JOPTION_SELECT_PUBLISHED</option>
+            <option value="">COM_ENGAGE_COMMENTS_FILTER_STATUS_ALL</option>
             <option value="-3">COM_ENGAGE_COMMENT_ENABLED_OPT_POSSIBLE_SPAM</option>
             <option value="-2">COM_ENGAGE_COMMENT_ENABLED_OPT_SPAM</option>
+        </field>
+
+        <field
+                name="itemtype"
+                type="itemtype"
+                label="COM_ENGAGE_COMMENTS_FILTER_ITEMTYPE"
+                class="engageCommonEventsOnChangeSubmit"
+                default=""
+        >
+            <option value="">COM_ENGAGE_COMMENTS_FILTER_ITEMTYPE_SELECT</option>
         </field>
 
         <field

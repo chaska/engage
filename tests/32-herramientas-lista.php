@@ -183,6 +183,7 @@ class RecDb extends FakeDb
 	public function qn($n, $as = null) { return $this->quoteName($n, $as); }
 	public function setQuery($q) { $this->queries[] = $q; return new class((count($this->queries) >= 2 && $this->rows2 !== null) ? $this->rows2 : $this->rows) { public function __construct(private array $rows) {} public function loadAssocList($key = null) { $o = []; foreach ($this->rows as $r) { $o[$r[$key ?? 'id']] = $r; } return $o; } public function loadObjectList($key = null) { return []; } }; }
 }
+require_once "$c/backend/src/Helper/CommentTypes.php";
 require_once "$c/backend/src/Model/CommentsModel.php";
 $rc = new ReflectionClass(\Akeeba\Component\Engage\Administrator\Model\CommentsModel::class);
 $mk = function (array $state, array $rows) use ($rc) {

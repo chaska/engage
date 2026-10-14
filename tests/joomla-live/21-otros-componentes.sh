@@ -38,6 +38,7 @@ instalar tercero-prueba terceroprueba; instalar tercero-hostil tercerohostil; in
 php "$AQUI/lib/otros-datos.php" crear || exit 1
 rm -f "$WORK/$SITE_DIR/cache/autoload_psr4.php" "$WORK/$SITE_DIR/administrator/cache/autoload_psr4.php"; bash "$AQUI/lib/servidor.sh"
 echo "== HTTP"; php "$AQUI/lib/otros-http.php" | tail -n "${LINEAS:-400}" || rc=1
+echo "== Lista de comentarios del administrador (0.8.5)"; php "$AQUI/lib/otros-admin-lista.php" || rc=1
 echo "== Borrado por activo (MariaDB real)"; php "$AQUI/lib/otros-borrado-cli.php" || rc=1
 echo "== HTML del articulo identico a la 0.8.1"
 COMMIT_081="${COMMIT_081:-5c9ca63}"
