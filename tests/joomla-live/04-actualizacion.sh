@@ -78,7 +78,7 @@ mysql "$DB_NAME" -e "UPDATE jos_extensions SET params='$(echo "$PARAMS_ANTES" | 
 echo "== 5d. 0.8.1: el PoC de XSS reflejado de la revision independiente contra el sitio actualizado (antes: el HTML llevaba \`x=\"><script>alert(document.domain)</script>\` sin escapar en el enlace de la fecha de cada comentario)"
 PX="$(curl -s "$PAG&x=%22%3E%3Cscript%3Ealert(document.domain)%3C/script%3E&p=ATACANTE" | perl -0pe 's#<script type="application/ld\+json">.*?</script>##gs')"
 X1=$(echo "$PX" | grep -c '"><script>alert' || true); X2=$(echo "$PX" | grep -c 'akengage.*ATACANTE\|ATACANTE.*akengage' || true);   # (el formulario de acceso de Joomla refleja la URL: no es de Engage)
- X3=$(echo "$PX" | grep -Eo 'href="/[^"]*akengage_cid=[0-9]+#akengage-comment-[0-9]+"' | wc -l || true)
+ X3=$(echo "$PX" | grep -Eo 'href="(/[^"]*akengage_cid=[0-9]+)?#akengage-comment-[0-9]+"' | wc -l || true)
 echo "   scripts inyectados: $X1 (0 = si); rastro de la consulta ajena en los enlaces: $X2 (0 = si); enlaces de fecha relativos y limpios: $X3 (= comentarios publicados: $NC)"
 [ "$X1" = "0" ] && [ "$X2" = "0" ] && { [ "$NC" = "0" ] || [ "$X3" -ge 1 ]; } && echo "RESULTADO XSS 0.8.1: PASA" || { echo "RESULTADO XSS 0.8.1: FALLA"; exit 1; }
 echo "== 6. Humo web tras actualizar"

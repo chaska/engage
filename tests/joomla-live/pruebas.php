@@ -80,6 +80,8 @@ function peligros(string $html): array
 	$d->loadHTML('<?xml encoding="utf-8"?><div>' . $frag . '</div>');
 	$mal = [];
 	foreach ($d->getElementsByTagName('*') as $e) {
+		// 0.9.5: el <meta itemprop=name> y el <link itemprop=url> PROPIOS del CreativeWork (el fragmento empieza dentro de la etiqueta de la seccion) no son contenido de nadie
+		if (in_array(strtolower($e->nodeName), ['meta', 'link'], true) && $e->hasAttribute('itemprop') && in_array($e->getAttribute('itemprop'), ['name', 'url'], true)) { continue; }
 		if (in_array(strtolower($e->nodeName), ['script', 'svg', 'iframe', 'object', 'embed', 'style', 'link', 'meta', 'base', 'form', 'math', 'applet'], true)) { $mal[] = '<' . $e->nodeName . '>'; }
 		foreach ($e->attributes as $at) {
 			$n = strtolower($at->nodeName); $v = strtolower(preg_replace('/[\x00-\x20]+/', '', $at->nodeValue));

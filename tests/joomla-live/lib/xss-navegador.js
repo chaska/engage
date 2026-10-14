@@ -95,7 +95,7 @@ async function mide(page) {
     let dlg = 0; p.on('dialog', async d => { dlg++; await d.dismiss(); });
     await p.goto(`${BASE}${ART}&x=%22%3E%3Cscript%3Ealert(1)%3C/script%3E&p=ATACANTE`, {waitUntil: 'load'}); await p.waitForTimeout(300);
     const href = await p.$eval('.akengage-comment-permalink a', a => a.getAttribute('href'));
-    r('N-LNK', 'el enlace de la fecha es relativo y sin parametros del atacante', /^\/[^"<>]*akengage_cid=\d+#akengage-comment-\d+$/.test(href) && !/ATACANTE|alert|script/.test(href), href);
+    r('N-LNK', '(0.9.5) el enlace de la fecha es un ancla (o relativo) y sin parametros del atacante', /^(\/[^"<>]*akengage_cid=\d+)?#akengage-comment-\d+$/.test(href) && !/ATACANTE|alert|script/.test(href), href);
     await p.click('.akengage-comment-permalink a'); await p.waitForTimeout(400);
     r('N-NAV', 'pulsarlo deja al visitante en el mismo sitio, con el comentario en el ancla, sin dialogos', p.url().startsWith(BASE + '/') && /#akengage-comment-\d+$/.test(p.url()) && dlg === 0, p.url());
     const visible = await p.$('.akengage-copy-btn:visible');
