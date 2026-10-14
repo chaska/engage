@@ -39,7 +39,7 @@ t_ok(!preg_match('/<\?=\s*\$meta\[[^\]]+\]\s*\?>/', $tp) && !preg_match('/<\?=\s
 $fx = $lee("$root/forms/filter_comments.xml");
 t_ok(preg_match('/name="itemtype"\s+type="itemtype"/', $fx) === 1 && str_contains($fx, 'COM_ENGAGE_COMMENTS_FILTER_STATUS_ALL'), 'formulario del filtro: tipo de elemento y «Todos» en el estado');
 $fl = $lee("$root/src/Field/ItemtypeField.php");
-t_ok(str_contains($fl, 'extends ListField') && str_contains($fl, 'CommentTypes::available()'), 'campo del filtro: lista cerrada');
+t_ok(str_contains($fl, 'extends ListField') && str_contains($fl, 'CommentTypes::counts()'), 'campo del filtro: lista cerrada');
 foreach (['en-GB', 'es-ES'] as $lg) {
 	$ini = $lee("$root/language/$lg/com_engage.ini");
 	foreach (['COM_ENGAGE_COMMENTS_FILTER_ITEMTYPE', 'COM_ENGAGE_COMMENTS_FILTER_ITEMTYPE_SELECT', 'COM_ENGAGE_COMMENTS_ITEMTYPE_ARTICLE', 'COM_ENGAGE_COMMENTS_ITEMTYPE_THIRDPARTY', 'COM_ENGAGE_COMMENTS_FILTER_STATUS_ALL', 'COM_ENGAGE_COMMENTS_LBL_ITEM_UNAVAILABLE'] as $k) {

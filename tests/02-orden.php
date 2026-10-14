@@ -30,6 +30,7 @@ foreach ([' asc ', 'ASC; DROP TABLE x', 'ASC, u.password', 'DESC--', '', 'RAND()
 echo "B) CommentsModel::getListQuery (real, con stubs)\n";
 require "$root/backend/src/Mixin/ModelPopulateStateTrait.php";
 require_once "$root/backend/src/Helper/CommentTypes.php";
+require_once "$root/backend/src/Helper/CommentItems.php";
 require "$root/backend/src/Model/CommentsModel.php";
 $rc = new ReflectionClass(\Akeeba\Component\Engage\Administrator\Model\CommentsModel::class);
 $gl = $rc->getMethod('getListQuery'); $gl->setAccessible(true);

@@ -26,11 +26,11 @@ class ItemtypeField extends ListField
 	{
 		$options = parent::getOptions();
 
-		foreach (CommentTypes::available() as $type)
+		foreach (CommentTypes::counts() as $type => $n)
 		{
 			$options[] = (object) [
 				'value' => $type,
-				'text'  => CommentTypes::isArticle($type) ? Text::_('COM_ENGAGE_COMMENTS_ITEMTYPE_ARTICLE') : Text::sprintf('COM_ENGAGE_COMMENTS_ITEMTYPE_THIRDPARTY', $type),
+				'text'  => CommentTypes::label($type, static fn(string $k): string => Text::_($k)) . ' (' . (int) $n . ')',
 			];
 		}
 
