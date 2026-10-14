@@ -288,6 +288,9 @@ echo I::sprite();
 							<div class="eg-health__body">
 								<p class="eg-health__title"><?= $e(Text::_('COM_ENGAGE_PANEL_H_' . $id . '_TITLE')) ?></p>
 								<p class="eg-health__text"><?= $e($text) ?></p>
+								<?php if (!empty($it['note'])) : ?>
+									<p class="eg-health__text eg-health__note"><?= $e(Text::sprintf('COM_ENGAGE_PANEL_H_PLUGIN_EMAIL_AUDIT', ...$it['note'])) ?></p>
+								<?php endif; ?>
 								<?php if ($fix !== '') : ?>
 									<a class="eg-btn eg-btn--small" href="<?= $url($fix) ?>">
 										<?= $e(Text::_('COM_ENGAGE_PANEL_FIX_' . strtoupper($it['fix']['kind']))) ?><?= I::icon('chevron') ?>
@@ -297,10 +300,10 @@ echo I::sprite();
 						</li>
 					<?php endforeach; ?>
 				</ul>
-				<?php if ($this->can['admin']) : ?>
+				<?php if ($this->can['superadmin']) : ?>
 					<p class="eg-health__preview"><a class="eg-btn eg-btn--small" href="<?= $url('index.php?option=com_engage&view=emailpreview') ?>"><?= $e(Text::_('COM_ENGAGE_MAILPREVIEW_LINK')) ?></a></p>
 				<?php endif; ?>
-				<?php if ($this->baseSource === 'learned' && $this->can['admin']) : ?>
+				<?php if ($this->baseSource === 'learned' && $this->can['superadmin']) : ?>
 					<form class="eg-health__forget" method="post" action="<?= $url('index.php?option=com_engage&task=controlpanel.forgetbase') ?>">
 						<button type="submit" class="eg-btn eg-btn--small"><?= $e(Text::_('COM_ENGAGE_PANEL_BASE_FORGET')) ?></button>
 						<?= $quickToken ?>

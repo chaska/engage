@@ -54,6 +54,8 @@ class HtmlView extends BaseHtmlView
 			'state'    => $user->authorise('core.edit.state', 'com_engage'),
 			'delete'   => $user->authorise('core.delete', 'com_engage'),
 			'admin'    => $user->authorise('core.admin', 'com_engage') || $user->authorise('core.options', 'com_engage'),
+			// 0.9.1: the preview of the emails, the test email and the forget button need core.admin (the view demands it)
+			'superadmin' => $user->authorise('core.admin', 'com_engage'),
 			'comments' => $user->authorise('core.manage', 'com_engage'),
 		];
 

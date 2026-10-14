@@ -33,9 +33,12 @@ final class SettingsService
 	private $filter;
 	private $dynamic;
 	private $log;
+	/** 0.9.1: fn(): bool  — core.admin on com_engage. Without it the settings that need core.admin are refused (fail-closed). */
+	private $isAdmin;
 
-	public function __construct(array $schema, callable $authorise, callable $load, callable $save, callable $filter, callable $dynamic, ?callable $log = null)
+	public function __construct(array $schema, callable $authorise, callable $load, callable $save, callable $filter, callable $dynamic, ?callable $log = null, ?callable $isAdmin = null)
 	{
+		$this->isAdmin   = $isAdmin;
 		$this->schema    = $schema;
 		$this->authorise = $authorise;
 		$this->load      = $load;
@@ -71,6 +74,12 @@ final class SettingsService
 		if (!is_string($key) || !isset($this->schema[$scope][$key]) || !array_key_exists($key, $this->schema[$scope]))
 		{
 			throw SettingsException::invalid('key');
+		}
+
+		// 3b. 0.9.1: sensitive settings need core.admin, not only core.options
+		if (SettingsSchema::requiresAdmin($scope, $key) && ($this->isAdmin === null || !($this->isAdmin)()))
+		{
+			throw SettingsException::denied();
 		}
 
 		$def = $this->schema[$scope][$key];
@@ -128,7 +137,7 @@ final class SettingsService
 		{
 			try
 			{
-				($this->log)($scope, $key);
+				($this->log)($scope, $key, $old === null ? null : (string) $old, $clean);
 			}
 			catch (\Throwable $e)
 			{

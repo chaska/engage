@@ -112,7 +112,7 @@ t_ok(str_contains($b, 'Hello') && str_contains($b, 'Confidentiality notice') && 
 t_ok(!preg_match('~<a [^>]*href="https?://[^"]*example\.com/"[^>]*>Mi~', $b), 'sin base fiable la cabecera no enlaza al sitio');
 
 $cfg = $lee("$root/component/backend/config.xml");
-t_ok(preg_match('/<field name="email_rich"\s+type="radio"[^>]*default="1"[^>]*switcher/s', $cfg) === 1 && preg_match('/<field name="email_confidential"\s+type="radio"[^>]*default="1"[^>]*switcher/s', $cfg) === 1 && preg_match('/<field name="email_accent"\s+type="list"[^>]*default="blue"[^>]*validate="options"/s', $cfg) === 1, 'config.xml: email_rich, email_confidential y email_accent (lista cerrada)');
+t_ok(preg_match('/<field name="email_rich"\s+type="radio"[^>]*default="1"[^>]*switcher/s', $cfg) === 1 && preg_match('/<field name="email_confidential"[^>]*?type="radio"[^>]*default="1"[^>]*switcher/s', $cfg) === 1 && preg_match('/<field name="email_accent"\s+type="list"[^>]*default="blue"[^>]*validate="options"/s', $cfg) === 1, 'config.xml: email_rich, email_confidential y email_accent (lista cerrada)');
 t_ok(preg_match('/(<option value="[a-z]+">COM_ENGAGE_EMAIL_ACCENT_[A-Z]+<\/option>\s*){6}/', $cfg) === 1, 'el acento ofrece justo los 6 tonos del panel');
 $lay = $lee("$root/component/backend/src/Helper/SettingsLayout.php");
 t_ok(str_contains($lay, "[\$c, 'email_rich'], [\$c, 'email_confidential'], [\$c, 'email_accent']"), 'panel moderno: grupo Notificaciones');

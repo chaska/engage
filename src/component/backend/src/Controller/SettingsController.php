@@ -80,7 +80,8 @@ class SettingsController extends BaseController
 				[$storage, 'save'],
 				[SettingsStorage::class, 'filter'],
 				fn(): array => ['captcha' => $storage->captchaPlugins()],
-				static function (string $s, string $k) use ($user): void { SettingsStorage::log($user, $s, $k); }
+				static function (string $s, string $k, ?string $old = null, ?string $new = null) use ($user, $storage): void { SettingsStorage::log($user, $s, $k, $old, $new, $storage); },
+				static fn(): bool => $user->authorise('core.admin', 'com_engage')
 			);
 
 			$r = $service->apply($scope, $key, $value);
