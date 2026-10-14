@@ -11,6 +11,7 @@
 #   S      lib/opciones-sensibles.php (0.9.1) core.options sin core.admin no cambia email_base_url ni el resto de opciones sensibles (panel moderno y com_config); auditoria; vista previa solo con core.admin
 #   N      lib/listas-navegador.js   (0.9.2) cada formulario de lista del backend en Chromium (la tarea vacia y «browse» no pueden volver a dar 403)
 #   N2     lib/admin-navegador.js    (0.9.3) rediseno .eg-admin de Comentarios, Plantillas de email y Edicion en Chromium: claro/oscuro x escritorio/movil, sin desbordamiento, sin estilos en linea, contraste, capturas en docs/img
+#   R      lib/rastreo-http.php, lib/rastreo-navegador.js (0.9.4) rastreo de robots: URL base indexable; variantes akengage_* con noindex, follow (meta y X-Robots-Tag), canonical a la base y rel nofollow en todos los enlaces; modulo; opcion apagada; clic de personas; semaforo del panel
 #   H6/H7  no tienen script propio: se comprueban con tests/41 (ficha del activo) y con 21-otros-componentes.sh (terceros con activos en #__assets); ejecute 21 aparte.
 # Ademas de este script hay que pasar: 05 (Gravatar con cache de pagina y Chromium), 03, 17, 19, 20, 21 y 04 (actualizacion).
 # Requisitos: 03-sembrar-y-probar.sh y el paquete actual instalado (02); MariaDB, SMTP de captura (00). Variables: PW_MODULE, CHROMIUM.
@@ -36,6 +37,9 @@ if [ -d "$PW" ] && [ -x "${CHROMIUM:-/opt/pw-browsers/chromium}" ]; then
 	php "$AQUI/lib/filtro-datos.php" crear >/dev/null && node "$AQUI/lib/listas-navegador.js" || rc=1
 	echo "== Navegador (Chromium): rediseno de Comentarios, Plantillas de email y Edicion, claro/oscuro x escritorio/movil (capturas en docs/img) - 0.9.3"
 	node "$AQUI/lib/admin-navegador.js" || rc=1
+	echo "== Rastreo de robots (0.9.4): URL base indexable, variantes con noindex/canonical/nofollow (HTTP) y las personas siguen pudiendo usarlo todo (Chromium)"
+	php "$AQUI/lib/rastreo-http.php" || rc=1
+	node "$AQUI/lib/rastreo-navegador.js" || rc=1
 	php "$AQUI/lib/filtro-datos.php" borrar >/dev/null
 	echo "== Navegador (Chromium): correos HTML en claro y oscuro, escritorio y movil (capturas en docs/img)"
 	node "$AQUI/lib/correos-navegador.js" || rc=1

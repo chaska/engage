@@ -53,7 +53,7 @@ final class SettingsLayout
 				[$c, 'filter_mode'], [$c, 'htmlpurifier_config_joomla'], [$c, 'htmlpurifier_configstring'], [$c, 'htmlpurifier_include'],
 			]],
 			['id' => 'advanced', 'icon' => 'wrench', 'tone' => 'slate', 'items' => [
-				[$c, 'workaround_mailtemplate'], [$c, 'iplookup'], [$c, 'max_spam_age'], [$c, 'loadCustomCss'], [$c, 'comments_reply_bad_ux'], [$c, 'pleaseWait'],
+				[$c, 'crawl_reduce'], [$c, 'workaround_mailtemplate'], [$c, 'iplookup'], [$c, 'max_spam_age'], [$c, 'loadCustomCss'], [$c, 'comments_reply_bad_ux'], [$c, 'pleaseWait'],
 			]],
 			['id' => 'permissions', 'icon' => 'lock', 'tone' => 'orange', 'items' => [], 'link' => 'permissions'],
 		];

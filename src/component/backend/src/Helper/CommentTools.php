@@ -27,7 +27,7 @@ final class CommentTools
 	 *
 	 * @param   callable|array  $get  array clave => valor, o funcion (clave, defecto) => valor
 	 *
-	 * @return array{sort_selector:bool,default_sort:string,copy_link:bool,show_badges:bool}
+	 * @return array{sort_selector:bool,default_sort:string,copy_link:bool,show_badges:bool,crawl_reduce:bool}
 	 */
 	public static function options($get): array
 	{
@@ -46,6 +46,7 @@ final class CommentTools
 			'default_sort'  => ListOrdering::defaultSort($read('default_sort', 'auto')),
 			'copy_link'     => $bool($read('copy_link', 1), true),
 			'show_badges'   => $bool($read('show_badges', 1), true),
+			'crawl_reduce'  => $bool($read('crawl_reduce', 1), true),
 		];
 	}
 
@@ -399,5 +400,94 @@ final class CommentTools
 		}
 
 		return $out;
+	}
+
+	/**
+	 * 0.9.4: ¿la peticion es una VARIANTE de la pagina (lleva algun parametro `akengage_*`: comentario, pagina, orden, favoritos, limite)?
+	 * Solo mira los NOMBRES de la consulta; nada de ellos llega al HTML.
+	 *
+	 * @param   array  $keys  Nombres de los parametros de la consulta (valores de cualquier tipo: se ignoran los que no son texto)
+	 */
+	public static function isVariant(array $keys): bool
+	{
+		foreach ($keys as $k)
+		{
+			if (is_string($k) && strncasecmp($k, 'akengage_', 9) === 0)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * 0.9.4: valor de la meta `robots` (y de la cabecera X-Robots-Tag) de una variante. «Solo mis favoritos» es personal: `noindex, nofollow`
+	 * siempre. Las demas variantes: `noindex, follow` (la pagina base sigue siendo alcanzable). Si el sitio ya puso `nofollow`, se respeta.
+	 * Devuelve null cuando no hay nada que cambiar (la URL base queda tal cual: indexable).
+	 *
+	 * @param   string  $existing   Valor que ya tuviera la meta robots ('' = ninguno)
+	 */
+	public static function robotsValue(bool $variant, bool $favorites, bool $reduce, string $existing = ''): ?string
+	{
+		if ($favorites)
+		{
+			return 'noindex, nofollow';
+		}
+
+		if (!$variant || !$reduce)
+		{
+			return null;
+		}
+
+		return (stripos($existing, 'nofollow') !== false) ? 'noindex, nofollow' : 'noindex, follow';
+	}
+
+	/**
+	 * 0.9.4: anade `nofollow` al `rel` de cada enlace `<a>` de un trozo de HTML que genera Joomla (la paginacion): conserva los valores que ya
+	 * hubiera (noopener...), no duplica y es idempotente. No toca nada que no sea la etiqueta de apertura `<a ...>`.
+	 */
+	public static function addNofollow(string $html): string
+	{
+		return (string) preg_replace_callback('~<a\b((?:[^>"\']|"[^"]*"|\'[^\']*\')*)>~i', static function (array $m): string {
+			$attrs = $m[1];
+
+			if (preg_match('~\srel\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s"\'>]+))~i', $attrs, $r, PREG_OFFSET_CAPTURE))
+			{
+				$value  = ($r[1][1] >= 0 ? $r[1][0] : ($r[2][1] >= 0 ? $r[2][0] : ($r[3][0] ?? '')));
+				$tokens = array_values(array_filter(preg_split('/\s+/', strtolower(trim($value))) ?: [], 'strlen'));
+
+				if (!in_array('nofollow', $tokens, true))
+				{
+					array_unshift($tokens, 'nofollow');
+				}
+
+				$attrs = substr($attrs, 0, $r[0][1]) . ' rel="' . htmlspecialchars(implode(' ', array_unique($tokens)), ENT_QUOTES, 'UTF-8') . '"' . substr($attrs, $r[0][1] + strlen($r[0][0]));
+
+				return '<a' . $attrs . '>';
+			}
+
+			return '<a' . $attrs . ' rel="nofollow">';
+		}, $html);
+	}
+
+	/**
+	 * 0.9.4: cuantas URLs DISTINTAS rastreables ofrece la pagina de un elemento con $comments comentarios publicados: una por cada fecha-enlace
+	 * permanente (`?akengage_cid=ID`), cada pagina de la lista en cada orden (sin orden + newest/oldest/top: 4 series) y los enlaces de orden y
+	 * de favoritos. Cada una carga el articulo entero y suma una visita en el contador de Joomla.
+	 *
+	 * @return array{cid:int,pages:int,series:int,pagination:int,tools:int,total:int}
+	 */
+	public static function crawlUrls(int $comments, int $pageSize, bool $reactions = true, bool $selector = true): array
+	{
+		$comments = max(0, $comments);
+		$pageSize = max(1, $pageSize);
+		$pages    = (int) ceil($comments / $pageSize);
+		$series   = $selector ? ($reactions ? 4 : 3) : 1;
+		$pagin    = ($pages > 1) ? $pages * $series : 0;
+		// Enlaces de la barra: un orden por modo (pagina 1) y el conmutador de favoritos (con y sin orden)
+		$tools    = ($selector && $comments >= 2) ? (($series - 1) + ($reactions ? $series : 0)) : 0;
+
+		return ['cid' => $comments, 'pages' => $pages, 'series' => $series, 'pagination' => $pagin, 'tools' => $tools, 'total' => $comments + $pagin + $tools];
 	}
 }

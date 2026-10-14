@@ -68,8 +68,10 @@ const LISTA_BLANCA = [
 		'($comment->depth < $this->maxLevel) ? $comment->id : $parentIds[$this->maxLevel - 1]' => 'ids enteros de la tabla',
 		'$copyHtml' => 'resultado de copyButtonHtml() (HTML propio ya escapado)',
 		'$this->badgesHtml($badges)' => 'ver SEGURAS_PREFIJO',
+		'$this->crawlRel()' => '0.9.4: literal fijo \' rel="nofollow"\' o vacio, elegido por la opcion',
 	],
 	'component/frontend/tmpl/comments/default.php' => [
+		'$this->paginationLinksHtml()' => '0.9.4: HTML de la paginacion de Joomla (escapado por Joomla) con rel="nofollow" anadido por CommentTools::addNofollow',
 		'$headerHtml' => 'cabecera de recuento: Text::plural con el titulo del contenido escapado (tests/13)',
 		'$sortActive ? \' is-active\' : \'\'' => 'literales', '$sortActive ? \' aria-current="true"\' : \'\'' => 'literales',
 		'$favView ? \' is-active\' : \'\'' => 'literales', '$favView ? \' aria-current="true"\' : \' hidden\'' => 'literales',

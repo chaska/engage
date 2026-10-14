@@ -57,9 +57,9 @@ t_ok(L::frontendColumn('reaction_score') === 'c.created', 'ni en la del listado 
 
 echo "B) CommentTools::options y resolve()\n";
 $def = T::options([]);
-t_ok($def === ['sort_selector' => true, 'default_sort' => 'auto', 'copy_link' => true, 'show_badges' => true], 'valores por defecto: selector, enlace e insignias activos; orden inicial automatico');
+t_ok($def === ['sort_selector' => true, 'default_sort' => 'auto', 'copy_link' => true, 'show_badges' => true, 'crawl_reduce' => true], 'valores por defecto: selector, enlace e insignias activos; orden inicial automatico');
 $o = T::options(['sort_selector' => '0', 'copy_link' => 0, 'show_badges' => '0', 'default_sort' => 'top']);
-t_ok($o === ['sort_selector' => false, 'default_sort' => 'top', 'copy_link' => false, 'show_badges' => false], 'se puede apagar todo');
+t_ok($o === ['sort_selector' => false, 'default_sort' => 'top', 'copy_link' => false, 'show_badges' => false, 'crawl_reduce' => true], 'se puede apagar todo');
 $o = T::options(['sort_selector' => 'yes', 'copy_link' => [1], 'show_badges' => '2', 'default_sort' => ['top']]);
 t_ok($o === $def, 'valores ajenos (yes, array, 2) vuelven al valor por defecto');
 $o = T::options(fn($k, $d) => $k === 'default_sort' ? "top\n" : $d);
@@ -353,7 +353,7 @@ t_ok(str_contains($ctl, 'CommentTools::PARAM_SORT') && str_contains($ctl, "'raw'
 t_ok(str_contains($ctl, "setState('filter.favorite_user', (int) \$identity->id)"), 'el usuario de los favoritos sale de la sesion (nunca de la peticion)');
 t_ok(str_contains($ctl, 'ReactionsController::canView($identity, $assetId)') && str_contains($ctl, '$this->disableJoomlaCache()') && str_contains($ctl, "setHeader('Vary', 'Cookie'"), 'favoritos: comprueba que el usuario ve el contenido, desactiva la cache y anade Vary: Cookie');
 t_ok(str_contains($ctl, "setState('filter.enabled', 1)"), 'favoritos: solo comentarios publicados, tambien para moderadores');
-t_ok(str_contains($view, "setMetaData('robots', 'noindex, nofollow')") && str_contains($view, "addHeadLink("), 'favoritos con noindex,nofollow; orden con enlace canonico');
+t_ok(str_contains($view, 'robotsValue($variant, $favorites, $reduce') && str_contains($view, "addHeadLink("), 'favoritos con noindex,nofollow; orden con enlace canonico');
 t_ok(!preg_match('/innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval\(|new Function|setAttribute\(\s*["\']style|\.style\.cssText|XMLHttpRequest|importScripts|\.src\s*=/i', $js), 'tools.js: sin innerHTML, eval, estilos en linea, red ni scripts dinamicos');
 t_ok(!preg_match('/https?:\/\/(?!\*)/i', preg_replace('~/\*.*?\*/~s', '', $js)) , 'tools.js: ninguna URL externa');
 t_ok(str_contains($js, 'navigator.clipboard') && str_contains($js, 'execCommand("copy")') && str_contains($js, 'role", "status"') && str_contains($js, 'aria-live') && !preg_match('/\b(alert|confirm|prompt)\s*\(/', preg_replace('~/\*.*?\*/~s', '', $js)), 'tools.js: Clipboard API con alternativa execCommand, region role=status/aria-live y sin alert/confirm');
