@@ -92,32 +92,12 @@ const LISTA_BLANCA = [
 		'$commentBody' => 'texto del comentario pasado por processCommentTextForDisplay (HtmlFilter/Purifier)',
 	],
 	'component/backend/tmpl/comments/default.php' => [
-		'$i % 2' => 'entero', '$item->id' => 'id entero de la tabla', '$ip' => 'ya escapado con $this->escape() al construirlo (con <wbr>)',
 		'$excerpt' => 'extracto del texto del comentario ya pasado por HTML Purifier', '$processedComment' => 'texto pasado por HTML Purifier',
-		'$jBrowser->isMobile() ? \'mobile\' : \'desktop\'' => 'literales', '$jBrowser->isMobile() ? \'mobile-alt\' : \'desktop\'' => 'literales',
-		'!empty($item->ip) ? \'flex-shrink-1\' : \'\'' => 'literales',
-		'Text::_(\'COM_ENGAGE_COMMENTS_LBL_BROWSERTYPE_\' . ($jBrowser->isMobile() ? \'mobile\' : \'desktop\'))' => 'clave de idioma con sufijo fijo',
-		'Route::_(\'index.php?option=com_engage&view=comments\')' => 'ruta fija',
-		'Route::_(\'index.php?option=com_engage&view=comments&filter[search]=ip:\' . urlencode($item->ip) . \'&limitstart=0\')' => 'la IP va con urlencode',
-		'Route::_(\'index.php?option=com_engage&view=comment&task=edit&id=\' . $item->id)' => 'id entero',
-		'Route::_(\'index.php?option=com_engage&view=comments&filter.asset_id=\' . $item->asset_id . \'&limitstart=0\')' => 'asset_id entero de la tabla',
-		'Route::_(\'index.php?option=com_engage&view=comments&filter.asset_id=&limitstart=0\')' => 'ruta fija',
-		'Text::_(\'JSEARCH_FILTER_LABEL\') . \' \' . $this->escape($item->ip)' => 'la IP va escapada',
-		'Factory::getDate($item->created)->format(Text::_(\'DATE_FORMAT_LC2\'), true, true)' => 'fecha formateada',
 		'LayoutHelper::render(\'joomla.searchtools.default\', [\'view\' => $this])' => 'capa de Joomla',
 	],
 	'component/backend/tmpl/comments/emptystate.php' => [],
 	'component/backend/layout/akeeba/engage/user.php' => [
 		'$email' => 'ya escapado con $this->escape() al construirlo (con <wbr>)',
-	],
-	'component/backend/tmpl/comment/edit.php' => [
-		'Route::_(\'index.php?option=com_engage&view=comment&layout=edit&id=\' . $this->item->id)' => 'id entero',
-		'Text::_($info->label)' => 'clave de idioma de una lista fija del formulario',
-	],
-	'component/backend/tmpl/emailtemplates/default.php' => [
-		'Route::_(\'index.php?option=com_mails&filter[extension]=com_engage\')' => 'ruta fija',
-		'Route::_(\'index.php?option=com_engage&view=Emailtemplates&task=updateEmails&\' . $token . \'=1\')' => 'token de Joomla (hex)',
-		'Route::_(\'index.php?option=com_engage&view=Emailtemplates&task=resetEmails&\' . $token . \'=1\')' => 'token de Joomla (hex)',
 	],
 	'component/backend/tmpl/common/errorhandler.php' => [
 		'$db->getName()' => 'texto del controlador de base de datos (constante)', '$db->getServerType()' => 'idem', '$db->getVersion()' => 'idem',

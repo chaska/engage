@@ -34,7 +34,7 @@ $v = $lee("$root/src/View/Comments/HtmlView.php");
 t_ok(str_contains($v, 'public const MAX_META_ASSETS = 50;') && preg_match('/count\(\$this->metaSeen\) >= self::MAX_META_ASSETS.*?return \[.type. => .unknown./s', $v) === 1 && str_contains($v, 'Meta::getAssetAccessMeta($assetId, false)'), 'vista: tope de activos distintos consultados por pagina (cache por activo en Meta)');
 $tp = $lee("$root/tmpl/comments/default.php");
 t_ok(str_contains($tp, '$this->itemMeta((int) $item->asset_id)') && !str_contains($tp, 'Meta::getAssetAccessMeta('), 'la plantilla usa itemMeta (con tope), no llama a los plugins directamente');
-t_ok(substr_count($tp, "COM_ENGAGE_COMMENTS_LBL_ITEM_UNAVAILABLE', (int) \$item->asset_id") >= 3 && str_contains($tp, '$this->escape($meta[\'title\']') && str_contains($tp, '$this->escape($item->article_title)'), 'titulo escapado; «Elemento no disponible (asset N)» con el numero como entero');
+t_ok(substr_count($tp, "COM_ENGAGE_COMMENTS_LBL_ITEM_UNAVAILABLE', (int) \$item->asset_id") >= 3 && str_contains($tp, '$e($mTitle)') && str_contains($tp, '$e($item->article_title)'), 'titulo escapado; «Elemento no disponible (asset N)» con el numero como entero');
 t_ok(!preg_match('/<\?=\s*\$meta\[[^\]]+\]\s*\?>/', $tp) && !preg_match('/<\?=\s*\$item->(article_title|name)\s*\?>/', $tp), 'ningun dato de ficha sin escapar');
 $fx = $lee("$root/forms/filter_comments.xml");
 t_ok(preg_match('/name="itemtype"\s+type="itemtype"/', $fx) === 1 && str_contains($fx, 'COM_ENGAGE_COMMENTS_FILTER_STATUS_ALL'), 'formulario del filtro: tipo de elemento y «Todos» en el estado');

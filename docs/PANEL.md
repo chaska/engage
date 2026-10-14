@@ -150,6 +150,19 @@ Joomla da acceso a la pantalla de Opciones de un componente con `core.admin` **o
 
 Opciones en **Opciones > Notificaciones**: «Diseño HTML enriquecido en los correos» (Sí/No, Sí por defecto), «Mostrar aviso de confidencialidad» (Sí/No, Sí por defecto) y «Color de acento de los correos» (lista cerrada de seis tonos). Desde el panel de control, el botón **Vista previa de los correos y correo de prueba** abre la vista previa (sin enviar nada ni hacer peticiones externas) y permite enviarse un correo de prueba a uno mismo (POST + token + `core.admin`, uno por minuto). Detalles, texto del aviso y cómo cambiarlo en [`CORREOS.md`](CORREOS.md).
 
+## Rediseño de Comentarios, Plantillas de email y Edición (0.9.3)
+
+Las tres pantallas usan el diseño `.eg-admin` del panel (variables de `panel.css`, hoja `admin-lists.css`): se adaptan al tema claro u oscuro de Joomla, son accesibles (estado con color y texto, foco visible, contraste mínimo 4,5), sin estilos en línea, sin recursos externos y sin Gravatar (avatar de iniciales). En escritorio la lista es una tabla compacta; en móvil cada comentario es una tarjeta. Arriba, el filtro «Tipo de elemento» (con recuento) y, debajo, «Elemento».
+
+| | Claro | Oscuro |
+|---|---|---|
+| Comentarios, escritorio | ![](img/admin-comentarios-claro-escritorio.png) | ![](img/admin-comentarios-oscuro-escritorio.png) |
+| Comentarios, móvil | ![](img/admin-comentarios-claro-movil.png) | ![](img/admin-comentarios-oscuro-movil.png) |
+| Plantillas de email, escritorio | ![](img/admin-plantillas-claro-escritorio.png) | ![](img/admin-plantillas-oscuro-escritorio.png) |
+| Plantillas de email, móvil | ![](img/admin-plantillas-claro-movil.png) | ![](img/admin-plantillas-oscuro-movil.png) |
+| Edición, escritorio | ![](img/admin-edicion-claro-escritorio.png) | ![](img/admin-edicion-oscuro-escritorio.png) |
+| Edición, móvil | ![](img/admin-edicion-claro-movil.png) | ![](img/admin-edicion-oscuro-movil.png) |
+
 ## Lista de comentarios del administrador (0.8.5)
 
 - **Tipo de elemento:** filtro con los tipos que realmente tienen comentarios (Artículos y, de cada tercero, `com_xxx.tipo (de terceros)`). Lista cerrada: un valor que no esté en ella se ignora.
