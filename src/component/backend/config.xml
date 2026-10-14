@@ -4,7 +4,7 @@
   ~ @copyright Copyright (c)2020-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
   ~ @license   GNU General Public License version 3, or later
   -->
-<config>
+<config addruleprefix="Akeeba\Component\Engage\Administrator\Rule">
     <inlinehelp button="show"/>
     <fieldset
             name="basic"
@@ -43,11 +43,12 @@
 
         <field
                 name="captcha"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::captcha"
+               validate="adminonly"
                 type="plugins"
                 label="COM_ENGAGE_CONFIG_CAPTCHA_LABEL"
                 description="COM_ENGAGE_CONFIG_CAPTCHA_DESC"
                 folder="captcha"
-                filter="cmd"
                 useglobal="true"
         >
             <option value="-1">JOPTION_DO_NOT_USE</option>
@@ -55,6 +56,8 @@
 
         <field
                 name="captcha_for"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::captcha_for"
+               validate="adminonly"
                 type="list"
                 label="COM_ENGAGE_CONFIG_CAPTCHA_FOR_LABEL"
                 description="COM_ENGAGE_CONFIG_CAPTCHA_FOR_DESC"
@@ -469,6 +472,8 @@
         <field
                 type="list"
                 name="filter_mode"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::filter_mode"
+               validate="adminonly"
                 default="strict"
                 label="COM_ENGAGE_CONFIG_FILTER_MODE_LABEL"
                 description="COM_ENGAGE_CONFIG_FILTER_MODE_DESC">
@@ -479,6 +484,8 @@
 
         <field
                 name="htmlpurifier_config_joomla"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::htmlpurifier_config_joomla"
+               validate="adminonly"
                 type="radio"
                 layout="joomla.form.field.radio.switcher"
                 label="COM_ENGAGE_CONFIG_HTMLPURIFIER_CONFIG_JOOMLA_LABEL"
@@ -492,6 +499,8 @@
 
         <field
                 name="htmlpurifier_configstring"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::htmlpurifier_configstring"
+               validate="adminonly"
                 type="textarea"
                 default="p,b,a[href],i,u,strong,em,small,big,span[style],font[size],font[color],ul,ol,li,br,img[src],img[width],img[height],code,pre,blockquote"
                 class="input-xlarge"
@@ -509,6 +518,8 @@
             description="COM_ENGAGE_CONFIG_ADVANCED_FIELDSET_DESC"
     >
         <field name="email_base_url"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::email_base_url"
+               validate="adminonly"
                type="text"
                label="COM_ENGAGE_CONFIG_EMAIL_BASE_URL_LABEL"
                description="COM_ENGAGE_CONFIG_EMAIL_BASE_URL_DESC"
@@ -518,8 +529,17 @@
         />
 
         <field name="email_base_learned"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::email_base_learned"
+               validate="adminonly"
                type="hidden"
                default=""
+        />
+
+        <field name="email_base_audit"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::email_base_audit"
+               validate="adminonly"
+               type="hidden"
+               default="-"
         />
 
         <field name="email_rich"
@@ -534,6 +554,8 @@
         </field>
 
         <field name="email_confidential"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::email_confidential"
+               validate="adminonly"
                type="radio"
                label="COM_ENGAGE_CONFIG_EMAIL_CONFIDENTIAL_LABEL"
                description="COM_ENGAGE_CONFIG_EMAIL_CONFIDENTIAL_DESC"
@@ -593,6 +615,8 @@
 
         <field
                 name="iplookup"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::iplookup"
+               validate="adminonly"
                 type="text"
                 default="https://whatismyipaddress.com/ip/%s"
                 label="COM_ENGAGE_CONFIG_IPLOOKUP_LABEL"
@@ -621,6 +645,8 @@
 
         <field
                 name="htmlpurifier_include"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::htmlpurifier_include"
+               validate="adminonly"
                 type="list"
                 default="composer"
                 label="COM_ENGAGE_CONFIG_HTMLPURIFIER_INCLUDE_LABEL"

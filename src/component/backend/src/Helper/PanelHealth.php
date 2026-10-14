@@ -121,9 +121,24 @@ final class PanelHealth
 		return false;
 	}
 
-	private static function item(string $id, string $level, array $args = [], ?array $fix = null): array
+	private static function item(string $id, string $level, array $args = [], ?array $fix = null, array $note = []): array
 	{
-		return ['id' => $id, 'level' => $level, 'args' => $args, 'fix' => $fix];
+		return ['id' => $id, 'level' => $level, 'args' => $args, 'fix' => $fix, 'note' => $note];
+	}
+
+	/** 0.9.1: parses the note of the last change of the base URL option: [user, date, old, new] or [] (nothing or not valid). */
+	public static function auditNote(string $json): array
+	{
+		$a = json_decode($json, true);
+
+		if (!is_array($a) || !isset($a['u'], $a['t'], $a['o'], $a['n']) || !is_string($a['u']) || !is_string($a['t']) || !is_string($a['o']) || !is_string($a['n']))
+		{
+			return [];
+		}
+
+		$clean = static fn(string $v): string => (string) preg_replace('/[^A-Za-z0-9:\/._~%\-\[\]@() ]/', '?', mb_substr($v, 0, 200));
+
+		return [$clean($a['u']), $clean($a['t']), $clean($a['o']), $clean($a['n'])];
 	}
 
 	private static function plugin(array $f, string $key): array
@@ -171,17 +186,19 @@ final class PanelHealth
 			return self::item('plugin_email', self::WARN, ['state' => 'disabled'], self::pluginFix($f, $p));
 		}
 
+		$note = self::auditNote((string) ($f['base_audit'] ?? ''));
+
 		// 0.8.3: the links of the emails (moderation, unsubscribe, link to the comment) are only built on the live_site configured in Joomla's
 		// configuration.php; without it the emails carry no links at all (the Host header of a request is not trusted). Unknown (missing fact) = no warning.
 		if (array_key_exists('trusted_base', $f) && !$f['trusted_base'])
 		{
-			return self::item('plugin_email', self::WARN, ['state' => 'nobase']);
+			return self::item('plugin_email', self::WARN, ['state' => 'nobase'], null, $note);
 		}
 
 		// 0.8.4: an option that is filled in but not valid is ignored: say so (amber), even if another source rescues the links
 		if (!empty($f['base_option_bad']))
 		{
-			return self::item('plugin_email', self::WARN, ['state' => 'badoption', 'url' => (string) ($f['base_url'] ?? '')]);
+			return self::item('plugin_email', self::WARN, ['state' => 'badoption', 'url' => (string) ($f['base_url'] ?? '')], null, $note);
 		}
 
 		// 0.8.4: show which base is used and where it comes from
@@ -189,10 +206,10 @@ final class PanelHealth
 
 		if ($state !== '' && (string) ($f['base_url'] ?? '') !== '')
 		{
-			return self::item('plugin_email', self::OK, ['state' => $state, 'url' => (string) $f['base_url']]);
+			return self::item('plugin_email', self::OK, ['state' => $state, 'url' => (string) $f['base_url']], null, $note);
 		}
 
-		return self::item('plugin_email', self::OK);
+		return self::item('plugin_email', self::OK, [], null, $note);
 	}
 
 	private static function pluginCache(array $f): array

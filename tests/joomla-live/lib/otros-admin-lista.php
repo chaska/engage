@@ -24,6 +24,7 @@ register_shutdown_function(function () use ($plugEstado) {
 q("DELETE FROM jos_engage_comments WHERE name LIKE 'R4N-%'"); q("DELETE FROM jos_assets WHERE id BETWEEN 920001 AND 920060");
 $ins = function (int $asset, int $en, string $name) { q("INSERT INTO jos_engage_comments (asset_id,parent_id,body,name,email,ip,user_agent,enabled,created,created_by) VALUES ($asset,NULL,'<p>R4B $name</p>','$name','r4@example.invalid','203.0.113.9','t',$en,'2026-09-02 10:00:00',0)"); global $db; return (int) $db->insert_id; };
 $idUnpub = $ins(900001, 0, 'R4N-UNPUB'); $idPoss = $ins(900002, -3, 'R4N-POSSIBLE'); $idSpam = $ins(900003, -2, 'R4N-SPAM'); $idOrf = $ins(999990, 1, 'R4N-ORFANO');
+$artAsset = (int) one("SELECT asset_id FROM jos_content WHERE asset_id > 0 ORDER BY id LIMIT 1"); if ($artAsset) { $ins($artAsset, 1, 'R4N-ARTICULO'); } // con al menos un comentario de articulo (otras pruebas los borran)
 for ($i = 1; $i <= 60; $i++) { $a = 920000 + $i; q("INSERT INTO jos_assets (id, parent_id, lft, rgt, level, name, title, rules) VALUES ($a, 1, " . (2 * $a) . ", " . (2 * $a + 1) . ", 1, 'com_tercero.item.$a', 'Activo $a', '{}')"); $ins($a, 1, "R4N-CAP-$i"); }
 $adm = new Cliente($BASE, "$WORK/tmp", 'r4lista'); $ok = $adm->loginAdmin('admintest', $AP);
 r('L-00', 'Sesion de Super User en la administracion', $ok);

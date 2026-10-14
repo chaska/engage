@@ -128,6 +128,24 @@ El apilado ya no depende del número de opciones sino del ancho real del texto (
 
 Prueba: `tests/joomla-live/14-opciones-segmentados.sh`.
 
+## Opciones sensibles (0.9.1): qué permiso hace falta para cambiarlas
+
+Joomla da acceso a la pantalla de Opciones de un componente con `core.admin` **o** `core.options`. Con la 0.9.1, las opciones que alimentan enlaces, URL, el filtrado del HTML o la protección antispam, o que escribe Engage por su cuenta, exigen **`core.admin`** (superadministrador de Engage); el resto sigue necesitando solo `core.admin` o `core.options`. La regla se aplica por **todas** las vías: el panel moderno (`settings.save`), el formulario de Opciones de Joomla (`com_config`) y la API de servicios web de Joomla (todas pasan por el filtro de campo `AdminOnlyFilter` de `config.xml`); sin `core.admin`, un valor enviado se descarta y se conserva el guardado (y queda anotado en el registro de Joomla).
+
+| Opción | Permiso | Por qué |
+|---|---|---|
+| `email_base_url` (URL base de los enlaces) | **core.admin** | Con ella se construyen los enlaces **firmados** de moderación y baja de los correos: apuntarla a otro dominio permitiría capturar los tokens. Cada cambio queda en el registro de acciones (usuario, valor anterior y nuevo, saneados) y en una nota del semáforo «Correos de aviso» |
+| `email_base_learned` (base aprendida) | **nadie por formulario** | La escribe solo Engage (primera visita de un administrador al panel); ni el panel moderno ni `com_config` ni la API la cambian (ni siquiera `core.admin`); se borra con «Olvidar la dirección aprendida» |
+| `email_base_audit` (nota del último cambio) | **nadie por formulario** | La escribe Engage al cambiarse `email_base_url` |
+| `email_confidential` (aviso de confidencialidad) | **core.admin** | Es el texto legal de los correos |
+| `iplookup` (enlace de consulta de la IP) | **core.admin** | URL que se abre desde la administración |
+| `filter_mode`, `htmlpurifier_config_joomla`, `htmlpurifier_configstring`, `htmlpurifier_include` | **core.admin** | Gobiernan cómo se limpia el HTML de los comentarios (XSS) |
+| `captcha`, `captcha_for` | **core.admin** | Protección antispam |
+| `email_rich`, `email_accent`, `email_include_links` | core.admin o core.options | Cerrados en lista (1/0 o los 6 tonos); no inyectan nada; apagar los enlaces los reduce |
+| `tos_accept`, `tos_prompt` | core.admin o core.options | Texto de aceptación de condiciones (se filtra como HTML seguro) |
+| Resto de opciones de diseño, moderación, reacciones y avanzadas (`default_publish`, `min_length`, `theme`, `loadCustomCss`…) | core.admin o core.options | Sin efecto sobre enlaces, URL ni HTML de correos |
+| Opciones de los plugins de Engage (clave de Akismet, Gravatar, correo) | `core.manage` y `core.edit` de `com_plugins` | Se cambian con el permiso de edición de plugins; la clave de Akismet se valida con `^[A-Za-z0-9]{8,32}$` y las URL de Gravatar con las reglas de la 0.8.3 |
+
 ## Correos: diseño HTML, aviso de confidencialidad, vista previa (0.9.0)
 
 Opciones en **Opciones > Notificaciones**: «Diseño HTML enriquecido en los correos» (Sí/No, Sí por defecto), «Mostrar aviso de confidencialidad» (Sí/No, Sí por defecto) y «Color de acento de los correos» (lista cerrada de seis tonos). Desde el panel de control, el botón **Vista previa de los correos y correo de prueba** abre la vista previa (sin enviar nada ni hacer peticiones externas) y permite enviarse un correo de prueba a uno mismo (POST + token + `core.admin`, uno por minuto). Detalles, texto del aviso y cómo cambiarlo en [`CORREOS.md`](CORREOS.md).

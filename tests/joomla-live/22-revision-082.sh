@@ -8,6 +8,7 @@
 #   H8     lib/revision-082-h8.php   ACL de updateEmails / resetEmails
 #   H10    lib/revision-082-h10.php  opcion «Incluir enlaces en los correos» (email_include_links): ACL y validacion del guardado, correos capturados a moderador y a suscriptor con 1 y con 0, plantilla por defecto y personalizada, sin live_site
 #   C      lib/correos-html.php      (0.9.0) correos con diseño HTML enriquecido y aviso de confidencialidad: 4 combinaciones de opciones x es/en x moderador/suscriptor, plantilla por defecto y personalizada hostil, vista previa y correo de prueba; lib/correos-navegador.js los renderiza en Chromium
+#   S      lib/opciones-sensibles.php (0.9.1) core.options sin core.admin no cambia email_base_url ni el resto de opciones sensibles (panel moderno y com_config); auditoria; vista previa solo con core.admin
 #   H6/H7  no tienen script propio: se comprueban con tests/41 (ficha del activo) y con 21-otros-componentes.sh (terceros con activos en #__assets); ejecute 21 aparte.
 # Ademas de este script hay que pasar: 05 (Gravatar con cache de pagina y Chromium), 03, 17, 19, 20, 21 y 04 (actualizacion).
 # Requisitos: 03-sembrar-y-probar.sh y el paquete actual instalado (02); MariaDB, SMTP de captura (00). Variables: PW_MODULE, CHROMIUM.
@@ -22,6 +23,8 @@ for s in h1 h2 h4 h8 h10 h11; do
 done
 echo "== correos HTML (0.9.0)"
 php "$AQUI/lib/correos-html.php" || rc=1
+echo "== opciones sensibles (0.9.1): core.options sin core.admin"
+php "$AQUI/lib/opciones-sensibles.php" || rc=1
 PW="${PW_MODULE:-/opt/node-tools/node_modules/playwright}"
 if [ -d "$PW" ] && [ -x "${CHROMIUM:-/opt/pw-browsers/chromium}" ]; then
 	export PW_MODULE="$PW" CHROMIUM="${CHROMIUM:-/opt/pw-browsers/chromium}"

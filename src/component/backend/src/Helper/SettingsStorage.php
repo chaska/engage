@@ -205,11 +205,76 @@ final class SettingsStorage
 		return (string) InputFilter::getInstance()->clean($value, preg_match('/^[a-z_]+$/i', $filter) === 1 ? $filter : 'string');
 	}
 
-	/** Registro de acciones, solo si el plugin de registro de Engage esta activado. Nunca incluye el valor (puede ser una clave). */
-	public static function log(User $user, string $scope, string $key): void
+	/** A value for a log: only URL-ish characters, at most 200; everything else becomes «?». */
+	public static function safeValue(?string $v): string
 	{
+		$v = (string) $v;
+
+		return $v === '' ? '(empty)' : (string) preg_replace('/[^A-Za-z0-9:\/._~%\-\[\]@]/', '?', mb_substr($v, 0, 200));
+	}
+
+	/** Joomla log entry (category com_engage) and, for the base URL, the note shown in the dashboard (`email_base_audit`). */
+	public static function auditChange(User $user, string $scope, string $key, ?string $old, ?string $new, ?self $storage = null): void
+	{
+		try
+		{
+			\Joomla\CMS\Log\Log::add(sprintf('Setting %s/%s changed by user #%d (%s): %s -> %s', $scope, $key, (int) $user->id, self::safeValue((string) $user->username), self::safeValue($key === 'email_base_url' ? $old : '(hidden)'), self::safeValue($key === 'email_base_url' ? $new : '(hidden)')), \Joomla\CMS\Log\Log::NOTICE, 'com_engage');
+		}
+		catch (\Throwable $e)
+		{
+		}
+
+		if ($key === 'email_base_url' && $storage !== null)
+		{
+			try
+			{
+				$params                     = $storage->load($scope);
+				$params['email_base_audit'] = self::auditRecord($user, (string) $old, (string) $new);
+				$storage->save($scope, $params);
+			}
+			catch (\Throwable $e)
+			{
+			}
+		}
+	}
+
+	/** JSON note: who, when, old and new value (sanitised). */
+	public static function auditRecord(User $user, string $old, string $new, ?int $now = null): string
+	{
+		return (string) json_encode(['u' => self::safeValue((string) $user->username), 'i' => (int) $user->id, 't' => gmdate('Y-m-d H:i', $now ?? time()), 'o' => self::safeValue($old), 'n' => self::safeValue($new)]);
+	}
+
+	/** Registro de acciones, solo si el plugin de registro de Engage esta activado. Nunca incluye el valor (puede ser una clave). */
+	public static function log(User $user, string $scope, string $key, ?string $old = null, ?string $new = null, ?self $storage = null): void
+	{
+		$sensitive = SettingsSchema::requiresAdmin($scope, $key);
+
+		// 0.9.1: a change of a sensitive setting is always recorded (Joomla log) with the user and the old and new values, sanitised
+		if ($sensitive)
+		{
+			self::auditChange($user, $scope, $key, $old, $new, $storage);
+		}
+
 		if (!PluginHelper::isEnabled('actionlog', 'engage') || $user->guest)
 		{
+			return;
+		}
+
+		if ($sensitive)
+		{
+			$app   = Factory::getApplication();
+			$model = $app->bootComponent('com_actionlogs')->getMVCFactory()->createModel('Actionlog', 'Administrator', ['ignore_request' => true]);
+			$model->addLog([[
+				'title'       => $key,
+				'setting'     => $key,
+				'scope'       => $scope,
+				'old'         => self::safeValue($key === 'email_base_url' ? $old : '(hidden)'),
+				'new'         => self::safeValue($key === 'email_base_url' ? $new : '(hidden)'),
+				'userid'      => $user->id,
+				'username'    => $user->username,
+				'accountlink' => 'index.php?option=com_users&task=user.edit&id=' . $user->id,
+			]], 'COM_ENGAGE_USERLOG_SETTING_CHANGED_VALUE', 'com_engage', $user->id);
+
 			return;
 		}
 

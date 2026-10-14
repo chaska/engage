@@ -75,9 +75,95 @@ final class EmailWrapper
 			return ['content' => '', 'legal' => ''];
 		}
 
+		// 0.9.1: libxml gives up on deeply nested HTML (and would return nothing, losing the buttons): such a message is not decorated, it is
+		// reduced to sanitised text plus its buttons
+		if (self::maxDepth($html) > self::MAX_DEPTH)
+		{
+			return self::fallback($html, $accent);
+		}
+
+		$res = self::contentDom($html, $accent);
+
+		if ($res['content'] === '')
+		{
+			return self::fallback($html, $accent);
+		}
+
+		return $res;
+	}
+
+	/** Deepest nesting of non-void elements (a quick scan, no DOM). */
+	public static function maxDepth(string $html): int
+	{
+		$void = ['meta' => 1, 'br' => 1, 'hr' => 1, 'img' => 1, 'input' => 1, 'link' => 1, 'col' => 1, 'area' => 1, 'base' => 1, 'wbr' => 1, 'source' => 1, 'embed' => 1, 'param' => 1, 'track' => 1];
+		$d    = 0;
+		$max  = 0;
+
+		if (preg_match_all('#<(/?)([a-zA-Z][a-zA-Z0-9]*)(?:[^>"\']|"[^"]*"|\'[^\']*\')*?(/?)>#', $html, $m, PREG_SET_ORDER) === false)
+		{
+			return PHP_INT_MAX;
+		}
+
+		foreach ($m as [$all, $close, $name, $self])
+		{
+			if ($self === '/' || isset($void[strtolower($name)]))
+			{
+				continue;
+			}
+
+			$d = $close === '/' ? max(0, $d - 1) : $d + 1;
+			$max = max($max, $d);
+		}
+
+		return $max;
+	}
+
+	public const MAX_DEPTH = 64;
+
+	/** Reduction of a message that cannot be processed as a DOM: sanitised text and the moderation buttons found by a flat scan. Never empty. */
+	private static function fallback(string $html, string $accent): array
+	{
+		$noCode = preg_replace('#<(script|style|head|title|template|noscript)\b.*?</\1\s*>#is', ' ', $html) ?? $html;
+		$noCode = preg_replace('#<(br|/p|/div|/li|/tr|/h[1-6])\b[^>]*>#i', "\n", $noCode) ?? $noCode;
+		$text   = trim((string) preg_replace("/[ \t]*\n[ \t\n]*/", "\n", html_entity_decode(strip_tags($noCode), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+		$text   = mb_substr($text, 0, 20000);
+		$out    = '<p style="margin:0 0 12px 0;">' . nl2br(htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), false) . '</p>';
+		$btn    = '';
+
+		if (preg_match_all('#<a\b([^>]*)>(.*?)</a\s*>#is', $html, $m, PREG_SET_ORDER) !== false)
+		{
+			$n = 0;
+
+			foreach ($m as [$all, $attrs, $label])
+			{
+				if ($n >= 12 || preg_match('/\bclass\s*=\s*["\'][^"\']*\bengageemail-button\b([^"\']*)["\']/i', $attrs, $cm) !== 1 || preg_match('/\bhref\s*=\s*(?:"([^"]*)"|\'([^\']*)\')/i', $attrs, $hm) !== 1)
+				{
+					continue;
+				}
+
+				$href = trim(html_entity_decode($hm[1] !== '' ? $hm[1] : ($hm[2] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+
+				if (!self::safeHref($href))
+				{
+					continue;
+				}
+
+				$classes = preg_split('/\s+/', 'engageemail-button ' . $cm[1], -1, PREG_SPLIT_NO_EMPTY) ?: [];
+				$txt     = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($label), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+				$btn    .= '<a href="' . htmlspecialchars($href, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" style="' . self::buttonStyle($classes, $accent) . '">' . htmlspecialchars(mb_substr($txt, 0, 80), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</a> ';
+				$n++;
+			}
+		}
+
+		return ['content' => $out . ($btn !== '' ? '<div>' . trim($btn) . '</div>' : ''), 'legal' => ''];
+	}
+
+	/** The DOM based cleaning. */
+	private static function contentDom(string $html, string $accent): array
+	{
 		$dom = new DOMDocument('1.0', 'UTF-8');
 		$prev = libxml_use_internal_errors(true);
-		$dom->loadHTML('<?xml encoding="UTF-8"><!DOCTYPE html><html><body><div id="engage-root">' . $html . '</div></body></html>', LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING);
+		$dom->loadHTML('<?xml encoding="UTF-8"><!DOCTYPE html><html><body><div id="engage-root">' . $html . '</div></body></html>', LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING | LIBXML_PARSEHUGE);
 		libxml_clear_errors();
 		libxml_use_internal_errors($prev);
 
@@ -90,7 +176,7 @@ final class EmailWrapper
 		}
 
 		// 1. Elements that never go to an email
-		foreach (['script', 'style', 'link', 'meta', 'base', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'form', 'input', 'button', 'select', 'textarea', 'svg', 'math', 'video', 'audio', 'source', 'track', 'canvas', 'title', 'head', 'img', 'picture', 'noscript', 'template'] as $tag)
+		foreach (['script', 'style', 'link', 'meta', 'base', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'form', 'input', 'button', 'select', 'textarea', 'svg', 'math', 'video', 'audio', 'source', 'track', 'canvas', 'title', 'head', 'img', 'picture', 'noscript', 'template', 'xmp', 'plaintext', 'noembed', 'noframes', 'area', 'map', 'param', 'marquee', 'listing', 'dialog', 'portal', 'slot', 'frame'] as $tag)
 		{
 			foreach (iterator_to_array($xp->query('.//' . $tag, $root)) as $n)
 			{
@@ -174,7 +260,7 @@ final class EmailWrapper
 		{
 			$name = strtolower($attr->nodeName);
 
-			if (!in_array($name, ['href', 'title', 'style', 'colspan', 'rowspan', 'width', 'height', 'align', 'valign', 'dir', 'lang', 'class'], true))
+			if (!in_array($name, ['href', 'title', 'style', 'colspan', 'rowspan', 'width', 'height', 'align', 'valign', 'dir', 'lang', 'class'], true) || ($name === 'href' && strtolower($el->nodeName) !== 'a'))
 			{
 				$el->removeAttribute($attr->nodeName);
 			}
@@ -185,11 +271,15 @@ final class EmailWrapper
 
 		if ($el->hasAttribute('style'))
 		{
-			$s = $el->getAttribute('style');
+			$clean = self::cleanStyle($el->getAttribute('style'));
 
-			if (preg_match('/url\s*\(|expression|@import|behaviou?r|javascript:|-moz-binding|[<>\\\\]/i', $s) === 1 || strlen($s) > 500)
+			if ($clean === '')
 			{
 				$el->removeAttribute('style');
+			}
+			else
+			{
+				$el->setAttribute('style', $clean);
 			}
 		}
 
@@ -234,24 +324,7 @@ final class EmailWrapper
 
 			if (in_array('engageemail-button', $classes, true))
 			{
-				$colour = '#ffffff';
-				$bg     = $accent;
-
-				if (in_array('engageemail-button-success', $classes, true))
-				{
-					$bg = self::ACCENTS['green'];
-				}
-				elseif (in_array('engageemail-button-warning', $classes, true))
-				{
-					$bg = self::ACCENTS['orange'];
-				}
-				elseif (in_array('engageemail-button-danger', $classes, true))
-				{
-					$bg = self::ACCENTS['red'];
-				}
-
-				$style = 'display:inline-block;margin:4px 6px 4px 0;padding:10px 16px;border-radius:6px;background-color:' . $bg . ';color:' . $colour . ';font-size:14px;font-weight:bold;line-height:1.2;text-decoration:none;text-align:center;';
-				$el->setAttribute('style', $style);
+				$el->setAttribute('style', self::buttonStyle($classes, $accent));
 
 				return;
 			}
@@ -274,6 +347,88 @@ final class EmailWrapper
 		{
 			$el->setAttribute('class', 'eg-cb');
 		}
+	}
+
+	/** Inline style of a button of Engage's templates, by its classes. */
+	public static function buttonStyle(array $classes, string $accent): string
+	{
+		$bg = $accent;
+
+		if (in_array('engageemail-button-success', $classes, true))
+		{
+			$bg = self::ACCENTS['green'];
+		}
+		elseif (in_array('engageemail-button-warning', $classes, true))
+		{
+			$bg = self::ACCENTS['orange'];
+		}
+		elseif (in_array('engageemail-button-danger', $classes, true))
+		{
+			$bg = self::ACCENTS['red'];
+		}
+
+		return 'display:inline-block;margin:4px 6px 4px 0;padding:10px 16px;border-radius:6px;background-color:' . $bg . ';color:#ffffff;font-size:14px;font-weight:bold;line-height:1.2;text-decoration:none;text-align:center;';
+	}
+
+	/** Properties that an inline style of a template or of a comment may keep (everything else is dropped). */
+	private const STYLE_PROPS = [
+		'color', 'background-color', 'font-weight', 'font-style', 'font-size', 'font-family', 'text-decoration', 'text-align', 'line-height', 'vertical-align',
+		'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left', 'padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
+		'border', 'border-top', 'border-right', 'border-bottom', 'border-left', 'border-color', 'border-width', 'border-style', 'border-radius',
+		'width', 'max-width', 'height', 'display', 'white-space', 'letter-spacing',
+	];
+
+	/**
+	 * Strict whitelist for the `style` attribute (0.9.1): only the properties of STYLE_PROPS, with values made of letters, digits, `#`, `%`, `.`, `,`, `-`,
+	 * spaces and the colour functions rgb()/rgba()/hsl()/hsla(); anything else (url(), image-set(), src(), cursor, position, expression, var(), attr()…)
+	 * is dropped declaration by declaration. Same idea as HtmlFilter::restrictStyles for the comments.
+	 */
+	public static function cleanStyle(string $style): string
+	{
+		if (strlen($style) > 1000 || preg_match('/[<>\\\\\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/', $style) === 1)
+		{
+			return '';
+		}
+
+		$out = [];
+
+		foreach (explode(';', $style) as $decl)
+		{
+			if (!str_contains($decl, ':'))
+			{
+				continue;
+			}
+
+			[$prop, $val] = array_map('trim', explode(':', $decl, 2));
+			$prop = strtolower($prop);
+			$val  = preg_replace('/\s*!important\s*$/i', '', $val) ?? '';
+
+			if (!in_array($prop, self::STYLE_PROPS, true) || $val === '' || strlen($val) > 120)
+			{
+				continue;
+			}
+
+			$probe = preg_replace('/\b(?:rgb|rgba|hsl|hsla)\(\s*[0-9.,%\s\/-]+\)/i', '', $val) ?? '';
+
+			if (preg_match('/^[A-Za-z0-9#%.,\- \'"]*$/', $probe) !== 1 || preg_match('/[()\'"]/', $probe) === 1 && $prop !== 'font-family')
+			{
+				continue;
+			}
+
+			if (preg_match('/url|image|src|expression|attr|var|env|calc|javascript|behaviou?r|binding|import/i', $val) === 1)
+			{
+				continue;
+			}
+
+			if ($prop === 'display' && !in_array(strtolower($val), ['block', 'inline', 'inline-block', 'none'], true))
+			{
+				continue;
+			}
+
+			$out[] = $prop . ':' . $val;
+		}
+
+		return $out ? implode(';', $out) . ';' : '';
 	}
 
 	/** Only http(s) and mailto addresses, without control characters or spaces, of reasonable length. */

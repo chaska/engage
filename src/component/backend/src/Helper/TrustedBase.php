@@ -164,7 +164,11 @@ final class TrustedBase
 		return ['origin' => $origin, 'root' => $origin . $path . '/', 'stored' => $origin . $path];
 	}
 
-	/** Loopback, private, link-local, reserved addresses, «localhost» and single-label names (intranet): not valid as the public address of a site. */
+	/**
+	 * Loopback, private, link-local, shared (CGNAT), documentation, benchmarking, multicast and other non-public addresses, «localhost» and
+	 * single-label names (intranet): not valid as the public address of a site. IPv6 is normalised with inet_pton, and the IPv4 addresses embedded in
+	 * IPv4-mapped (::ffff:a.b.c.d), IPv4-compatible (::/96), NAT64 (64:ff9b::/96) and 6to4 (2002::/16) addresses are checked as IPv4; Teredo is refused.
+	 */
 	public static function isInternalHost(string $host): bool
 	{
 		$host = strtolower(trim($host, '[]'));
@@ -174,19 +178,81 @@ final class TrustedBase
 			return $host === 'localhost' || str_ends_with($host, '.localhost') || !str_contains($host, '.');
 		}
 
-		if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false)
+		if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false)
+		{
+			return self::isInternalV4(ip2long($host));
+		}
+
+		$bin = @inet_pton($host);
+
+		if ($bin === false || strlen($bin) !== 16)
 		{
 			return true;
 		}
 
-		// IPv4-mapped / embedded IPv4 notation in IPv6
-		if (str_contains($host, ':') && str_contains($host, '.'))
+		$b = array_values(unpack('C*', $bin));
+		$zero12 = !array_filter(array_slice($b, 0, 12));
+		$v4 = static fn(int $o): int => ($b[$o] << 24) | ($b[$o + 1] << 16) | ($b[$o + 2] << 8) | $b[$o + 3];
+
+		if ($zero12)
+		{
+			// ::/96 (unspecified, loopback and IPv4-compatible)
+			return true;
+		}
+
+		if (!array_filter(array_slice($b, 0, 10)) && $b[10] === 0xff && $b[11] === 0xff)
+		{
+			return self::isInternalV4($v4(12));
+		}
+
+		if ($b[0] === 0x00 && $b[1] === 0x64 && $b[2] === 0xff && $b[3] === 0x9b)
+		{
+			// 64:ff9b::/96 NAT64 (embedded IPv4) and 64:ff9b:1::/48 (local use)
+			return $b[4] === 0 && $b[5] === 1 ? true : self::isInternalV4($v4(12));
+		}
+
+		if ($b[0] === 0x20 && $b[1] === 0x02)
+		{
+			return self::isInternalV4($v4(2));
+		}
+
+		if ($b[0] === 0x20 && $b[1] === 0x01 && $b[2] === 0x00 && $b[3] === 0x00)
+		{
+			return true; // Teredo
+		}
+
+		if ($b[0] === 0x20 && $b[1] === 0x01 && $b[2] === 0x0d && $b[3] === 0xb8)
+		{
+			return true; // documentation
+		}
+
+		return ($b[0] & 0xfe) === 0xfc || ($b[0] === 0xfe && ($b[1] & 0xc0) === 0x80) || $b[0] === 0xff || ($b[0] & 0xe0) === 0x00 || ($b[0] === 0x01 && !array_filter(array_slice($b, 1, 7)));
+	}
+
+	/** Non-public IPv4 ranges (RFC 6890 and friends) for an address given as an integer. */
+	private static function isInternalV4($ip): bool
+	{
+		if ($ip === false || $ip === null)
 		{
 			return true;
 		}
 
-		// IPv6 loopback, unspecified, link-local and unique local, spelled however
-		return str_contains($host, ':') && (preg_match('/^(?:0*:)*0*:0*[01]$/', $host) === 1 || preg_match('/^(?:fe[89ab]|f[cd])/', $host) === 1);
+		$ip = $ip & 0xFFFFFFFF;
+
+		foreach ([
+			['0.0.0.0', 8], ['10.0.0.0', 8], ['100.64.0.0', 10], ['127.0.0.0', 8], ['169.254.0.0', 16], ['172.16.0.0', 12], ['192.0.0.0', 24], ['192.0.2.0', 24],
+			['192.88.99.0', 24], ['192.168.0.0', 16], ['198.18.0.0', 15], ['198.51.100.0', 24], ['203.0.113.0', 24], ['224.0.0.0', 4], ['240.0.0.0', 4],
+		] as [$net, $bits])
+		{
+			$mask = $bits === 0 ? 0 : (0xFFFFFFFF << (32 - $bits)) & 0xFFFFFFFF;
+
+			if (($ip & $mask) === (ip2long($net) & $mask))
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

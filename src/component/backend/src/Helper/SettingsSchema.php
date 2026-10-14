@@ -29,6 +29,26 @@ final class SettingsSchema
 		'plg_engage_email'    => ['type' => 'plugin', 'element' => 'email', 'folder' => 'engage'],
 	];
 
+	/**
+	 * 0.9.1: options of com_engage that need `core.admin` (not just `core.options`) to be changed, by EVERY way (modern panel, Joomla's options form
+	 * and the web services API). They feed links, URLs, HTML filtering or the anti-spam protection, or are written by Engage itself. See docs/PANEL.md.
+	 * `NEVER_FORM` are the ones that no form can write (Engage writes them itself).
+	 */
+	public const ADMIN_ONLY = [
+		'com_engage' => [
+			'email_base_url', 'email_base_learned', 'email_base_audit', 'email_confidential', 'iplookup',
+			'filter_mode', 'htmlpurifier_config_joomla', 'htmlpurifier_configstring', 'htmlpurifier_include', 'captcha', 'captcha_for',
+		],
+	];
+
+	public const NEVER_FORM = ['email_base_learned', 'email_base_audit'];
+
+	/** Does changing this setting need core.admin? */
+	public static function requiresAdmin(string $scope, string $key): bool
+	{
+		return in_array($key, self::ADMIN_ONLY[$scope] ?? [], true);
+	}
+
 	/** Tipos de campo que NO se pueden cambiar desde aqui (dinamicos, ficheros o permisos): siguen en las opciones clasicas. */
 	private const UNSETTABLE = ['note', 'spacer', 'rules', 'media', 'modulesmodule', 'calendar', 'editor', 'password', 'hidden', 'subform'];
 

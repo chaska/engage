@@ -130,6 +130,19 @@ q("INSERT INTO jos_mail_templates (template_id, extension, language, subject, bo
 [, $sub] = $flujo('sinbaja');
 r('C23', 'Plantilla personalizada SIN enlace de baja: el aviso de confidencialidad añade la baja firmada (HTML y texto plano)', $sub && count(array_filter($hrefsDe($sub['html']), fn($x) => str_contains($x, 'comments.unsubscribe'))) === 1 && str_contains($sub['txt'], 'comments.unsubscribe'), '');
 q("DELETE FROM jos_mail_templates WHERE template_id LIKE 'com_engage.%' AND subject LIKE 'R9-%'");
+// ---- B1-B4 (0.9.1): plantilla personalizada con 300 niveles de anidacion, style con image-set/cursor/position y elementos raros
+$deep = str_repeat('<div>', 300) . "<p style=\"background:image-set(url(http://t.example/a.png) 1x);position:fixed\">Aviso {NAME}</p><a class='engageemail-button' href='{PUBLISH_URL}'>Publicar</a><a class='engageemail-button engageemail-button-danger' href='{DELETE_URL}'>Borrar</a>" . str_repeat('</div>', 300);
+$raro = "<xmp><a href='http://evil.test/x'>x</a></xmp><map><area href='http://evil.test/a'></map><span style=\"cursor:url(http://t.example/c.cur),auto\" href='http://evil.test/s'>span</span><a class='engageemail-button' href='{PUBLISH_URL}'>Publicar</a>";
+foreach (['manage' => $deep, 'notify_author' => $raro] as $k => $htmlTpl) { q("DELETE FROM jos_mail_templates WHERE template_id='com_engage.$k' AND language='en-GB' AND subject LIKE 'R9-%'"); q("INSERT INTO jos_mail_templates (template_id, extension, language, subject, body, htmlbody, attachments, params) VALUES ('com_engage.$k', 'com_engage', 'en-GB', 'R9-$k', 'Texto plano', '" . esc($htmlTpl) . "', '', '{}')"); }
+$setCom(['default_publish' => '0']);
+$mm = array_values(array_filter($enviar('profundo'), fn($x) => stripos($x['para'], 'admin@example.test') !== false));
+$hh = $mm[0]['html'] ?? '';
+r('C26', 'B1 (0.9.1): plantilla con 300 niveles de anidacion: el correo no queda vacio y conserva los botones de moderacion firmados', $hh !== '' && substr_count($hh, 'task=comments.') >= 2 && str_contains($hh, 'Publicar') && str_contains($hh, 'eg-card') && !preg_match('/image-set|position:fixed|t\.example/i', $hh), 'href=' . count($hrefsDe($hh)));
+$setCom(['default_publish' => '1']);
+$m2 = array_values(array_filter($enviar('raro'), fn($x) => stripos($x['para'], 'admin@example.test') !== false));
+$h2 = $m2[0]['html'] ?? '';
+r('C27', 'B2/B4 (0.9.1): style con cursor:url, elementos xmp/map/area y href en <span>: nada de evil.test ni t.example en el correo', $h2 !== '' && !preg_match('/evil\.test|t\.example|<xmp|<map|<area|cursor/i', $h2) && str_contains($h2, 'task=comments.publish'), strlen($h2) . ' bytes');
+q("DELETE FROM jos_mail_templates WHERE template_id LIKE 'com_engage.%' AND subject LIKE 'R9-%'");
 $tplSum1 = one("SELECT MD5(GROUP_CONCAT(CONCAT(template_id,language,subject,body,htmlbody) ORDER BY template_id, language)) FROM jos_mail_templates WHERE template_id LIKE 'com_engage.%'");
 r('C24', 'Las plantillas de correo guardadas en Joomla no cambian (ni se reescriben ni se pisan)', $tplSum0 === $tplSum1, "$tplSum0 / $tplSum1");
 

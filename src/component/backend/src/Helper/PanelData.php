@@ -25,7 +25,7 @@ use Throwable;
 final class PanelData
 {
 	/** Version del fork segun el CHANGELOG (la prueba tests/28 comprueba que coincide con su primera entrada). */
-	public const FORK_VERSION = '0.9.0';
+	public const FORK_VERSION = '0.9.1';
 
 	public const REPO_URL      = 'https://github.com/chaska/engage';
 	public const CHANGELOG_URL = 'https://github.com/chaska/engage/blob/main/CHANGELOG.md';
@@ -345,6 +345,8 @@ final class PanelData
 			'base_url'         => rtrim(TrustedBase::root(), '/'),
 			'base_source'      => TrustedBase::source(),
 			'base_option_bad'  => TrustedBase::optionIsInvalid(),
+			// 0.9.1: note of the last change of the base URL option (who, when, from what to what; sanitised)
+			'base_audit'       => (string) ComponentHelper::getParams('com_engage')->get('email_base_audit', ''),
 			'update_sites'     => [],
 			'can_edit_plugins' => $user->authorise('core.manage', 'com_plugins') && $user->authorise('core.edit', 'com_plugins'),
 			'can_options'      => $user->authorise('core.admin', 'com_engage') || $user->authorise('core.options', 'com_engage'),

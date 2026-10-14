@@ -50,7 +50,7 @@ $mal = ['', '   ', 'example.com', '//example.com', '///example.com', 'https:exam
 foreach ($mal as $m) {
 	t_ok($parse($m) === null, 'rechazada (guardar): ' . json_encode(substr($m, 0, 60)));
 }
-t_ok($parse('https://203.0.113.9')['stored'] === 'https://203.0.113.9' || $parse('https://93.184.216.34')['stored'] === 'https://93.184.216.34', 'una IP publica si vale');
+t_ok($parse('https://93.184.216.34')['stored'] === 'https://93.184.216.34', 'una IP publica si vale');
 t_ok($parse('http://example.com', 2) === null && $parse('http://example.com:80', 2) === null, 'guardar: http se rechaza si el sitio fuerza SSL (force_ssl = 2)');
 t_ok($parse('http://example.com', 1) !== null && $parse('http://example.com', 0) !== null, 'guardar: http se admite si el sitio no fuerza SSL (force_ssl 0 o 1)');
 t_ok($parse('https://example.com', 2)['stored'] === 'https://example.com', 'guardar: https siempre');
@@ -217,9 +217,9 @@ t_ok(preg_match('/TrustedBase::learnFromAdminRequest\(\$user\);.*?PanelHealth::e
 $cc = $lee("$root/component/backend/src/Controller/ControlpanelController.php");
 t_ok(str_contains($cc, "return ['main', 'display', 'forgetbase'];") && str_contains($cc, "Session::checkToken('post')") && str_contains($cc, "authorise('core.admin', 'com_engage')") && preg_match('/forgetLearned\(\).*?setRedirect\(\'index\.php\'/s', $cc) === 1, 'olvidar: tarea en la lista cerrada, POST + token + core.admin; no vuelve al panel (no reaprende en la misma peticion)');
 $tp = $lee("$root/component/backend/tmpl/controlpanel/default.php");
-t_ok(str_contains($tp, "\$this->baseSource === 'learned' && \$this->can['admin']") && str_contains($tp, 'task=controlpanel.forgetbase') && str_contains($tp, '$quickToken'), 'el panel ofrece olvidar la base aprendida (solo si es la aprendida y con permiso) con token');
+t_ok(str_contains($tp, "\$this->baseSource === 'learned' && \$this->can['superadmin']") && str_contains($tp, 'task=controlpanel.forgetbase') && str_contains($tp, '$quickToken'), 'el panel ofrece olvidar la base aprendida (solo si es la aprendida y con permiso) con token');
 $cfg = $lee("$root/component/backend/config.xml");
-t_ok(preg_match('/<field name="email_base_url"\s+type="text"[^>]*default=""[^>]*maxlength="255"/s', $cfg) === 1 && preg_match('/<field name="email_base_learned"\s+type="hidden"/', $cfg) === 1, 'config.xml: opcion de texto y parametro oculto (el formulario clasico no lo pierde al guardar)');
+t_ok(preg_match('/<field name="email_base_url"[^>]*?type="text"[^>]*default=""[^>]*maxlength="255"/s', $cfg) === 1 && preg_match('/<field name="email_base_learned"[^>]*?type="hidden"/', $cfg) === 1, 'config.xml: opcion de texto y parametro oculto (el formulario clasico no lo pierde al guardar)');
 t_ok(str_contains($lee("$root/component/backend/src/Helper/SettingsLayout.php"), "[\$c, 'email_base_url']"), 'aparece en el panel moderno, grupo Notificaciones');
 $su = $lee("$root/component/backend/src/Helper/SettingsSchema.php");
 t_ok(str_contains($su, "'callback' => [TrustedBase::class, 'validateOption']"), 'el esquema valida la opcion con TrustedBase::validateOption');
