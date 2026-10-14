@@ -184,6 +184,7 @@ class RecDb extends FakeDb
 	public function setQuery($q) { $this->queries[] = $q; return new class((count($this->queries) >= 2 && $this->rows2 !== null) ? $this->rows2 : $this->rows) { public function __construct(private array $rows) {} public function loadAssocList($key = null) { $o = []; foreach ($this->rows as $r) { $o[$r[$key ?? 'id']] = $r; } return $o; } public function loadObjectList($key = null) { return []; } }; }
 }
 require_once "$c/backend/src/Helper/CommentTypes.php";
+require_once "$c/backend/src/Helper/CommentItems.php";
 require_once "$c/backend/src/Model/CommentsModel.php";
 $rc = new ReflectionClass(\Akeeba\Component\Engage\Administrator\Model\CommentsModel::class);
 $mk = function (array $state, array $rows) use ($rc) {
@@ -203,7 +204,7 @@ foreach (['newest' => ['`c`.`created` DESC', '`c`.`id` DESC'], 'oldest' => ['`c`
 	$tree($m);
 	$q = $m->db->queries[0];
 	t_ok($q->orders === $esperado, "modo $mode: ORDER BY " . implode(', ', $q->orders));
-	t_ok(($mode === 'top') === (count($q->joins) === 4), "modo $mode: " . ($mode === 'top' ? 'une la subconsulta agregada de reacciones' : 'no une la subconsulta de reacciones (ni lee la tabla)'));
+	t_ok(($mode === 'top') === (count($q->joins) === 5), "modo $mode: " . ($mode === 'top' ? 'une la subconsulta agregada de reacciones' : 'no une la subconsulta de reacciones (ni lee la tabla)'));
 	$s = (string) $q;
 	t_ok(!str_contains($s, 'engage_reactions') || $mode === 'top', "modo $mode: la tabla de reacciones solo aparece en top");
 }

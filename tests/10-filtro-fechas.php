@@ -19,6 +19,7 @@ echo "B) CommentsModel::getListQuery\n";
 require "$root/component/backend/src/Helper/ListOrdering.php";
 require "$root/component/backend/src/Mixin/ModelPopulateStateTrait.php";
 require_once "$root/component/backend/src/Helper/CommentTypes.php";
+require_once "$root/component/backend/src/Helper/CommentItems.php";
 require "$root/component/backend/src/Model/CommentsModel.php";
 $rc = new ReflectionClass(\Akeeba\Component\Engage\Administrator\Model\CommentsModel::class);
 $gl = $rc->getMethod('getListQuery'); $gl->setAccessible(true);

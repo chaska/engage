@@ -40,6 +40,16 @@
         </field>
 
         <field
+                name="itemid"
+                type="itemid"
+                label="COM_ENGAGE_COMMENTS_FILTER_ITEMID"
+                class="engageCommonEventsOnChangeSubmit"
+                default=""
+        >
+            <option value="">COM_ENGAGE_COMMENTS_FILTER_ITEMID_SELECT</option>
+        </field>
+
+        <field
                 name="since"
                 type="calendar"
                 label="COM_ENGAGE_COMMENTS_SINCE_LABEL"

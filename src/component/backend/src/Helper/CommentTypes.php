@@ -21,9 +21,6 @@ final class CommentTypes
 {
 	public const ARTICLE = 'com_content.article';
 
-	/** Maximum number of distinct assets read to build the list of types (the list is a convenience, not a security boundary). */
-	public const MAX_ASSETS = 5000;
-
 	/** @var array<string,string>|null */
 	private static $cache = null;
 
@@ -86,8 +83,134 @@ final class CommentTypes
 		return addcslashes($type, '%_\\') . '.%';
 	}
 
+	/** Maximum number of different types that are discovered (a safety net: a site has a handful). */
+	public const MAX_TYPES = 60;
+
+	/** @var array<string,int>|null */
+	private static $countCache = null;
+
 	/**
-	 * Types really used by the comments (read once per request).
+	 * Types really used by the comments, with their number of comments, WITHOUT looking at every asset: each round asks for ONE asset name that does
+	 * not belong to the types already found (and not to a name that cannot be a type), so a site with tens of thousands of assets costs as many
+	 * small queries as it has types (0.9.3; before, a `SELECT DISTINCT` with a 5000 limit could lose types).
+	 *
+	 * @return  array<string,int>  type => number of comments (articles first, then by name)
+	 */
+	public static function counts($db = null): array
+	{
+		if (is_array(self::$namesOverride))
+		{
+			$out = [];
+
+			foreach (self::$namesOverride as $n)
+			{
+				$t = self::fromAssetName($n);
+
+				if ($t !== null)
+				{
+					$out[$t] = ($out[$t] ?? 0) + 1;
+				}
+			}
+
+			return self::sortTypes($out);
+		}
+
+		if (self::$countCache !== null)
+		{
+			return self::$countCache;
+		}
+
+		try
+		{
+			$db  = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+			$mk  = static fn() => method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true);
+			$out = [];
+			$bad = [];
+
+			for ($round = 0; $round < self::MAX_TYPES + 20; $round++)
+			{
+				$q = $mk()->select($db->quoteName('a.name'))
+					->from($db->quoteName('#__engage_comments', 'c'))
+					->join('INNER', $db->quoteName('#__assets', 'a'), $db->quoteName('a.id') . ' = ' . $db->quoteName('c.asset_id'));
+				$binds = [];
+				$i     = 0;
+
+				foreach (array_keys($out) as $t)
+				{
+					$k = ':nt' . $i++;
+					$binds[$k] = self::likePattern($t);
+					$q->where($db->quoteName('a.name') . ' NOT LIKE ' . $k);
+				}
+
+				foreach ($bad as $n)
+				{
+					$k = ':nb' . $i++;
+					$binds[$k] = $n;
+					$q->where($db->quoteName('a.name') . ' <> ' . $k);
+				}
+
+				foreach ($binds as $k => &$v)
+				{
+					$q->bind($k, $v, \Joomla\Database\ParameterType::STRING);
+				}
+
+				unset($v);
+				$q->setLimit(1);
+				$name = $db->setQuery($q)->loadResult();
+
+				if ($name === null || $name === false || $name === '')
+				{
+					break;
+				}
+
+				$type = self::fromAssetName((string) $name);
+
+				if ($type === null)
+				{
+					$bad[] = (string) $name;
+
+					continue;
+				}
+
+				$pattern = self::likePattern($type);
+				$cq      = $mk()->select('COUNT(*)')
+					->from($db->quoteName('#__engage_comments', 'c'))
+					->join('INNER', $db->quoteName('#__assets', 'a'), $db->quoteName('a.id') . ' = ' . $db->quoteName('c.asset_id'))
+					->where($db->quoteName('a.name') . ' LIKE :tp')
+					->bind(':tp', $pattern, \Joomla\Database\ParameterType::STRING);
+				$out[$type] = (int) $db->setQuery($cq)->loadResult();
+
+				if (count($out) >= self::MAX_TYPES)
+				{
+					break;
+				}
+			}
+
+			self::$countCache = self::sortTypes($out);
+		}
+		catch (\Throwable $e)
+		{
+			self::$countCache = [];
+		}
+
+		return self::$countCache;
+	}
+
+	/** Articles first, then by name. */
+	public static function sortTypes(array $counts): array
+	{
+		ksort($counts);
+
+		if (isset($counts[self::ARTICLE]))
+		{
+			$counts = [self::ARTICLE => $counts[self::ARTICLE]] + $counts;
+		}
+
+		return $counts;
+	}
+
+	/**
+	 * Closed list: type => type.
 	 *
 	 * @return  array<string,string>
 	 */
@@ -98,28 +221,49 @@ final class CommentTypes
 			return self::fromNames(self::$namesOverride);
 		}
 
-		if (self::$cache !== null)
+		$out = [];
+
+		foreach (array_keys(self::counts($db)) as $t)
 		{
-			return self::$cache;
+			$out[$t] = $t;
 		}
 
-		try
-		{
-			$db    = $db ?? \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-			$query = (method_exists($db, 'createQuery') ? $db->createQuery() : $db->getQuery(true))
-				->select('DISTINCT ' . $db->quoteName('a.name'))
-				->from($db->quoteName('#__engage_comments', 'c'))
-				->join('INNER', $db->quoteName('#__assets', 'a'), $db->quoteName('a.id') . ' = ' . $db->quoteName('c.asset_id'))
-				->setLimit(self::MAX_ASSETS);
+		return $out;
+	}
 
-			self::$cache = self::fromNames($db->setQuery($query)->loadColumn() ?: []);
-		}
-		catch (\Throwable $e)
+	/** Language key that names the COMPONENT of a type (`com_mapaviajes.trip.5` -> COM_ENGAGE_ITEMTYPE_COM_MAPAVIAJES); a site can translate it. */
+	public static function componentLabelKey(string $type): string
+	{
+		$comp = strtoupper((string) strtok($type, '.'));
+
+		return preg_match('/^[A-Z][A-Z0-9_]*$/', $comp) === 1 ? 'COM_ENGAGE_ITEMTYPE_' . $comp : '';
+	}
+
+	/**
+	 * Friendly name of a type: «Articles» for com_content.article, the translation of the component when there is one, else the technical name.
+	 *
+	 * @param   callable  $tr  fn(string $key): string — returns the key itself when there is no translation (Joomla's Text::_ does)
+	 */
+	public static function label(string $type, callable $tr): string
+	{
+		if (self::isArticle($type))
 		{
-			self::$cache = [];
+			return (string) $tr('COM_ENGAGE_COMMENTS_ITEMTYPE_ARTICLE');
 		}
 
-		return self::$cache;
+		$key = self::componentLabelKey($type);
+
+		if ($key !== '')
+		{
+			$t = (string) $tr($key);
+
+			if ($t !== '' && $t !== $key)
+			{
+				return $t;
+			}
+		}
+
+		return sprintf((string) $tr('COM_ENGAGE_COMMENTS_ITEMTYPE_THIRDPARTY'), $type);
 	}
 
 	/** Language key of the label of a type. */

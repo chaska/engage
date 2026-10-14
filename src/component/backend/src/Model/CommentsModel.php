@@ -9,6 +9,7 @@ namespace Akeeba\Component\Engage\Administrator\Model;
 
 defined('_JEXEC') or die;
 
+use Akeeba\Component\Engage\Administrator\Helper\CommentItems;
 use Akeeba\Component\Engage\Administrator\Helper\CommentTypes;
 use Akeeba\Component\Engage\Administrator\Helper\ListOrdering;
 use Akeeba\Component\Engage\Administrator\Helper\Reactions;
@@ -61,7 +62,7 @@ class CommentsModel extends ListModel
 				// Sort–only fields
 				'c.id', 'user_name', 'c.enabled', 'c.created',
 				// Filter–only fields
-				'search', 'from', 'to', 'itemtype',
+				'search', 'from', 'to', 'itemtype', 'itemid',
 			];
 
 		parent::__construct($config, $factory);
@@ -75,6 +76,7 @@ class CommentsModel extends ListModel
 				'created_by'         => 'int',
 				'enabled'            => 'int',
 				'itemtype'           => 'string',
+				'itemid'             => 'string',
 
 				// Internal filters
 				'asset_id'           => 'int',
@@ -619,6 +621,10 @@ class CommentsModel extends ListModel
 			)
 			->join('LEFT', $db->quoteName('#__categories', 'cat'),
 				$db->quoteName('cat.id') . ' = ' . $db->quoteName('a.catid')
+			)
+			// 0.9.3: the asset of the item (its name gives the type; its title is searched), always joined
+			->join('LEFT', $db->quoteName('#__assets', 'ast'),
+				$db->quoteName('ast.id') . ' = ' . $db->quoteName('c.asset_id')
 			);
 
 		// Frontend listing filter
@@ -670,9 +676,27 @@ class CommentsModel extends ListModel
 		if ($fltType !== '')
 		{
 			$typeLike = CommentTypes::likePattern($fltType);
-			$query->join('INNER', $db->quoteName('#__assets', 'ast'), $db->quoteName('ast.id') . ' = ' . $db->quoteName('c.asset_id'))
-				->where($db->quoteName('ast.name') . ' LIKE :itemtype')
+			$query->where($db->quoteName('ast.name') . ' LIKE :itemtype')
 				->bind(':itemtype', $typeLike, ParameterType::STRING);
+		}
+
+		// 0.9.3: «Elemento» filter: an asset of the closed list (most commented first, within the chosen type), or «others» (everything that is not in the list)
+		$fltItemRaw = $this->getState('filter.itemid');
+
+		if (is_string($fltItemRaw) && $fltItemRaw !== '')
+		{
+			$itemList = CommentItems::available($db, $fltType);
+			$fltItem  = CommentItems::validate($fltItemRaw, $itemList);
+
+			if ($fltItem === CommentItems::OTHERS)
+			{
+				$query->whereNotIn($db->quoteName('c.asset_id'), array_map(static fn(array $i): int => $i['id'], $itemList['items']), ParameterType::INTEGER);
+			}
+			elseif ($fltItem !== '')
+			{
+				$fltItemId = (int) $fltItem;
+				$query->where($db->quoteName('c.asset_id') . ' = :itemid')->bind(':itemid', $fltItemId, ParameterType::INTEGER);
+			}
 		}
 
 		// Parent ID filter
@@ -712,7 +736,7 @@ class CommentsModel extends ListModel
 				$query->where($db->quoteName('c.id') . ' = :filter_search')
 					->bind(':filter_search', $fsValue, ParameterType::INTEGER);
 			}
-			if (substr($fltSearch, 0, 3) === 'ip:')
+			elseif (substr($fltSearch, 0, 3) === 'ip:')
 			{
 				$fsValue = '%' . substr($fltSearch, 3) . '%';
 
@@ -749,9 +773,20 @@ class CommentsModel extends ListModel
 			}
 			elseif (substr($fltSearch, 0, 6) === 'title:')
 			{
+				// title of the item (article title or title of the asset)
 				$fsValue = '%' . substr($fltSearch, 6) . '%';
-				$query->where($db->quoteName('a.asset_id') . ' = :filter_search')
-					->bind(':filter_search', $fsValue, ParameterType::INTEGER);
+
+				if ($query->where === null)
+				{
+					$query->where('1=1');
+				}
+
+				$query->extendWhere('AND', [
+					$db->quoteName('a.title') . ' LIKE :filter_search_1',
+					$db->quoteName('ast.title') . ' LIKE :filter_search_2',
+				], 'OR')
+					->bind(':filter_search_1', $fsValue, ParameterType::STRING)
+					->bind(':filter_search_2', $fsValue, ParameterType::STRING);
 			}
 			elseif (substr($fltSearch, 0, 8) === 'comment:')
 			{
@@ -776,7 +811,11 @@ class CommentsModel extends ListModel
 					$db->quoteName('c.name') . ' LIKE :filter_search_2',
 					$db->quoteName('u.email') . ' LIKE :filter_search_3',
 					$db->quoteName('c.email') . ' LIKE :filter_search_4',
+					$db->quoteName('a.title') . ' LIKE :filter_search_5',
+					$db->quoteName('ast.title') . ' LIKE :filter_search_6',
 				], 'OR')
+					->bind(':filter_search_5', $fsValue, ParameterType::STRING)
+					->bind(':filter_search_6', $fsValue, ParameterType::STRING)
 					->bind(':filter_search', $fsValue, ParameterType::STRING)
 					->bind(':filter_search_1', $fsValue, ParameterType::STRING)
 					->bind(':filter_search_2', $fsValue, ParameterType::STRING)

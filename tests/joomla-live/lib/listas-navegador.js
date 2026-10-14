@@ -46,6 +46,43 @@ const r = (id, d, c, ev = '') => { (c ? ok++ : ko++); console.log(`${id.padEnd(7
     await espera(() => p.selectOption('select[name="filter[enabled]"]', '0'));
     r('L-07', 'Tipo (mapas) + estado (sin publicar): sin 403 y solo el comentario sin publicar de mapas', !(await prohibido()) && (await filas()) === 1, 'filas=' + (await filas()));
   }
+  // 0.9.3: recuentos y etiquetas amigables en «Tipo de elemento»; filtro «Elemento»
+  await abre(); await filtros();
+  const textos = await p.$$eval('select[name="filter[itemtype]"] option', (o) => o.map((x) => x.textContent.trim()));
+  r('L-07b', 'Las opciones de tipo llevan el recuento entre parentesis y etiquetas amigables (Mapa de viajes / Travel map; articulos)', textos.some((t) => /^(Mapa de viajes|Travel map) \(5\)$/.test(t)) && textos.some((t) => /^(Art[ií]culos|Articles) \(\d+\)$/.test(t)) && textos.some((t) => /^com_juego\.ranking.* \(4\)$/.test(t)), textos.join(' | '));
+  const selI = await p.$('select[name="filter[itemid]"]');
+  r('L-07c', 'Existe el filtro «Elemento»', !!selI);
+  if (selI) {
+    const optI = await p.$$eval('select[name="filter[itemid]"] option', (o) => o.map((x) => [x.value, x.textContent.trim()]));
+    const libro = optI.find((o) => /\(2\d\d\)$/.test(o[1]));
+    r('L-07d', 'Sus opciones: elementos con su numero de comentarios, el mas comentado (el «libro de visitas», ~200) primero', !!libro && optI[1] && optI[1][0] === libro[0], optI.slice(0, 4).map((o) => o.join('=')).join(' | '));
+    if (libro) {
+      await espera(() => p.selectOption('select[name="filter[itemid]"]', libro[0]));
+      const n1 = await filas();
+      r('L-07e', 'Filtro por elemento (libro de visitas): sin 403, 20 filas por pagina', !(await prohibido()) && n1 === 20, 'filas=' + n1);
+      const pg = await p.$('.pagination .page-item:nth-child(4) a, .pagination a.page-link[aria-label*="2"]');
+      if (pg) { await espera(() => pg.click()); }
+      r('L-07f', 'La paginacion conserva el filtro por elemento (pagina 2: filas y el elemento sigue elegido)', !(await prohibido()) && (await filas()) > 0 && (await p.$eval('select[name="filter[itemid]"]', (e) => e.value)) === libro[0], 'filas=' + (await filas()));
+      await filtros();
+      await espera(() => p.selectOption('select[name="filter[itemtype]"]', 'com_mapaviajes.trip'));
+      r('L-07g', 'Al cambiar de tipo, el elemento que no es de ese tipo se ignora (solo los 5 de mapas)', !(await prohibido()) && (await filas()) === 5, 'filas=' + (await filas()));
+    }
+    await abre(); await filtros();
+    await espera(() => p.selectOption('select[name="filter[itemtype]"]', 'com_content.article'));
+    const optI2 = await p.$$eval('select[name="filter[itemid]"] option', (o) => o.map((x) => x.textContent.trim()));
+    r('L-07h', 'Con el tipo «Articulos», el desplegable de elementos solo ofrece articulos', !(await prohibido()) && !optI2.some((t) => /Activo|ranking|trip/i.test(t)) && optI2.length >= 2, optI2.join(' | '));
+  }
+  // mas de 100 elementos de un tipo: «Otros…»
+  await abre(); await filtros();
+  await espera(() => p.selectOption('select[name="filter[itemtype]"]', 'com_juego.partida'));
+  const optP = await p.$$eval('select[name="filter[itemid]"] option', (o) => o.map((x) => [x.value, x.textContent.trim()]));
+  const otros = optP.find((o) => o[0] === 'other');
+  r('L-07j', 'Mas de 100 elementos del tipo: 100 en la lista mas «Otros… (10)»', optP.length === 102 && !!otros && /\(10\)$/.test(otros[1]), 'opciones=' + optP.length + ' ' + (otros || []).join('='));
+  if (otros) { await filtros(); await espera(() => p.selectOption('select[name="filter[itemid]"]', 'other')); r('L-07k', '«Otros…» muestra los 10 comentarios de los elementos que no caben en la lista', !(await prohibido()) && (await filas()) === 10, 'filas=' + (await filas())); }
+  await abre();
+  await p.fill('#filter_search', 'Articulo publico');
+  await espera(() => p.click('button.filter-search-bar__button, .js-stools-btn-search'));
+  r('L-07i', 'La busqueda de texto tambien busca en el titulo del elemento (articulo «Articulo publico»: 20 filas por pagina)', !(await prohibido()) && (await filas()) === 20, 'filas=' + (await filas()));
   // busqueda de texto
   await abre();
   await p.fill('#filter_search', 'F9N-RANK-2');
