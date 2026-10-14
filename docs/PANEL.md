@@ -128,6 +128,10 @@ El apilado ya no depende del número de opciones sino del ancho real del texto (
 
 Prueba: `tests/joomla-live/14-opciones-segmentados.sh`.
 
+## Correos: diseño HTML, aviso de confidencialidad, vista previa (0.9.0)
+
+Opciones en **Opciones > Notificaciones**: «Diseño HTML enriquecido en los correos» (Sí/No, Sí por defecto), «Mostrar aviso de confidencialidad» (Sí/No, Sí por defecto) y «Color de acento de los correos» (lista cerrada de seis tonos). Desde el panel de control, el botón **Vista previa de los correos y correo de prueba** abre la vista previa (sin enviar nada ni hacer peticiones externas) y permite enviarse un correo de prueba a uno mismo (POST + token + `core.admin`, uno por minuto). Detalles, texto del aviso y cómo cambiarlo en [`CORREOS.md`](CORREOS.md).
+
 ## Lista de comentarios del administrador (0.8.5)
 
 - **Tipo de elemento:** filtro con los tipos que realmente tienen comentarios (Artículos y, de cada tercero, `com_xxx.tipo (de terceros)`). Lista cerrada: un valor que no esté en ella se ignora.

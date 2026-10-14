@@ -522,6 +522,43 @@
                default=""
         />
 
+        <field name="email_rich"
+               type="radio"
+               label="COM_ENGAGE_CONFIG_EMAIL_RICH_LABEL"
+               description="COM_ENGAGE_CONFIG_EMAIL_RICH_DESC"
+               default="1"
+               layout="joomla.form.field.radio.switcher"
+        >
+            <option value="0">JNo</option>
+            <option value="1">JYes</option>
+        </field>
+
+        <field name="email_confidential"
+               type="radio"
+               label="COM_ENGAGE_CONFIG_EMAIL_CONFIDENTIAL_LABEL"
+               description="COM_ENGAGE_CONFIG_EMAIL_CONFIDENTIAL_DESC"
+               default="1"
+               layout="joomla.form.field.radio.switcher"
+        >
+            <option value="0">JNo</option>
+            <option value="1">JYes</option>
+        </field>
+
+        <field name="email_accent"
+               type="list"
+               label="COM_ENGAGE_CONFIG_EMAIL_ACCENT_LABEL"
+               description="COM_ENGAGE_CONFIG_EMAIL_ACCENT_DESC"
+               default="blue"
+               validate="options"
+        >
+            <option value="blue">COM_ENGAGE_EMAIL_ACCENT_BLUE</option>
+            <option value="violet">COM_ENGAGE_EMAIL_ACCENT_VIOLET</option>
+            <option value="green">COM_ENGAGE_EMAIL_ACCENT_GREEN</option>
+            <option value="red">COM_ENGAGE_EMAIL_ACCENT_RED</option>
+            <option value="orange">COM_ENGAGE_EMAIL_ACCENT_ORANGE</option>
+            <option value="slate">COM_ENGAGE_EMAIL_ACCENT_SLATE</option>
+        </field>
+
         <field name="email_include_links"
                type="radio"
                label="COM_ENGAGE_CONFIG_EMAIL_INCLUDE_LINKS_LABEL"

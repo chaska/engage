@@ -74,7 +74,7 @@ echo "D) El plugin de correo\n";
 t_ok(preg_match('/\$includeLinks\s*=.*?\$publicUrl\s*=\s*\$includeLinks \? TrustedBase::absolute/s', $em) === 1, 'con 0, la URL del contenido ni se calcula');
 t_ok(str_contains($em, "'SITEURL'           => \$includeLinks ? TrustedBase::root() : ''"), 'SITEURL vacio con 0');
 t_ok(str_contains($em, '$canState    = $includeLinks && $this->recipientCan($recipient, \'core.edit.state\');') && str_contains($em, '$canDelete   = $includeLinks && $this->recipientCan($recipient, \'core.delete\');'), 'con 0 nadie es «moderador» a efectos de enlaces: no se llama a getAbsoluteSignedURL de moderacion (el ternario no la evalua)');
-t_ok(preg_match("/'UNSUBSCRIBE_URL'\s*=>\s*SignedURL::getAbsoluteSignedURL\(sprintf\(\\\$protoUrl, 'comments\.unsubscribe'/", $em) === 1, 'la baja se sigue firmando siempre (sin condicion), sobre la base fiable');
+t_ok(preg_match("/\\\$unsubUrl\s*=\s*SignedURL::getAbsoluteSignedURL\(sprintf\(\\\$protoUrl, 'comments\.unsubscribe'.*?'UNSUBSCRIBE_URL'\s*=>\s*\\\$unsubUrl/s", $em) === 1, 'la baja se sigue firmando siempre (sin condicion), sobre la base fiable');
 $te = $lee("$root/component/backend/src/Helper/TemplateEmails.php");
 t_ok(str_contains($te, 'self::hasEmptyLinks($data) && get_class($templateMailer) === MailTemplate::class') && str_contains($te, 'new EngageMailTemplate('), 'TemplateEmails usa EngageMailTemplate cuando falta algun enlace');
 t_ok(preg_match("/LINK_TAGS = \['SITEURL', 'CONTENT_LINK', 'COMMENT_LINK', 'PUBLISH_URL', 'UNPUBLISH_URL', 'DELETE_URL', 'POSSIBLESPAM_URL', 'SPAM_URL', 'UNSPAM_URL', 'UNSUBSCRIBE_URL'\]/", $te) === 1, 'las etiquetas de enlace son exactamente las de las plantillas (AVATAR_URL es una imagen y no cuenta)');

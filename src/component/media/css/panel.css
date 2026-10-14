@@ -1081,3 +1081,9 @@ html[data-eg-theme="dark"] .eg-admin {
 	.eg-admin .eg-theme__btn[aria-checked="true"] { outline: 2px solid Highlight; }
 	.eg-admin .eg-chart__bar { fill: CanvasText; }
 }
+
+/* 0.9.0: preview of the notification emails */
+.eg-admin .eg-mailpreview__form { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 12px 0; }
+.eg-admin .eg-mailpreview__frame { display: block; width: 100%; max-width: 680px; height: 820px; border: 1px solid #94a3b8; border-radius: 8px; background: #ffffff; }
+.eg-admin .eg-mailpreview__send { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 12px 0; }
+.eg-admin .eg-mailpreview__hint { color: #475569; font-size: 13px; }

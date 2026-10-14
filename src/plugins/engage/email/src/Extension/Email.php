@@ -368,6 +368,10 @@ class Email extends CMSPlugin implements SubscriberInterface
 		 * on the trusted base, because people must be able to unsubscribe.
 		 */
 		$includeLinks   = !in_array(ComponentHelper::getParams('com_engage')->get('email_include_links', 1), [0, '0', false], true);
+		// 0.9.0: options «Rich HTML design» and «Show confidentiality notice» (closed lists 1/0, default 1) and accent colour (closed list)
+		$richOn         = !in_array(ComponentHelper::getParams('com_engage')->get('email_rich', 1), [0, '0', false], true);
+		$confOn         = !in_array(ComponentHelper::getParams('com_engage')->get('email_confidential', 1), [0, '0', false], true);
+		$accent         = (string) ComponentHelper::getParams('com_engage')->get('email_accent', 'blue');
 		$publicUrl      = $includeLinks ? TrustedBase::absolute((string) ($meta['public_url'] ?? '')) : '';
 		$publicUri      = Uri::getInstance($publicUrl);
 		$returnUrl      = base64_encode($publicUrl);
@@ -458,6 +462,21 @@ class Email extends CMSPlugin implements SubscriberInterface
 			$canDelete   = $includeLinks && $this->recipientCan($recipient, 'core.delete');
 			$fallbackUrl = ($publicUrl !== '') ? $publicUri->toString() : '';
 
+			$unsubUrl = SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.unsubscribe', urlencode($returnUrl)), $comment, $recipient->email);
+
+			// 0.9.0: rich HTML design and confidentiality notice, applied when the message is sent (the stored mail templates are not touched)
+			$wrap = [
+				'enabled'      => $richOn || $confOn,
+				'rich'         => $richOn,
+				'confidential' => $confOn,
+				'accent'       => $accent,
+				'sitename'     => (string) $this->getApplication()->get('sitename', ''),
+				'siteurl'      => $includeLinks ? TrustedBase::root() : '',
+				'contact'      => (string) $this->getApplication()->get('mailfrom', ''),
+				'unsubscribe'  => str_replace('&amp;', '&', $unsubUrl),
+				'subscriber'   => in_array($type, ['com_engage.notify', 'com_engage.notify_author'], true),
+			];
+
 			// Try to send an email
 			try
 			{
@@ -471,8 +490,8 @@ class Email extends CMSPlugin implements SubscriberInterface
 					'POSSIBLESPAM_URL' => $canState ? SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.possiblespam', urlencode($returnUrl)), $comment, $recipient->email) : $fallbackUrl,
 					'SPAM_URL'         => $canState ? SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.reportspam', urlencode($returnUrl)), $comment, $recipient->email) : $fallbackUrl,
 					'UNSPAM_URL'       => $canState ? SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.reportham', urlencode($returnUrlComment)), $comment, $recipient->email) : $fallbackUrl,
-					'UNSUBSCRIBE_URL'  => SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.unsubscribe', urlencode($returnUrl)), $comment, $recipient->email),
-				]), $recipient);
+					'UNSUBSCRIBE_URL'  => $unsubUrl,
+				]), $recipient, null, false, null, $wrap);
 			}
 			catch (Exception $e)
 			{

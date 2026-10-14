@@ -131,6 +131,9 @@ const LISTA_BLANCA = [
 	'component/backend/tmpl/controlpanel/default.php' => [
 		'$quickToken' => 'token de Joomla (hex) para las acciones rapidas',
 	],
+	'component/backend/tmpl/emailpreview/default.php' => [
+		'$quickToken' => 'token de Joomla (hex) del formulario de envio de prueba',
+	],
 ];
 /** Ficheros PHP de src que se analizan (todos menos vendor). */
 function ficheros(string $src): array
