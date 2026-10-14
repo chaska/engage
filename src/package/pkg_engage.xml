@@ -7,7 +7,7 @@
 
 <extension version="4.0.0" type="package" method="upgrade">
     <name>pkg_engage</name>
-    <version>3.4.8</version>
+    <version>3.4.9</version>
     <creationDate>2026-10-11</creationDate>
     <author>Akeeba Ltd</author>
     <authorEmail>no-reply@akeeba.com</authorEmail>

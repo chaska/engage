@@ -37,7 +37,11 @@ $headerHtml  = $favView
 	: Text::plural($this->headerKey, $this->pagination->total, htmlspecialchars((string) $this->title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
 ?>
 <section id="akengage-comments-section" class="akengage-outer-container<?= ($this->theme !== 'classic') ? ' akengage-theme--' . $this->escape($this->theme) : '' ?><?= $this->escape($this->mobileAvatarClass()) ?>"
-		aria-label="<?= Text::_('COM_ENGAGE_COMMENTS_SECTION_HEADER') ?>">
+		aria-label="<?= Text::_('COM_ENGAGE_COMMENTS_SECTION_HEADER') ?>"
+		itemscope itemtype="https://schema.org/CreativeWork">
+	<?php // 0.9.5: the comments are properties (itemprop="comment") of this CreativeWork: Google requires every Comment to be nested in one. Name and url only when known (the title is escaped; the url is the clean canonical: trusted base or relative path). ?>
+	<?php if ((string) $this->title !== ''): ?><meta itemprop="name" content="<?= $this->escape((string) $this->title) ?>"><?php endif; ?>
+	<?php if (($schemaUrl = $this->schemaUrl()) !== ''): ?><link itemprop="url" href="<?= $this->escape($schemaUrl) ?>"><?php endif; ?>
 
 	<h3 class="akengage-title h4 border-bottom mb-2">
 		<?= $headerHtml ?>
@@ -67,7 +71,7 @@ $headerHtml  = $favView
 
 		<?php if ($this->pagination->pagesTotal > 1): ?>
 		<div class="akengage-pagination">
-			<div class="akengage-pagination-pages pagination" itemscope itemtype="http://www.schema.org/SiteNavigationElement">
+			<div class="akengage-pagination-pages pagination" itemscope itemtype="https://schema.org/SiteNavigationElement">
 				<?= $this->paginationLinksHtml() ?>
 			</div>
 		</div>

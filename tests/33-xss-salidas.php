@@ -320,10 +320,10 @@ $tplL = $lf("$c/frontend/tmpl/comments/default_list.php");
 $tplF = $lf("$c/frontend/tmpl/comments/default_form.php");
 $view = $lf("$c/frontend/src/View/Comments/HtmlView.php");
 t_ok(!str_contains($tplL, 'tempUri') && !str_contains($tplL, 'replyToUri') && !str_contains($tplL, 'Uri::getInstance()'), 'default_list.php no usa Uri::getInstance(): ni $tempUri ni $replyToUri');
-t_ok(preg_match('/href="<\?= htmlspecialchars\(\$this->commentPermalink\(\(int\) \$comment->id\), ENT_QUOTES \| ENT_SUBSTITUTE, \'UTF-8\'\) \?>"/', $tplL) === 1, 'el enlace de la fecha: htmlspecialchars(commentPermalink(id))');
+t_ok(preg_match('/href="#akengage-comment-<\?= \(int\) \$comment->id \?>"/', $tplL) === 1, '0.9.5: el enlace de la fecha es un ancla con el id entero de la tabla');
 t_ok(!str_contains($tplF, "'scheme', 'user', 'pass', 'host'") && str_contains($tplF, 'CommentTools::relativeUrl('), 'el returnurl del formulario es relativo y validado (sin anfitrion)');
 t_ok(!preg_match('/Uri::getInstance\(\)->toString\(\)/', $view) && !str_contains($view, "toString(['scheme', 'host', 'port', 'path', 'query'])"), 'la vista no imprime la URL absoluta de la peticion (con el Host)');
-t_ok(str_contains($view, "trustedOrigin((string) Factory::getApplication()->get('live_site'") && str_contains($view, '$origin === \'\''), 'el canonical solo con el live_site de Joomla; sin el, no se anade');
+t_ok(str_contains($view, 'TrustedBase::current()') && str_contains($view, 'CommentTools::canonicalHref(') && !str_contains($view, "->get('live_site'"), '0.9.5: el canonical usa solo la base fiable (TrustedBase) o, sin ella, la ruta limpia relativa: nunca la cabecera Host');
 t_ok(!preg_match('/^[^\n]*(?:getHost|HTTP_HOST|SERVER_NAME)/m', $view), 'la vista no lee el anfitrion de la peticion');
 foreach (['frontend/tmpl/comments/default_list.php', 'frontend/tmpl/comments/default.php', 'frontend/tmpl/comments/default_form.php', 'frontend/tmpl/comment/edit.php', 'frontend/src/View/Comments/HtmlView.php', '../modules/site/engage_latest/tmpl/default.php', '../plugins/content/engage/layouts/akeeba/engage/content/article.php', '../plugins/content/engage/layouts/akeeba/engage/content/category.php', '../plugins/content/engage/layouts/akeeba/engage/content/featured.php'] as $f) {
 	$t = $lee("$c/$f");

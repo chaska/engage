@@ -25,7 +25,9 @@ t_ok(T::robotsValue(true, false, true, 'noindex, nofollow') === 'noindex, nofoll
 
 echo "B) Cuenta de URLs (300 comentarios, 20 por pagina)\n";
 $u = T::crawlUrls(300, 20);
-t_ok($u['cid'] === 300 && $u['pages'] === 15 && $u['pagination'] === 60 && $u['tools'] === 7 && $u['total'] === 367, 'URLs distintas: 300 + 15x4 + 7 = 367 (' . json_encode($u) . ')');
+t_ok($u['cid'] === 0 && $u['pages'] === 15 && $u['pagination'] === 60 && $u['tools'] === 7 && $u['total'] === 67, '0.9.5: la fecha es un ancla y no cuenta: 0 + 15x4 + 7 = 67 (' . json_encode($u) . ')');
+$u2 = T::crawlUrls(300, 20, true, true, 150);
+t_ok($u2['cid'] === 150 && $u2['total'] === 217 && T::crawlUrls(300, 20, true, true, 9999)['cid'] === 300, 'con 150 respuestas (enlaces «en respuesta a» a otra pagina): 150 + 60 + 7 = 217; nunca mas que comentarios');
 t_ok(T::crawlUrls(0, 20)['total'] === 0 && T::crawlUrls(5, 0)['total'] > 0 && T::crawlUrls(-4, 20)['total'] === 0, 'casos limite sin error');
 t_ok(T::crawlUrls(300, 20, true, false)['total'] < $u['total'], 'sin selector hay menos URLs');
 
@@ -51,12 +53,12 @@ foreach (['default', 'default_list'] as $t) {
 }
 $dl = $lee("$root/component/frontend/tmpl/comments/default_list.php");
 t_ok(substr_count($dl, '$this->crawlRel()') === 3, 'fecha del comentario, «en respuesta a» y «ver en el hilo» usan crawlRel()');
+t_ok(str_contains($dl, 'href="#akengage-comment-<?= (int) $comment->id ?>"') && !str_contains($dl, 'commentPermalink((int) $comment->id), ENT_QUOTES | ENT_SUBSTITUTE, \'UTF-8\') ?>"\n\t\t\t\t\t\t\t\tclass="text-body'), '0.9.5: la fecha de cada comentario es un ancla (#akengage-comment-ID) de la misma pagina, no una URL con akengage_cid');
 t_ok(str_contains($dl, 'rel="nofollow ugc noopener noreferrer"'), 'el perfil externo lleva nofollow ugc noopener noreferrer');
 t_ok(str_contains($lee("$root/component/frontend/tmpl/comments/default.php"), '$this->paginationLinksHtml()') && !str_contains($lee("$root/component/frontend/tmpl/comments/default.php"), 'getPagesLinks()'), 'la paginacion de Joomla pasa por addNofollow');
 $v = $lee("$root/component/frontend/src/View/Comments/HtmlView.php");
 t_ok(str_contains($v, "setHeader('X-Robots-Tag', \$robots, true)") && str_contains($v, "setMetaData('robots', \$robots)"), 'meta robots y X-Robots-Tag con el mismo valor');
 t_ok(str_contains($v, 'robotsValue($variant, $favorites, $reduce') && str_contains($v, 'CommentTools::isVariant(array_keys((array) Factory::getApplication()->getInput()->get->getArray()))') && !preg_match('/\$_(GET|SERVER|POST|REQUEST)/', $v), 'la variante se decide por los NOMBRES de la consulta (entrada GET de Joomla), sin superglobales');
-t_ok(str_contains($v, 'CommentTools::trustedOrigin((string) Factory::getApplication()->get(\'live_site\'') && str_contains($v, 'CommentTools::cleanUrl('), 'el canonical sigue usando solo live_site y la URL limpia (sin akengage_*)');
 foreach (['en-GB', 'es-ES'] as $lg) {
 	$ini = $lee("$root/modules/site/engage_latest/language/$lg/mod_engage_latest.ini");
 	t_ok(preg_match('/COMMENTED_ON=.*<a href="%s" rel="nofollow">/', $ini) === 1, "$lg: el enlace con la fecha del modulo «Ultimos comentarios» lleva nofollow");
@@ -78,15 +80,39 @@ $base = ['params' => ['crawl_reduce' => 1, 'default_limit' => 20, 'sort_selector
 $g = fn(array $f) => array_values(array_filter(H::evaluate($f)['items'], fn($i) => $i['id'] === 'crawl'))[0];
 t_ok($g($base + ['crawl_comments' => 0])['level'] === 'ok', 'semaforo: sin comentarios, verde');
 t_ok($g(['crawl_comments' => 40, 'crawl_page' => 20] + $base)['level'] === 'ok', 'semaforo: reduccion activa y pocas URLs, verde');
-$w = $g(['crawl_comments' => 300, 'crawl_page' => 20] + $base);
-t_ok($w['level'] === 'warn' && $w['args']['state'] === 'on_many' && $w['args']['a'] === 300 && $w['args']['b'] === 367, 'semaforo: reduccion activa pero 367 URLs, ambar (robots.txt)');
-$off = $g(['crawl_comments' => 300, 'crawl_page' => 20, 'params' => ['crawl_reduce' => 0, 'sort_selector' => 1]]);
-t_ok($off['level'] === 'warn' && $off['args']['state'] === 'off_many' && $off['fix']['section'] === 'advanced', 'semaforo: opcion apagada y 367 URLs, ambar con enlace a Opciones > Avanzado');
+$w = $g(['crawl_comments' => 300, 'crawl_page' => 20, 'crawl_replies' => 150] + $base);
+t_ok($w['level'] === 'warn' && $w['args']['state'] === 'on_many' && $w['args']['a'] === 300 && $w['args']['b'] === 217, 'semaforo: reduccion activa pero 217 URLs, ambar (robots.txt)');
+$off = $g(['crawl_comments' => 300, 'crawl_page' => 20, 'crawl_replies' => 150, 'params' => ['crawl_reduce' => 0, 'sort_selector' => 1]]);
+t_ok($off['level'] === 'warn' && $off['args']['state'] === 'off_many' && $off['fix']['section'] === 'advanced', 'semaforo: opcion apagada y 217 URLs, ambar con enlace a Opciones > Avanzado');
 t_ok($g(['crawl_comments' => 30, 'crawl_page' => 20, 'params' => ['crawl_reduce' => 0]])['level'] === 'ok', 'semaforo: opcion apagada y pocas URLs, verde');
 t_ok($g([])['level'] === 'ok', 'semaforo: sin ningun dato no falla');
 $lay = $lee("$root/component/backend/src/Helper/SettingsLayout.php");
 t_ok(str_contains($lay, "[\$c, 'crawl_reduce']"), 'el panel moderno de opciones incluye crawl_reduce');
 $md = $lee(dirname($root) . '/docs/ROBOTS-Y-TRAFICO.md');
-foreach (['Disallow: /*akengage_cid=', 'Disallow: /*akengage_', 'Disallow: /*akengage_limitstart=', '367', 'robots.txt', 'X-Robots-Tag', 'access.log', 'Search Console'] as $k) { t_ok(str_contains($md, $k), "docs/ROBOTS-Y-TRAFICO.md: $k"); }
+foreach (['Disallow: /*akengage_cid=', 'Disallow: /*akengage_', 'Disallow: /*akengage_limitstart=', '67', 'robots.txt', 'X-Robots-Tag', 'access.log', 'Search Console'] as $k) { t_ok(str_contains($md, $k), "docs/ROBOTS-Y-TRAFICO.md: $k"); }
 t_ok(preg_match('/ignoran|ignora/i', $md) === 1 && preg_match('/cortafuegos/i', $md) === 1, 'el manual avisa de que los robots maliciosos ignoran robots.txt');
+
+echo "F) 0.9.5: canonical con base fiable o relativa, paginacion en la ruta amigable\n";
+$cl = fn(string $u, string $o = '') => T::canonicalHref($u, $o);
+t_ok($cl('/libro-de-visitas?akengage_cid=5&akengage_sort=top') === '/libro-de-visitas' && $cl('/index.php/juegos/hueveros-por-el-mundo?akengage_limitstart=50') === '/index.php/juegos/hueveros-por-el-mundo', 'sin base fiable: canonical RELATIVA a la raiz con la ruta amigable limpia (sin akengage_*)');
+t_ok($cl('/libro-de-visitas?akengage_cid=5', 'https://hueva.net') === 'https://hueva.net/libro-de-visitas', 'con base fiable: absoluta sobre ese origen');
+t_ok($cl('/') === '/' && $cl('/x?option=com_content&view=article&id=23&akengage_fav=1') === '/x?option=com_content&view=article&id=23', 'la URL base (sin parametros) tambien tiene canonical (autocanonical); se conservan los parametros de Joomla de la lista blanca');
+t_ok($cl('//evil.com/x?akengage_cid=1') === '' && $cl('?akengage_cid=1') === '' && $cl('/a b?x') === '' && $cl('') === '' && $cl('/' . str_repeat('a', 2100)) === '', 'rutas inseguras (//host, solo consulta, espacios, vacia, enorme): ninguna canonical (falla cerrado)');
+t_ok($cl("/x\"onmouseover=\"1") === '' && $cl('/x<script>') === '' && $cl("/x'y") === '', 'comillas y angulos en la ruta: ninguna canonical');
+$pl = fn(string $h) => T::rewritePageLinks($h, fn(int $n) => T::pageUrl('/libro?akengage_sort=top&akengage_limitstart=20&akengage_cid=4', $n));
+$o = $pl('<a aria-label="p2" href="/index.php?view=article&amp;id=1:a&amp;akengage_cid=&amp;akengage_limitstart=20&amp;catid=8" class="page-link">2</a><a href="/q?x=1">q</a><a href="/index.php?akengage_limitstart=0&amp;a=1">1</a>');
+t_ok(str_contains($o, 'href="/libro?akengage_sort=top&amp;akengage_limitstart=20#akengage-comments-section"') && str_contains($o, 'href="/libro?akengage_sort=top#akengage-comments-section"') && str_contains($o, 'href="/q?x=1"') && !str_contains($o, 'amp;amp;') && !str_contains($o, 'view=article'), 'paginacion: cada enlace pasa a la ruta de la pagina actual (conserva el orden, la pagina 1 es la URL limpia), un solo &amp; y los demas enlaces intactos');
+t_ok(str_contains($pl('<a href="/index.php?x=1&amp;akengage_limitstart=40">3</a>'), 'akengage_limitstart=40') && $pl('<a href="/i?akengage_limitstart=99999999">x</a>') === '<a href="/i?akengage_limitstart=99999999">x</a>', 'el numero de pagina se valida (1 a 7 cifras): otro valor deja el enlace como esta');
+$v = $lee("$root/component/frontend/src/View/Comments/HtmlView.php");
+t_ok(str_contains($v, 'TrustedBase::current()') && str_contains($v, 'CommentTools::canonicalHref($this->requestUri()') && !str_contains($v, "->get('live_site'"), 'la canonical usa TrustedBase (opcion, live_site o base aprendida) y no solo live_site');
+t_ok(str_contains($v, "getInput()->server->get('REQUEST_URI'") && !preg_match('/Uri::getInstance\(\)->toString\(\[.path., .query.\]\)/', preg_replace('/function requestUri.*?\n\t}\n/s', '', $v)), 'la ruta sale de REQUEST_URI (no del objeto Uri que usa la cabecera Host) en toda la vista');
+t_ok(str_contains($v, '!$reduce && empty($state[\'explicit\'])') && str_contains($v, 'autocanonical'), 'con la opcion activa toda pagina con hilo (tambien la base) declara su canonical');
+echo "G) 0.9.5: un solo escape en todos los enlaces de Engage\n";
+$malEsc = [];
+foreach (array_merge(glob("$root/component/frontend/tmpl/*/*.php"), glob("$root/modules/site/engage_latest/tmpl/*.php"), glob("$root/component/frontend/src/View/*/*.php"), glob("$root/component/backend/tmpl/*/*.php")) as $f) {
+	$t = $lee($f);
+	if (preg_match('/(htmlspecialchars|escape|\$e)\(\s*Route::(_|link)\((?:(?!, false).)*?\)\s*\)/s', $t) && !preg_match('/(htmlspecialchars|escape|\$e)\(\s*Route::(_|link)\([^;]*?, false/s', $t)) { $malEsc[] = basename(dirname($f)) . '/' . basename($f); }
+}
+t_ok(!$malEsc, 'ninguna plantilla escapa lo que devuelve Route::_/Route::link sin xhtml=false (doble escape &amp;amp;)' . ($malEsc ? ' [' . implode(', ', $malEsc) . ']' : ''));
+t_ok(!preg_match('/&amp;amp;|amp;amp;/', $lee("$root/component/frontend/src/View/Comments/HtmlView.php") . $lee("$root/component/backend/src/Helper/CommentTools.php")), 'ni la vista ni CommentTools escriben «&amp;amp;» a mano');
 t_fin();

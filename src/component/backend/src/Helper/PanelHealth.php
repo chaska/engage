@@ -286,8 +286,8 @@ final class PanelHealth
 		return self::item('moderation', self::BAD, ['state' => 'instant_open'], $fix);
 	}
 
-	/** Mas de estas URLs rastreables en una sola pagina de artículo se considera desmesurado (cada una suma una visita al contador de Joomla). */
-	public const CRAWL_MANY = 250;
+	/** Mas de estas URLs rastreables (0.9.5: la fecha de cada comentario ya es un ancla y no cuenta) en una sola pagina de artículo se considera desmesurado (cada una suma una visita al contador de Joomla). */
+	public const CRAWL_MANY = 150;
 
 	/**
 	 * 0.9.4: rastreo de robots. Cuenta las URLs distintas que ofrece la pagina del elemento con mas comentarios (CommentTools::crawlUrls) y
@@ -305,7 +305,7 @@ final class PanelHealth
 			return self::item('crawl', self::OK, ['state' => $reduce ? 'on' : 'off_few', 'a' => 0, 'b' => 0], $reduce ? null : $fix);
 		}
 
-		$u    = CommentTools::crawlUrls($n, (int) ($f['crawl_page'] ?? 20) ?: 20, true, (int) ($f['params']['sort_selector'] ?? 1) !== 0);
+		$u    = CommentTools::crawlUrls($n, (int) ($f['crawl_page'] ?? 20) ?: 20, true, (int) ($f['params']['sort_selector'] ?? 1) !== 0, (int) ($f['crawl_replies'] ?? 0));
 		$many = $u['total'] > self::CRAWL_MANY;
 
 		if ($reduce)

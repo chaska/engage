@@ -15,8 +15,10 @@ if (preg_match('#^(/[^?]*\.php)(/.*)?$#', $path, $m) && is_file($root . $m[1])) 
 	$script = '/api/index.php';
 	$info   = substr($path, 4);
 } else {
+	// 0.9.5: como Apache con mod_rewrite (SEF con reescritura): el script es index.php y NO hay PATH_INFO; Joomla lee la ruta de REQUEST_URI.
+	// (Con PATH_INFO = la ruta, Joomla sin live_site tomaba «/index.php» como carpeta base y no resolvia /component/content/article/...)
 	$script = '/index.php';
-	$info   = $path === '/' ? '' : $path;
+	$info   = '';
 }
 // Solo para las pruebas (0.8.3): la cabecera X-Engage-Test-Https simula una peticion que llega por https (SSL forzado en Joomla)
 if (($_SERVER['HTTP_X_ENGAGE_TEST_HTTPS'] ?? '') === '1') {

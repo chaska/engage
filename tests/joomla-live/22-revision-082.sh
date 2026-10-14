@@ -11,7 +11,7 @@
 #   S      lib/opciones-sensibles.php (0.9.1) core.options sin core.admin no cambia email_base_url ni el resto de opciones sensibles (panel moderno y com_config); auditoria; vista previa solo con core.admin
 #   N      lib/listas-navegador.js   (0.9.2) cada formulario de lista del backend en Chromium (la tarea vacia y «browse» no pueden volver a dar 403)
 #   N2     lib/admin-navegador.js    (0.9.3) rediseno .eg-admin de Comentarios, Plantillas de email y Edicion en Chromium: claro/oscuro x escritorio/movil, sin desbordamiento, sin estilos en linea, contraste, capturas en docs/img
-#   R      lib/rastreo-http.php, lib/rastreo-navegador.js (0.9.4) rastreo de robots: URL base indexable; variantes akengage_* con noindex, follow (meta y X-Robots-Tag), canonical a la base y rel nofollow en todos los enlaces; modulo; opcion apagada; clic de personas; semaforo del panel
+#   R      lib/rastreo-http.php, lib/rastreo-navegador.js (0.9.4/0.9.5, con nginx + php-fpm: lib/nginx-fpm.sh) rastreo de robots con SEF y sin SEF, con y sin live_site / opcion / base aprendida: URL base indexable con su canonical; variantes akengage_* con noindex, follow (meta y X-Robots-Tag), canonical a la base y rel nofollow en todos los enlaces; modulo; opcion apagada; clic de personas; semaforo del panel
 #   H6/H7  no tienen script propio: se comprueban con tests/41 (ficha del activo) y con 21-otros-componentes.sh (terceros con activos en #__assets); ejecute 21 aparte.
 # Ademas de este script hay que pasar: 05 (Gravatar con cache de pagina y Chromium), 03, 17, 19, 20, 21 y 04 (actualizacion).
 # Requisitos: 03-sembrar-y-probar.sh y el paquete actual instalado (02); MariaDB, SMTP de captura (00). Variables: PW_MODULE, CHROMIUM.
@@ -38,8 +38,11 @@ if [ -d "$PW" ] && [ -x "${CHROMIUM:-/opt/pw-browsers/chromium}" ]; then
 	echo "== Navegador (Chromium): rediseno de Comentarios, Plantillas de email y Edicion, claro/oscuro x escritorio/movil (capturas en docs/img) - 0.9.3"
 	node "$AQUI/lib/admin-navegador.js" || rc=1
 	echo "== Rastreo de robots (0.9.4): URL base indexable, variantes con noindex/canonical/nofollow (HTTP) y las personas siguen pudiendo usarlo todo (Chromium)"
+	# 0.9.5: nginx + php-fpm (php -S hace que Joomla se crea en CLI y sin live_site no resuelve las rutas amigables): SEF con reescritura, con y sin live_site
+	bash "$AQUI/lib/nginx-fpm.sh" arrancar >/dev/null || rc=2
 	php "$AQUI/lib/rastreo-http.php" || rc=1
 	node "$AQUI/lib/rastreo-navegador.js" || rc=1
+	bash "$AQUI/lib/nginx-fpm.sh" parar >/dev/null 2>&1 || true
 	php "$AQUI/lib/filtro-datos.php" borrar >/dev/null
 	echo "== Navegador (Chromium): correos HTML en claro y oscuro, escritorio y movil (capturas en docs/img)"
 	node "$AQUI/lib/correos-navegador.js" || rc=1

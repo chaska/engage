@@ -25,7 +25,7 @@ use Throwable;
 final class PanelData
 {
 	/** Version del fork segun el CHANGELOG (la prueba tests/28 comprueba que coincide con su primera entrada). */
-	public const FORK_VERSION = '0.9.4';
+	public const FORK_VERSION = '0.9.5';
 
 	public const REPO_URL      = 'https://github.com/chaska/engage';
 	public const CHANGELOG_URL = 'https://github.com/chaska/engage/blob/main/CHANGELOG.md';
@@ -459,6 +459,22 @@ final class PanelData
 				->order('COUNT(*) DESC');
 			$top = $db->setQuery($q, 0, 1)->loadAssoc();
 			$facts['crawl_comments'] = (int) ($top['n'] ?? 0);
+			// 0.9.5: how many of them are replies (each may link to its parent on another page with ?akengage_cid=)
+			$facts['crawl_replies']  = 0;
+
+			if (!empty($top['asset_id']))
+			{
+				$asset = (int) $top['asset_id'];
+				$q2    = self::query($db);
+				$q2->select('COUNT(*)')
+					->from($db->quoteName('#__engage_comments', 'c'))
+					->where($db->quoteName('c.enabled') . ' = 1')
+					->where($db->quoteName('c.parent_id') . ' IS NOT NULL')
+					->where($db->quoteName('c.asset_id') . ' = :asset')
+					->bind(':asset', $asset, ParameterType::INTEGER);
+				$facts['crawl_replies'] = (int) $db->setQuery($q2)->loadResult();
+			}
+
 			$facts['crawl_page']     = (int) ($params['default_limit'] ?? 20);
 		}
 		catch (Throwable $e)
