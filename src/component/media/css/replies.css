@@ -565,3 +565,10 @@ section.akengage-outer-container .akengage-badge-icon {
 		transform: none !important;
 	}
 }
+
+/* 0.9.5: el comentario al que apunta el ancla de la fecha (#akengage-comment-ID) se resalta y deja margen bajo cabeceras fijas */
+section.akengage-outer-container article[id^="akengage-comment-"]:target {
+	outline: 2px solid Highlight;
+	outline-offset: 3px;
+	scroll-margin-top: 4rem;
+}

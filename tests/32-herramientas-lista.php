@@ -344,7 +344,7 @@ t_ok(str_contains($tplD, 'hidden') && str_contains($tplD, 'data-engage-fav-toggl
 t_ok(!preg_match('/\bstyle\s*=/i', $tplD) && !preg_match('/\bon[a-z]+\s*=/i', $tplD), 'la barra no lleva estilos en linea ni manejadores onclick');
 t_ok(substr_count($tplL, 'style=') === 1 && str_contains($tplL, 'max-width: <?= (int) $maxAvatarWidth ?>px'), 'default_list.php no gana ningun estilo en linea (queda solo el ancho del avatar, que ya existia y es un entero)');
 t_ok(str_contains($tplD, 'akengage-sort-label-<?= (int) $this->assetId ?>') && !str_contains($tplD, 'id="akengage-sort-label"'), 'el id de la etiqueta del grupo es unico por contenido (varias secciones en una misma pagina)');
-t_ok(str_contains($view, 'CommentTools::relativeUrl(Uri::getInstance()') && str_contains($view, '$this->contentAuthorId = null;'), 'la vista sanea la URL relativa de la peticion y no arrastra el autor de un articulo anterior (la vista puede reutilizarse)');
+t_ok(str_contains($view, 'CommentTools::relativeUrl($this->requestUri())') && str_contains($view, '$this->contentAuthorId = null;'), 'la vista sanea la URL relativa de la peticion y no arrastra el autor de un articulo anterior (la vista puede reutilizarse)');
 t_ok(str_contains($tplD, '$this->escape($this->sortUrl(') && str_contains($tplD, '$this->escape($this->favoritesUrl('), 'las URL de la barra salen escapadas');
 t_ok(str_contains($view, 'htmlspecialchars($url') || str_contains($view, '$e($url)'), 'el enlace del boton Copiar sale escapado');
 t_ok(str_contains($view, 'CommentTools::permalinkRelative('), 'el enlace permanente se construye en el servidor con CommentTools::permalinkRelative (relativo y validado)');

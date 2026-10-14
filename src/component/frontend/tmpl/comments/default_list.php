@@ -129,13 +129,13 @@ $favView = $this->isFavoritesView();
 
 	<article
 			class="akengage-comment--<?= ($comment->enabled == 1) ? 'primary' : (($comment->enabled == -3) ? 'spam' : 'unpublished') ?> border-start border-4 border-<?= $bsCommentStateClass ?> ps-2 mb-2"
-			id="akengage-comment-<?= $comment->id ?>" itemscope itemtype="http://schema.org/Comment">
+			id="akengage-comment-<?= $comment->id ?>" itemprop="comment" itemscope itemtype="https://schema.org/Comment">
 
 		<span itemprop="dateCreated" content="<?= $commentDate->toISO8601(false) ?>"></span>
 		<span itemprop="datePublished" content="<?= $commentDate->toISO8601(false) ?>"></span>
 
 		<footer
-				itemprop="author" itemscope itemtype="http://schema.org/Person"
+				itemprop="author" itemscope itemtype="https://schema.org/Person"
 				class="akengage-comment-properties d-flex flex-row gap-1 mb-1 bg-light p-1 small border-bottom border-2">
 			<?php if (!empty($avatar)): ?>
 			<div class="akengage-commenter-avatar-container d-none d-sm-block flex-shrink-1" style="max-width: <?= (int) $maxAvatarWidth ?>px">
@@ -178,8 +178,8 @@ $favView = $this->isFavoritesView();
 				</div>
 				<div class="akengage-comment-info d-flex flex-row flex-wrap gap-2 align-items-center">
 					<div class="akengage-comment-permalink flex-grow-1">
-						<?php // 0.8.1: relative and validated link, escaped for the attribute (it used to print the whole request URL as-is: reflected XSS) ?>
-						<a href="<?= htmlspecialchars($this->commentPermalink((int) $comment->id), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"
+						<?php // 0.9.5: the comment is on THIS page of the thread, so its date is an anchor on the current page (no new address to crawl); the ?akengage_cid= link stays for comments on another page (reply-to, thread link, emails, module) ?>
+						<a href="#akengage-comment-<?= (int) $comment->id ?>"
 								class="text-body text-decoration-none"<?= $this->crawlRel() ?>
 						>
 							<?= $commentDate->format(Text::_('DATE_FORMAT_LC2'), true) ?>

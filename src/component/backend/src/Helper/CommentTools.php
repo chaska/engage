@@ -472,13 +472,14 @@ final class CommentTools
 	}
 
 	/**
-	 * 0.9.4: cuantas URLs DISTINTAS rastreables ofrece la pagina de un elemento con $comments comentarios publicados: una por cada fecha-enlace
-	 * permanente (`?akengage_cid=ID`), cada pagina de la lista en cada orden (sin orden + newest/oldest/top: 4 series) y los enlaces de orden y
-	 * de favoritos. Cada una carga el articulo entero y suma una visita en el contador de Joomla.
+	 * 0.9.4: cuantas URLs DISTINTAS rastreables ofrece la pagina de un elemento con $comments comentarios publicados: cada pagina de la lista en cada
+	 * orden (sin orden + newest/oldest/top: 4 series), los enlaces de orden y de favoritos y, como maximo, un `?akengage_cid=ID` por respuesta ($replies:
+	 * el enlace «en respuesta a» a un padre que esta en otra pagina). 0.9.5: la fecha de cada comentario ya es un ancla (`#akengage-comment-ID`) sobre la
+	 * misma pagina y no cuenta. Cada URL carga el articulo entero y suma una visita en el contador de Joomla.
 	 *
 	 * @return array{cid:int,pages:int,series:int,pagination:int,tools:int,total:int}
 	 */
-	public static function crawlUrls(int $comments, int $pageSize, bool $reactions = true, bool $selector = true): array
+	public static function crawlUrls(int $comments, int $pageSize, bool $reactions = true, bool $selector = true, int $replies = 0): array
 	{
 		$comments = max(0, $comments);
 		$pageSize = max(1, $pageSize);
@@ -488,6 +489,74 @@ final class CommentTools
 		// Enlaces de la barra: un orden por modo (pagina 1) y el conmutador de favoritos (con y sin orden)
 		$tools    = ($selector && $comments >= 2) ? (($series - 1) + ($reactions ? $series : 0)) : 0;
 
-		return ['cid' => $comments, 'pages' => $pages, 'series' => $series, 'pagination' => $pagin, 'tools' => $tools, 'total' => $comments + $pagin + $tools];
+		$cid = min($comments, max(0, $replies));
+
+		return ['cid' => $cid, 'pages' => $pages, 'series' => $series, 'pagination' => $pagin, 'tools' => $tools, 'total' => $cid + $pagin + $tools];
+	}
+
+	/**
+	 * 0.9.5: valor del `href` de la etiqueta canonical de la pagina de un hilo. Siempre la direccion LIMPIA de la peticion (la ruta amigable tal cual,
+	 * sin ningun `akengage_*`, solo con la lista blanca de parametros). Con una base fiable ($origin: opcion, live_site o base aprendida de TrustedBase)
+	 * es absoluta; SIN base fiable es RELATIVA a la raiz (`/ruta/limpia`), construida solo con la ruta ya validada: nunca sale de la cabecera Host.
+	 * Cadena vacia si la ruta no es segura (no se imprime ninguna canonical).
+	 *
+	 * @param   string  $requestUri  Ruta y consulta de la peticion (REQUEST_URI)
+	 * @param   string  $origin      `https://host[:puerto]` fiable o ''
+	 */
+	public static function canonicalHref(string $requestUri, string $origin = ''): string
+	{
+		if (strlen($requestUri) > 2000)
+		{
+			return '';
+		}
+
+		$clean = self::cleanUrl($requestUri);
+
+		// Sin una ruta valida que empiece por una sola barra no hay canonical (la ruta se habria descartado y quedaria solo `?...`)
+		if ($clean === '' || $clean[0] !== '/')
+		{
+			return '';
+		}
+
+		if ($origin === '')
+		{
+			return preg_match('/^[\x21\x23-\x26\x28-\x3B\x3D\x3F-\x5B\x5D-\x5F\x61-\x7E]+$/D', $clean) === 1 ? $clean : '';
+		}
+
+		$abs = $origin . $clean;
+
+		return self::isSafeAbsoluteUrl($abs) ? $abs : '';
+	}
+
+	/**
+	 * 0.9.5: URL (relativa, ruta amigable de la peticion) de una pagina de la lista: conserva el orden y los favoritos elegidos, sustituye la
+	 * pagina y el comentario. La primera pagina es la direccion limpia (sin `akengage_limitstart`). Con el ancla de la seccion de comentarios.
+	 */
+	public static function pageUrl(string $requestUri, int $limitstart): string
+	{
+		$add = ($limitstart > 0) ? ['akengage_limitstart' => (string) $limitstart] : [];
+
+		return self::withQuery(self::relativeUrl($requestUri), ['akengage_limitstart', 'akengage_limit', 'akengage_cid'], $add, 'akengage-comments-section');
+	}
+
+	/**
+	 * 0.9.5: cambia el `href` de los enlaces de pagina de Joomla (`...akengage_limitstart=N...`, que Joomla construye sin la ruta amigable, p. ej.
+	 * `/index.php?view=article&id=1:x&akengage_cid=&akengage_limitstart=20&catid=8`) por la URL de la pagina actual con esa pagina (`pageUrl`).
+	 * Los enlaces sin numero de pagina no se tocan. $url recibe el numero de pagina y devuelve la URL ya segura (sin escapar).
+	 */
+	public static function rewritePageLinks(string $html, callable $url): string
+	{
+		return (string) preg_replace_callback('~(<a\b(?:[^>"\']|"[^"]*"|\'[^\']*\')*?\shref=")([^"]*)(")~i', static function (array $m) use ($url): string {
+			$href = html_entity_decode($m[2], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+			if (preg_match('/[?&]akengage_limitstart=([0-9]{1,7})(?:&|$)/', $href, $n) !== 1)
+			{
+				return $m[0];
+			}
+
+			$new = (string) $url((int) $n[1]);
+
+			return $new === '' ? $m[0] : $m[1] . htmlspecialchars($new, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . $m[3];
+		}, $html);
 	}
 }

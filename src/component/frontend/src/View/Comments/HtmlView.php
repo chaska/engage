@@ -10,6 +10,7 @@ namespace Akeeba\Component\Engage\Site\View\Comments;
 defined('_JEXEC') or die;
 
 use Akeeba\Component\Engage\Administrator\Helper\CommentTools;
+use Akeeba\Component\Engage\Administrator\Helper\TrustedBase;
 use Akeeba\Component\Engage\Administrator\Helper\ListOrdering;
 use Akeeba\Component\Engage\Administrator\Helper\ReactionIcons;
 use Akeeba\Component\Engage\Administrator\Helper\Reactions;
@@ -391,7 +392,7 @@ class HtmlView extends BaseHtmlView
 
 		$baseUrl = Uri::getInstance(Route::_('index.php?option=com_engage'));
 		// 0.8.1: relative and validated (no host, no unknown query parameters): this value ends up in HTML that the page cache shares
-		$baseUrl->setVar('returnurl', base64_encode(CommentTools::relativeUrl(Uri::getInstance()->toString(['path', 'query']))));
+		$baseUrl->setVar('returnurl', base64_encode(CommentTools::relativeUrl($this->requestUri())));
 		$baseUrl->setVar($app->getFormToken(), 1);
 
 		$baseUrl->setVar('id', '__ID__');
@@ -724,11 +725,6 @@ class HtmlView extends BaseHtmlView
 			$variant   = $reduce ? CommentTools::isVariant(array_keys((array) Factory::getApplication()->getInput()->get->getArray())) : false;
 			$robots    = CommentTools::robotsValue($variant, $favorites, $reduce, (string) $doc->getMetaData('robots'));
 
-			if ($robots === null && !$favorites && empty($state['explicit']))
-			{
-				return;
-			}
-
 			if ($robots !== null)
 			{
 				$doc->setMetaData('robots', $robots);
@@ -745,19 +741,9 @@ class HtmlView extends BaseHtmlView
 				return;
 			}
 
-			// 0.8.1: the origin is only the live_site configured in Joomla, never the Host header of the visitor (the page is shared through the
-			// cache); without a valid live_site no canonical is added (the path and the query are cleaned with a whitelist as well)
-			$origin = CommentTools::trustedOrigin((string) Factory::getApplication()->get('live_site', ''));
-
-			if ($origin === '')
-			{
-				return;
-			}
-
-			// 0.9.4: cleanUrl() drops akengage_sort, _fav, _limitstart, _limit and _cid: the canonical of every variant is the base URL of the article
-			$canonical = $origin . CommentTools::cleanUrl(Uri::getInstance()->toString(['path', 'query']));
-
-			if (!CommentTools::isSafeAbsoluteUrl($canonical))
+			// 0.9.5: with the option on EVERY page that has the comments thread declares its canonical (the base page too: autocanonical); with it off,
+			// only the sorted list as before
+			if (!$reduce && empty($state['explicit']))
 			{
 				return;
 			}
@@ -771,11 +757,58 @@ class HtmlView extends BaseHtmlView
 				}
 			}
 
+			// 0.9.5: the origin is the trusted base (TrustedBase: option, live_site or learned base), never the Host header of the visitor (the page is shared
+			// through the cache). Without any trusted base the canonical is RELATIVE to the root (`/clean/path`), built only from the validated path.
+			// cleanUrl() drops every akengage_* parameter: the canonical of each variant is the clean friendly URL of the article.
+			$canonical = CommentTools::canonicalHref($this->requestUri(), (string) (TrustedBase::current()['origin'] ?? ''));
+
+			if ($canonical === '')
+			{
+				return;
+			}
+
 			$doc->addHeadLink(htmlspecialchars($canonical, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), 'canonical');
 		}
 		catch (Exception $e)
 		{
 			// Without the extra head data the page is still correct
+		}
+	}
+
+	/**
+	 * 0.9.5: path and query of the REQUEST (`/friendly/path?x=1`) from the server's REQUEST_URI through Joomla's input, not from the URI object that
+	 * Joomla builds with the Host header (a hostile Host with `#` or `?` made it lose the path). The callers clean and validate it before using it.
+	 */
+	private function requestUri(): string
+	{
+		try
+		{
+			$uri = (string) Factory::getApplication()->getInput()->server->get('REQUEST_URI', '', 'raw');
+		}
+		catch (Exception $e)
+		{
+			$uri = '';
+		}
+
+		$pos = strpos($uri, '#');
+		$uri = ($pos === false) ? $uri : substr($uri, 0, $pos);
+
+		return ($uri !== '' && $uri[0] === '/') ? $uri : Uri::getInstance()->toString(['path', 'query']);
+	}
+
+	/**
+	 * 0.9.5: URL of the thread for the structured data (the CreativeWork that contains the comments): the same clean canonical as the <link rel="canonical">
+	 * (trusted base, or a path relative to the root). Empty if the path is not safe.
+	 */
+	public function schemaUrl(): string
+	{
+		try
+		{
+			return CommentTools::canonicalHref($this->requestUri(), (string) (TrustedBase::current()['origin'] ?? ''));
+		}
+		catch (Exception $e)
+		{
+			return '';
 		}
 	}
 
@@ -785,10 +818,13 @@ class HtmlView extends BaseHtmlView
 		return !empty($this->tools['crawl_reduce']) ? ' rel="nofollow"' : '';
 	}
 
-	/** 0.9.4: the links of Joomla's pagination, with rel="nofollow" when "Reduce robot crawling" is on. */
+	/** 0.9.4/0.9.5: the links of Joomla's pagination, on the friendly URL of the page, with rel="nofollow" when "Reduce robot crawling" is on. */
 	public function paginationLinksHtml(): string
 	{
 		$html = (string) $this->pagination->getPagesLinks();
+		// 0.9.5: Joomla builds these links without the friendly route (`/index.php?view=article&id=..&akengage_limitstart=20`): they point to the current page
+		$uri  = $this->requestUri();
+		$html = CommentTools::rewritePageLinks($html, static fn(int $start): string => CommentTools::pageUrl($uri, $start));
 
 		return !empty($this->tools['crawl_reduce']) ? CommentTools::addNofollow($html) : $html;
 	}
@@ -804,7 +840,7 @@ class HtmlView extends BaseHtmlView
 	private function toolsUrl(array $remove, array $add): string
 	{
 		// safeRelative: the path of the request is attacker-influenced (a path starting with // would be a link to another site)
-		return CommentTools::withQuery(CommentTools::relativeUrl(Uri::getInstance()->toString(['path', 'query'])), $remove, $add, 'akengage-comments-section');
+		return CommentTools::withQuery(CommentTools::relativeUrl($this->requestUri()), $remove, $add, 'akengage-comments-section');
 	}
 
 	/** Link of one sort mode (back to the first page; the favourites filter, if active, is kept). */
@@ -837,7 +873,7 @@ class HtmlView extends BaseHtmlView
 	 */
 	public function commentPermalink(int $commentId): string
 	{
-		return CommentTools::permalinkRelative(Uri::getInstance()->toString(['path', 'query']), $commentId);
+		return CommentTools::permalinkRelative($this->requestUri(), $commentId);
 	}
 
 	/** Is the list currently the "only my favourites" one? */
