@@ -1,0 +1,48 @@
+# Correos de aviso de Engage (0.9.0)
+
+## Qué hace Engage con los correos
+
+Engage envía avisos de comentarios (a moderadores, al autor del contenido y a quienes participan en el hilo) con las **plantillas de correo de Joomla** (Sistema > Plantillas de correo). Esas plantillas **no se tocan**: ni las de Engage ni las que usted haya personalizado. Lo que hace desde la 0.9.0 es decorar el mensaje **justo al enviarlo**:
+
+1. **Diseño HTML enriquecido** (opción «Diseño HTML enriquecido en los correos», `email_rich`, Sí por defecto): cabecera con el nombre del sitio y el tipo de aviso, tarjeta con el contenido, botones, pie. Todo con CSS en línea y tablas (lo que exigen los clientes de correo), ancho máximo de 600 píxeles, adaptable a móvil y con modo oscuro (`color-scheme`, `prefers-color-scheme`). **No** carga imágenes (se quitan el avatar y las imágenes del comentario), fuentes, hojas de estilo ni nada externo; **no** lleva píxeles de seguimiento ni JavaScript; solo admite enlaces `http(s)` y `mailto`.
+2. **Aviso de confidencialidad y protección de datos** (opción «Mostrar aviso de confidencialidad», `email_confidential`, Sí por defecto) al pie, también en la parte de texto plano.
+3. **Color de acento** (`email_accent`): lista cerrada de seis tonos (azul, violeta, verde, rojo, naranja, pizarra).
+
+Con las dos primeras opciones en **No** los correos salen exactamente como antes de la 0.9.0.
+
+Con plantillas personalizadas: el HTML de su plantilla se limpia (sin `script`, `style`, formularios, imágenes…) y se coloca dentro de la tarjeta; los elementos de las plantillas por defecto de Engage (barra con el nombre del sitio, bloque legal) se recolocan en la cabecera y el pie.
+
+Los botones solo aparecen si hay dirección: con «Incluir enlaces en los correos» en No, o sin una dirección fiable del sitio (véase `docs/PANEL.md`), los botones desaparecen. El enlace de baja de los suscriptores se mantiene siempre que haya dirección fiable.
+
+## Capturas
+
+Renderizadas en Chromium a partir de los correos realmente enviados por el Joomla de pruebas (`tests/joomla-live/lib/correos-navegador.js`): escritorio y móvil, claro y oscuro, es-ES y en-GB.
+
+| Moderador, claro, escritorio | Moderador, oscuro, escritorio |
+|---|---|
+| ![Moderador claro](img/correo-es-ES-moderador-claro-escritorio.png) | ![Moderador oscuro](img/correo-es-ES-moderador-oscuro-escritorio.png) |
+
+| Suscriptor, claro, móvil | Suscriptor, oscuro, móvil (en-GB) |
+|---|---|
+| ![Suscriptor claro móvil](img/correo-es-ES-suscriptor-claro-movil.png) | ![Suscriptor oscuro móvil](img/correo-en-GB-suscriptor-oscuro-movil.png) |
+
+Todas las variantes están en [`img/`](img/) (`correo-<idioma>-<moderador|suscriptor>-<claro|oscuro>-<escritorio|movil>.png`).
+
+## Aviso de confidencialidad: texto estándar
+
+> **Es un texto estándar, redactado con carácter general. Conviene que lo revise su asesoría legal** (responsable del tratamiento, base jurídica, plazos de conservación, derechos y vías de contacto reales de su sitio) antes de darlo por bueno.
+
+El texto está en cadenas de idioma, de modo que puede cambiarlo sin tocar el código con los **overrides de idioma de Joomla** (Sistema > Idioma > Sobrescrituras): `COM_ENGAGE_MAILWRAP_CONF_TITLE`, `COM_ENGAGE_MAILWRAP_CONF_BODY`, `COM_ENGAGE_MAILWRAP_CONF_PRIVACY` (sin correo de contacto), `COM_ENGAGE_MAILWRAP_CONF_PRIVACY_CONTACT` (con el correo de contacto de Joomla, `mailfrom`), `COM_ENGAGE_MAILWRAP_UNSUB`, `COM_ENGAGE_MAILWRAP_UNSUB_LABEL`, `COM_ENGAGE_MAILWRAP_UNSUB_NOLINK`, `COM_ENGAGE_MAILWRAP_SENT_BY` y los títulos `COM_ENGAGE_MAILWRAP_HEAD_*`. El idioma del correo es el del destinatario (o el del sitio) como hasta ahora; si falta la traducción se usa en-GB.
+
+Qué dice, en esencia: que el mensaje y sus adjuntos son confidenciales y van dirigidos exclusivamente a su destinatario; que si lo ha recibido por error debe avisar al remitente y eliminarlo, sin copiarlo, usarlo ni divulgarlo; que no se garantiza la seguridad ni la integridad de las comunicaciones por correo electrónico; que sus datos se tratan conforme al RGPD para gestionar los comentarios y las notificaciones y cómo ejercer sus derechos contactando con el responsable del sitio (el nombre del sitio y, si está configurado, el correo de contacto de Joomla); y, en los correos a suscriptores, cómo darse de baja.
+
+## Vista previa y correo de prueba
+
+Panel de control > «Vista previa de los correos y correo de prueba» (solo con permiso `core.admin` de Engage):
+
+- La **vista previa** enseña el correo de moderador o de suscriptor, en español o en inglés, con datos de ejemplo y las opciones actuales. Se pinta en un `iframe` con `sandbox` (sin scripts) y no hace ninguna petición externa ni envía nada. Usa las plantillas por defecto de Engage; el correo de prueba, en cambio, usa la plantilla guardada en Joomla.
+- **Enviar correo de prueba**: POST con token, solo para `core.admin`, **solo a la dirección de su cuenta**, y como máximo uno por minuto y sesión.
+
+## Compatibilidad
+
+Probado en Joomla 6.1.4 con SMTP de captura y Chromium (claro y oscuro, escritorio y móvil; capturas en `docs/img/`). No se ha probado en Gmail, Outlook ni Apple Mail reales: el diseño sigue las prácticas habituales (tablas, CSS en línea, sin dependencias) para funcionar en ellos.

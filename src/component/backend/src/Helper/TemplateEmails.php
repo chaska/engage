@@ -346,7 +346,7 @@ abstract class TemplateEmails
 	 * @return  bool True if the email was sent.
 	 * @throws  Exception When $throw === true and there's an error sending the email
 	 */
-	public static function sendMail(string $key, array $data, ?User $user = null, ?string $forceLanguage = null, bool $throw = false, ?Mail $mailer = null): bool
+	public static function sendMail(string $key, array $data, ?User $user = null, ?string $forceLanguage = null, bool $throw = false, ?Mail $mailer = null, array $wrap = []): bool
 	{
 		if (empty($user))
 		{
@@ -394,20 +394,18 @@ abstract class TemplateEmails
 				return false;
 			}
 
-			if (ComponentHelper::getParams('com_engage')->get('workaround_mailtemplate', 1))
-			{
-				$templateMailer = MailTemplateHotFix::getAWorkingMailTemplate($key, $langTag, $mailer);
-			}
-			else
-			{
-				$templateMailer = new MailTemplate($key, $langTag, $mailer);
-			}
+			$templateMailer = self::buildTemplateMailer($key, $langTag, $mailer, $data);
 
-			// 0.8.3: with empty link tags the dead buttons and links are removed after the tags are replaced (EngageMailTemplate)
-			if (self::hasEmptyLinks($data) && get_class($templateMailer) === MailTemplate::class)
+			// 0.9.0: rich HTML wrapper and confidentiality notice, applied to the final message when it is sent (the stored templates are not touched)
+			if ($wrap !== [] && !empty($wrap['enabled']) && $mailer instanceof Mail)
 			{
-				$templateMailer                   = new EngageMailTemplate($key, $langTag, $mailer);
-				$templateMailer->engageStripLinks = true;
+				$wrap['lang'] = $langTag;
+				$wrap['key']  = $key;
+				$wrap['tr']   = self::translator($langTag);
+				$mailer       = EngageMailer::from($mailer, $wrap);
+
+				// the template classes keep a reference to the mailer given to them: build them again with the decorating one
+				$templateMailer = self::buildTemplateMailer($key, $langTag, $mailer, $data);
 			}
 
 			$templateMailer->addTemplateData(self::inertLinks($data));
@@ -427,6 +425,57 @@ abstract class TemplateEmails
 
 			return false;
 		}
+	}
+
+	/** The MailTemplate object that will send the message (hot fix class of 0.7.x, or the one that removes dead links, or the core one). */
+	private static function buildTemplateMailer(string $key, string $langTag, Mail $mailer, array $data): MailTemplate
+	{
+		if (ComponentHelper::getParams('com_engage')->get('workaround_mailtemplate', 1))
+		{
+			$templateMailer = MailTemplateHotFix::getAWorkingMailTemplate($key, $langTag, $mailer);
+		}
+		else
+		{
+			$templateMailer = new MailTemplate($key, $langTag, $mailer);
+		}
+
+		// 0.8.3: with empty link tags the dead buttons and links are removed after the tags are replaced (EngageMailTemplate)
+		if (self::hasEmptyLinks($data) && get_class($templateMailer) === MailTemplate::class)
+		{
+			$templateMailer                   = new EngageMailTemplate($key, $langTag, $mailer);
+			$templateMailer->engageStripLinks = true;
+		}
+
+		return $templateMailer;
+	}
+
+	/**
+	 * Translator for the language of the email: strings of com_engage (with the overrides of that language), falling back to en-GB.
+	 *
+	 * @return  callable  fn(string $key, ...$args): string
+	 * @since   0.9.0
+	 */
+	public static function translator(string $langTag): callable
+	{
+		$lang = null;
+
+		try
+		{
+			$tag  = preg_match('/^[a-z]{2,3}-[A-Z]{2}$/', $langTag) === 1 ? $langTag : 'en-GB';
+			$lang = Factory::getContainer()->get(\Joomla\CMS\Language\LanguageFactoryInterface::class)->createLanguage($tag, false);
+			// $default = true: the strings of en-GB are loaded first, so a missing translation falls back to English
+			$lang->load('com_engage', JPATH_ADMINISTRATOR, $tag, true, true);
+		}
+		catch (\Throwable $e)
+		{
+			$lang = null;
+		}
+
+		return static function (string $k, ...$args) use ($lang): string {
+			$text = $lang ? (string) $lang->_($k) : $k;
+
+			return $args ? vsprintf($text, $args) : $text;
+		};
 	}
 
 	/**

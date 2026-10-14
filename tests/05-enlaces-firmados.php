@@ -122,6 +122,6 @@ namespace {
 	// Email: los enlaces de moderación solo se firman para quien tiene permiso
 	$email = file_get_contents($root . '/../plugins/engage/email/src/Extension/Email.php');
 	t_ok(preg_match_all('/\$can(State|Delete) \? SignedURL::getAbsoluteSignedURL/', $email) === 6, 'Email.php: 6 enlaces de moderación condicionados a core.edit.state / core.delete');
-	t_ok(strpos($email, "'UNSUBSCRIBE_URL'  => SignedURL::getAbsoluteSignedURL") !== false, 'Email.php: el enlace de baja se firma para todos');
+	t_ok(strpos($email, "\$unsubUrl = SignedURL::getAbsoluteSignedURL(sprintf(\$protoUrl, 'comments.unsubscribe'") !== false && strpos($email, "'UNSUBSCRIBE_URL'  => \$unsubUrl,") !== false, 'Email.php: el enlace de baja se firma para todos');
 	t_fin();
 }
