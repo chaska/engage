@@ -17,7 +17,7 @@
 		<downloads>
 			<downloadurl type="full" format="zip">https://github.com/chaska/engage/releases/download/v3.4.7/pkg_engage-3.4.7.zip</downloadurl>
 		</downloads>
-		<sha256>27698ff1bd019af3bb23172e8930627409fb23ba41c5ed8a8ebdfb8cdb9a0b69</sha256>
+		<sha256>533b13aedce4ea362375a3c7737191932cb041ad996a5060b26e45209948d75d</sha256>
 		<tags>
 			<tag>stable</tag>
 		</tags>

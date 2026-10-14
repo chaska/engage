@@ -10,6 +10,7 @@
 #   C      lib/correos-html.php      (0.9.0) correos con diseño HTML enriquecido y aviso de confidencialidad: 4 combinaciones de opciones x es/en x moderador/suscriptor, plantilla por defecto y personalizada hostil, vista previa y correo de prueba; lib/correos-navegador.js los renderiza en Chromium
 #   S      lib/opciones-sensibles.php (0.9.1) core.options sin core.admin no cambia email_base_url ni el resto de opciones sensibles (panel moderno y com_config); auditoria; vista previa solo con core.admin
 #   N      lib/listas-navegador.js   (0.9.2) cada formulario de lista del backend en Chromium (la tarea vacia y «browse» no pueden volver a dar 403)
+#   N2     lib/admin-navegador.js    (0.9.3) rediseno .eg-admin de Comentarios, Plantillas de email y Edicion en Chromium: claro/oscuro x escritorio/movil, sin desbordamiento, sin estilos en linea, contraste, capturas en docs/img
 #   H6/H7  no tienen script propio: se comprueban con tests/41 (ficha del activo) y con 21-otros-componentes.sh (terceros con activos en #__assets); ejecute 21 aparte.
 # Ademas de este script hay que pasar: 05 (Gravatar con cache de pagina y Chromium), 03, 17, 19, 20, 21 y 04 (actualizacion).
 # Requisitos: 03-sembrar-y-probar.sh y el paquete actual instalado (02); MariaDB, SMTP de captura (00). Variables: PW_MODULE, CHROMIUM.
@@ -33,6 +34,8 @@ if [ -d "$PW" ] && [ -x "${CHROMIUM:-/opt/pw-browsers/chromium}" ]; then
 	node "$AQUI/lib/revision-082-navegador.js" || rc=1
 	echo "== Navegador (Chromium): formularios de lista del backend (filtros, busqueda, orden, paginacion, limpiar, lote) - 0.9.2"
 	php "$AQUI/lib/filtro-datos.php" crear >/dev/null && node "$AQUI/lib/listas-navegador.js" || rc=1
+	echo "== Navegador (Chromium): rediseno de Comentarios, Plantillas de email y Edicion, claro/oscuro x escritorio/movil (capturas en docs/img) - 0.9.3"
+	node "$AQUI/lib/admin-navegador.js" || rc=1
 	php "$AQUI/lib/filtro-datos.php" borrar >/dev/null
 	echo "== Navegador (Chromium): correos HTML en claro y oscuro, escritorio y movil (capturas en docs/img)"
 	node "$AQUI/lib/correos-navegador.js" || rc=1

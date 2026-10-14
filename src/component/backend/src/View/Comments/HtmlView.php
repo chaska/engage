@@ -16,6 +16,7 @@ use Akeeba\Component\Engage\Administrator\Model\CommentsModel;
 use Exception;
 use HTMLPurifier;
 use HTMLPurifier_Config;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\Language\Text;
@@ -103,6 +104,28 @@ class HtmlView extends BaseHtmlView
 	 * @see     self::loadTemplate()
 	 * @since   3.0.0
 	 */
+	/** @var array<int,array{0:int,1:int}> 0.9.3: comment id => [likes, dislikes] of the comments of this page (empty if the reactions are not available) */
+	public $reactionCounts = [];
+
+	/** @var array<string,int> 0.9.3: type => number of comments (for the chips «Tipo de elemento») */
+	public $typeCounts = [];
+
+	/** @var string 0.9.3: the type chosen in the filter (already validated), or '' */
+	public $activeType = '';
+
+	/** Type of the content item of a comment (`com_content.article`…) from the name of its asset, or ''. */
+	public function typeOf(int $assetId): string
+	{
+		try
+		{
+			return (string) (\Akeeba\Component\Engage\Administrator\Helper\CommentTypes::fromAssetName(\Akeeba\Component\Engage\Site\Helper\Meta::assetName($assetId)) ?? '');
+		}
+		catch (\Throwable $e)
+		{
+			return '';
+		}
+	}
+
 	/** Maximum number of DIFFERENT content items whose sheet is asked of the plugins for one page of the list (0.8.5). */
 	public const MAX_META_ASSETS = 50;
 
@@ -147,6 +170,32 @@ class HtmlView extends BaseHtmlView
 		if (!\count($this->items) && $this->isEmptyState = $this->get('IsEmptyState'))
 		{
 			$this->setLayout('emptystate');
+		}
+
+		// 0.9.3: modern design (shared with the control panel) and the data that the list shows
+		$wa = Factory::getApplication()->getDocument()->getWebAssetManager();
+		$wa->useStyle('com_engage.lists')->useScript('com_engage.panel.theme');
+
+		$this->typeCounts = \Akeeba\Component\Engage\Administrator\Helper\CommentTypes::counts();
+		$this->activeType = \Akeeba\Component\Engage\Administrator\Helper\CommentTypes::validate($this->state->get('filter.itemtype'), \Akeeba\Component\Engage\Administrator\Helper\CommentTypes::available());
+
+		try
+		{
+			$ids = array_map(static fn($i): int => (int) $i->id, (array) $this->items);
+
+			if ($ids)
+			{
+				$store = new \Akeeba\Component\Engage\Administrator\Helper\ReactionStore(Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class));
+
+				foreach ($store->counts($ids) as $cid => $byType)
+				{
+					$this->reactionCounts[(int) $cid] = [(int) ($byType[\Akeeba\Component\Engage\Administrator\Helper\Reactions::LIKE] ?? 0), (int) ($byType[\Akeeba\Component\Engage\Administrator\Helper\Reactions::DISLIKE] ?? 0)];
+				}
+			}
+		}
+		catch (\Throwable $e)
+		{
+			$this->reactionCounts = [];
 		}
 
 		// Create an HTML purifier instance

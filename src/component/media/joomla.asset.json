@@ -114,6 +114,16 @@
 		},
 
 		{
+			"name": "com_engage.lists",
+			"description": "Modern design of the comments list, the email templates and the comment edit screens (.eg-admin)",
+			"type": "style",
+			"uri": "com_engage/admin-lists.css",
+			"dependencies": [
+				"com_engage.panel"
+			]
+		},
+
+		{
 			"name": "com_engage.panel.theme",
 			"description": "Applies the saved control panel design before painting (no defer on purpose)",
 			"type": "script",

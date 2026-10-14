@@ -229,7 +229,7 @@
 }
 
 /* Paginacion de Joomla */
-.eg-admin .pagination { margin: 16px 0 0; }
+.eg-admin .pagination { margin: 16px 0 0; flex-wrap: wrap; max-width: 100%; }
 
 .eg-admin .pagination .page-link {
 	border-color: var(--eg-admin-border);
