@@ -129,7 +129,7 @@ echo I::sprite();
 				<a class="eg-tile" href="#eg-about">
 					<span class="eg-icobox eg-icobox--slate"><?= I::icon('info') ?></span>
 					<span class="eg-tile__label"><?= $e(Text::_('COM_ENGAGE_PANEL_TILE_ABOUT')) ?></span>
-					<span class="eg-tile__hint"><?= $e(Text::sprintf('COM_ENGAGE_PANEL_TILE_ABOUT_HINT', $this->installedVersion ?: '3.4.5')) ?></span>
+					<span class="eg-tile__hint"><?= $e(Text::sprintf('COM_ENGAGE_PANEL_TILE_ABOUT_HINT', $this->installedVersion ?: '3.4.6')) ?></span>
 				</a>
 			</li>
 		</ul>
@@ -359,7 +359,7 @@ echo I::sprite();
 			<h2 class="eg-h2" id="eg-h-about"><?= I::icon('info') ?><?= $e(Text::_('COM_ENGAGE_PANEL_ABOUT')) ?></h2>
 		</div>
 		<dl class="eg-about__facts">
-			<div><dt><?= $e(Text::_('COM_ENGAGE_PANEL_ABOUT_PACKAGE')) ?></dt><dd><?= $e($this->installedVersion ?: '3.4.5') ?></dd></div>
+			<div><dt><?= $e(Text::_('COM_ENGAGE_PANEL_ABOUT_PACKAGE')) ?></dt><dd><?= $e($this->installedVersion ?: '3.4.6') ?></dd></div>
 			<div><dt><?= $e(Text::_('COM_ENGAGE_PANEL_ABOUT_FORK')) ?></dt><dd><?= $e(PanelData::FORK_VERSION) ?></dd></div>
 			<div><dt><?= $e(Text::_('COM_ENGAGE_PANEL_ABOUT_LICENSE')) ?></dt><dd><?= $e(Text::_('COM_ENGAGE_PANEL_ABOUT_LICENSE_VALUE')) ?></dd></div>
 			<div><dt><?= $e(Text::_('COM_ENGAGE_PANEL_ABOUT_AUTHOR')) ?></dt><dd><?= $e(Text::_('COM_ENGAGE_PANEL_ABOUT_AUTHOR_VALUE')) ?></dd></div>

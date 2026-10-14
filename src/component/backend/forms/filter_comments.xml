@@ -89,7 +89,7 @@
                 type="limitbox"
                 label="JGLOBAL_LIST_LIMIT"
                 default="25"
-                class="atsCommonEventsOnChangeSubmit"
+                class="engageCommonEventsOnChangeSubmit"
         />
     </fields>
 

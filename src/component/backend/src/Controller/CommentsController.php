@@ -35,7 +35,10 @@ class CommentsController extends AdminController
 	 */
 	protected function engageAllowedTasks(): ?array
 	{
-		return ['main', 'display', 'publish', 'unpublish', 'delete', 'possiblespam', 'reportham', 'reportspam', 'checkin'];
+		// 0.9.2: '' and 'browse' are what the filter/search/sort/pagination form of the list sends (Joomla's adminForm submits an empty task; the reset
+		// button of backend.js sends «browse»). They are NOT actions: Joomla maps both to the default task, which only shows the list. Without them
+		// every filter of the list ended in 403 (regression of 0.8.3).
+		return ['', 'browse', 'main', 'display', 'publish', 'unpublish', 'delete', 'possiblespam', 'reportham', 'reportspam', 'checkin'];
 	}
 
 	/** @inheritdoc */
