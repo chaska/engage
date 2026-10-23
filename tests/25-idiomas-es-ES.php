@@ -12,7 +12,7 @@ $src = dirname(__DIR__) . '/src';
 
 // Valores (en minúsculas) que pueden ser idénticos al inglés: nombres propios, ejemplos y palabras iguales en español.
 $listaBlanca = [
-	'akeeba engage', 'html purifier', 'composer', 'identicon', 'monsterid', 'wavatar', 'retro', 'robohash', 'spam',
+	'akeeba engage', 'chaska', 'html purifier', 'composer', 'identicon', 'monsterid', 'wavatar', 'retro', 'robohash', 'spam',
 	'john doe', 'john.doe@example.com', 'nicholas k. dionysopoulos / akeeba ltd',
 ];
 // Palabras inglesas que no deben aparecer sueltas en una cadena es-ES (tras quitar HTML, código, URLs y marcadores).

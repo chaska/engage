@@ -1,6 +1,14 @@
 # Aviso de atribución
 
-Este repositorio es un **fork comunitario no oficial** de **Akeeba Engage**.
+Este repositorio es un **fork comunitario no oficial** de **Akeeba Engage**, **iniciado y dirigido por ChasKa**.
+
+| Créditos | |
+|---|---|
+| Obra original (3.4.2) | Nicholas K. Dionysopoulos / Akeeba Ltd |
+| Fork comunitario: inicio, ideas, pruebas y dirección | **ChasKa** |
+| Licencia | GNU GPL versión 3 o posterior |
+
+El panel de control de Engage (tarjeta «Acerca de Engage») y las descripciones de Extensiones > Gestionar recogen ambos créditos.
 
 - Obra original: Akeeba Engage 3.4.2
 - Autor original: Nicholas K. Dionysopoulos / Akeeba Ltd — <https://www.akeeba.com>
