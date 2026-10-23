@@ -1,5 +1,12 @@
 # Registro de cambios del fork
 
+## 0.9.7 — 2026-10-23 (crédito a ChasKa, que inició y dirige el fork, en el panel y en Extensiones; paquete 3.4.11 SIN publicar; sin SQL)
+- **Panel de control > «Acerca de Engage».** Nueva casilla «Fork iniciado y dirigido por» = «ChasKa» (es-ES / en-GB; un nombre propio, sin enlace) detrás de «Autor original» (Akeeba, sin cambios), y en el aviso la línea «Ideas, pruebas y dirección del proyecto: ChasKa.» La rejilla ya es adaptable (móvil y claro/oscuro).
+- **Extensiones > Gestionar.** La descripción del paquete y del componente empieza por «Fork comunitario iniciado y dirigido por ChasKa.»; `<author>` y `<copyright>` de Akeeba quedan intactos, como exige la GPL. No se toca nada de instalación ni de esquema.
+- `NOTICE.md` (tabla de créditos) y `README.md` (primera pantalla) ya lo recogían; captura del panel en `docs/img/panel-acerca-de.png`.
+- ZIP `pkg_engage-3.4.11.zip` sha256 `284a1f478f8cfea9310da5666d616bea87ad2f2619b9b1c778fc38b68c8befee`.
+- Resultados: `php tests/run.php` y `php build/verificar.php` en verde; `lib/panel-acerca-navegador.js` 2/0 (escritorio claro y móvil oscuro: casilla tras «Autor original», sin enlaces ni desbordamiento); 04 desde la 3.4.10: PASA. No se ejecutó nada más.
+
 ## 0.9.6 — 2026-10-23 (los correos de Engage SIEMPRE salen en HTML + texto, con botones sin direcciones a la vista y aviso de confidencialidad; paquete 3.4.10 SIN publicar; sin SQL)
 - **Causa raíz de que el correo llegara en texto plano y sin diseño.** El «Formato de correo» de Joomla (Correos electrónicos > Opciones, `mail_style`) vale **«Solo texto» por defecto**. Con él, `MailTemplate::send()` de Joomla construye únicamente el cuerpo de texto, no manda parte HTML (ni `htmlbody`) y deja el mensaje como `text/plain`: el diseño de la 0.9.0 (que se aplica sobre la parte HTML) no tiene a qué aplicarse. Reproducido con el SMTP de captura: con ese valor llegaba un único `text/plain`. Además, una plantilla de texto que use `{COMMENT_SANITIZED}` mostraba el comentario como HTML crudo (`<p>…</p>`).
 - **Arreglo.** `TemplateEmails::sendMail` fuerza, **solo en memoria y solo mientras construye y envía el mensaje**, `mail_style = both`, sin el envoltorio HTML de Joomla (`disable_htmllayout = 0`) y sin configuración alternativa de la plantilla, y los restaura al acabar (lo guardado en Joomla no se toca). Todos los correos de Engage son `multipart/alternative` (texto + HTML), con cualquier opción de Joomla.
