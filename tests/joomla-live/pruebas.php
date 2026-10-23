@@ -179,7 +179,7 @@ foreach (glob("$mailDir/*.eml") ?: [] as $fm) {
 		$planos .= (stripos($mp[1], 'quoted-printable') !== false ? quoted_printable_decode($mp[2]) : $mp[2]) . "\n";
 	}
 }
-if (preg_match('#unsubscribe: (https?://\S+)#', $planos, $mu)) {
+if (preg_match('#unsubscribe:\s+(https?://\S+)#', $planos, $mu)) {
 	q('DELETE FROM jos_engage_unsubscribe');
 	$cu = new Cliente($BASE, $tmp, 'baja'); $rb = $cu->get($mu[1]);
 	$cu2 = (int) one('SELECT COUNT(*) FROM jos_engage_unsubscribe');
