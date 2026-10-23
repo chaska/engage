@@ -288,6 +288,14 @@ abstract class TemplateEmails
 			}
 		}
 
+		// 0.9.6: the text part never shows the comment as HTML (`<p>…</p>`): a template that uses {COMMENT_SANITIZED} in its plain text gets the clean text
+		// (paragraphs kept, tags removed, entities decoded ONCE by EmailWrapper::htmlToText: a comment that says «&amp;» keeps saying «&amp;»)
+		if (isset($data['COMMENT_PLAINTEXT']) && is_string($data['COMMENT_PLAINTEXT']))
+		{
+			$data['COMMENT_PLAINTEXT'] = trim($data['COMMENT_PLAINTEXT']);
+			$data['COMMENT_SANITIZED'] = $data['COMMENT_PLAINTEXT'];
+		}
+
 		return $data;
 	}
 
@@ -414,7 +422,37 @@ abstract class TemplateEmails
 			$templateMailer->addTemplateData(self::plainTextData($data), true);
 			$templateMailer->addRecipient(trim($user->email), $user->name);
 
-			return $templateMailer->send();
+			// 0.9.6: Engage ALWAYS sends HTML + plain text (multipart/alternative), whatever the «Mail format» of Joomla's Mail Templates options says
+			// (its default is «Plain text only»: the 0.9.0 design never reached such sites). The option is forced in memory only while the message
+			// is built and sent, and restored afterwards; the stored configuration is never touched.
+			$mailsParams = ComponentHelper::getParams('com_mails');
+			$forced      = ['mail_style' => 'both', 'disable_htmllayout' => '0', 'alternative_mailconfig' => 0];
+			$previous    = [];
+
+			foreach ($forced as $k => $v)
+			{
+				$previous[$k] = $mailsParams->get($k);
+				$mailsParams->set($k, $v);
+			}
+
+			try
+			{
+				return $templateMailer->send();
+			}
+			finally
+			{
+				foreach ($previous as $k => $v)
+				{
+					if ($v === null)
+					{
+						$mailsParams->remove($k);
+					}
+					else
+					{
+						$mailsParams->set($k, $v);
+					}
+				}
+			}
 		}
 		catch (Exception $e)
 		{

@@ -8,8 +8,8 @@
 namespace Akeeba\Plugin\Engage\Email\Extension;
 
 use Akeeba\Component\Engage\Administrator\Helper\Avatar;
-use Akeeba\Component\Engage\Administrator\Helper\Html2Text;
 use Akeeba\Component\Engage\Administrator\Helper\HtmlFilter;
+use Akeeba\Component\Engage\Administrator\Helper\EmailWrapper;
 use Akeeba\Component\Engage\Administrator\Helper\TemplateEmails;
 use Akeeba\Component\Engage\Administrator\Helper\TrustedBase;
 use Akeeba\Component\Engage\Administrator\Helper\UserFetcher;
@@ -48,6 +48,15 @@ class Email extends CMSPlugin implements SubscriberInterface
 	 * @since 3.0.0
 	 */
 	protected $allowLegacyListeners = false;
+
+	/** 0.9.6: actions of the plain text part of each email: label (language key) => tag of the address. */
+	private const ACTIONS = [
+		'com_engage.manage'          => ['COM_ENGAGE_MAILWRAP_ACT_VIEW' => 'COMMENT_LINK', 'COM_ENGAGE_MAILWRAP_ACT_PUBLISH' => 'PUBLISH_URL', 'COM_ENGAGE_MAILWRAP_ACT_DELETE' => 'DELETE_URL', 'COM_ENGAGE_MAILWRAP_ACT_POSSIBLESPAM' => 'POSSIBLESPAM_URL', 'COM_ENGAGE_MAILWRAP_ACT_SPAM' => 'SPAM_URL'],
+		'com_engage.spam'            => ['COM_ENGAGE_MAILWRAP_ACT_VIEW' => 'COMMENT_LINK', 'COM_ENGAGE_MAILWRAP_ACT_PUBLISH' => 'PUBLISH_URL', 'COM_ENGAGE_MAILWRAP_ACT_DELETE' => 'DELETE_URL', 'COM_ENGAGE_MAILWRAP_ACT_SPAM' => 'SPAM_URL', 'COM_ENGAGE_MAILWRAP_ACT_UNSPAM' => 'UNSPAM_URL'],
+		'com_engage.notify_managers' => ['COM_ENGAGE_MAILWRAP_ACT_VIEW' => 'COMMENT_LINK', 'COM_ENGAGE_MAILWRAP_ACT_UNPUBLISH' => 'UNPUBLISH_URL', 'COM_ENGAGE_MAILWRAP_ACT_DELETE' => 'DELETE_URL', 'COM_ENGAGE_MAILWRAP_ACT_POSSIBLESPAM' => 'POSSIBLESPAM_URL', 'COM_ENGAGE_MAILWRAP_ACT_SPAM' => 'SPAM_URL'],
+		'com_engage.notify'          => ['COM_ENGAGE_MAILWRAP_ACT_VIEW' => 'COMMENT_LINK'],
+		'com_engage.notify_author'   => ['COM_ENGAGE_MAILWRAP_ACT_VIEW' => 'COMMENT_LINK'],
+	];
 
 	/**
 	 * Returns an array of events this subscriber will listen to.
@@ -386,7 +395,6 @@ class Email extends CMSPlugin implements SubscriberInterface
 
 		$purifier           = new HTMLPurifier($purifierConfig);
 		$processedComment   = $purifier->purify(HTMLHelper::_('engage.processCommentTextForDisplay', $comment->body));
-		$plainTextConverter = new Html2Text($processedComment);
 
 		try
 		{
@@ -410,7 +418,7 @@ class Email extends CMSPlugin implements SubscriberInterface
 			'CONTENT_CATEGORY'  => strip_tags((string) ($meta['category'] ?? '')),
 			'AVATAR_URL'        => $avatarUrl,
 			'COMMENT_SANITIZED' => $processedComment,
-			'COMMENT_PLAINTEXT' => $plainTextConverter->getText(),
+			'COMMENT_PLAINTEXT' => EmailWrapper::htmlToText($processedComment),
 		];
 
 		// Send emails
@@ -480,7 +488,7 @@ class Email extends CMSPlugin implements SubscriberInterface
 			// Try to send an email
 			try
 			{
-				TemplateEmails::sendMail($type, array_merge($data, [
+				$mailData = array_merge($data, [
 					'RECIPIENT_NAME'   => strip_tags($recipient->name),
 					'RECIPIENT_EMAIL'  => strip_tags($recipient->email),
 					'DATE_LOCAL'       => $jCreatedOn->format($dateFormat, true),
@@ -491,7 +499,17 @@ class Email extends CMSPlugin implements SubscriberInterface
 					'SPAM_URL'         => $canState ? SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.reportspam', urlencode($returnUrl)), $comment, $recipient->email) : $fallbackUrl,
 					'UNSPAM_URL'       => $canState ? SignedURL::getAbsoluteSignedURL(sprintf($protoUrl, 'comments.reportham', urlencode($returnUrlComment)), $comment, $recipient->email) : $fallbackUrl,
 					'UNSUBSCRIBE_URL'  => $unsubUrl,
-				]), $recipient, null, false, null, $wrap);
+				]);
+
+				// 0.9.6: the plain text part lists these addresses, each one on its own line with its label (the HTML part shows buttons, never the address)
+				$wrap['actions'] = [];
+
+				foreach (self::ACTIONS[$type] ?? [] as $label => $tag)
+				{
+					$wrap['actions'][] = [$label, (string) ($mailData[$tag] ?? '')];
+				}
+
+				TemplateEmails::sendMail($type, $mailData, $recipient, null, false, null, $wrap);
 			}
 			catch (Exception $e)
 			{

@@ -14,6 +14,21 @@ Con plantillas personalizadas: el HTML de su plantilla se limpia (sin `script`, 
 
 Los botones solo aparecen si hay dirección: con «Incluir enlaces en los correos» en No, o sin una dirección fiable del sitio (véase `docs/PANEL.md`), los botones desaparecen. El enlace de baja de los suscriptores se mantiene siempre que haya dirección fiable.
 
+## Siempre HTML + texto, con cualquier «Formato de correo» de Joomla (0.9.6)
+
+**Qué pasaba:** el «Formato de correo» de Joomla (Sistema > Correos electrónicos > Opciones, `mail_style`) vale **«Solo texto» por defecto**. Con él Joomla no construye ninguna parte HTML y manda el mensaje como `text/plain`: el diseño de la 0.9.0 no tenía dónde aplicarse y llegaba un correo plano, con las direcciones largas a la vista (y, si la plantilla usaba `{COMMENT_SANITIZED}`, el comentario con sus etiquetas `<p>`).
+
+**Qué hace ahora Engage**, sea cual sea ese formato («solo texto», «HTML» o «ambos»):
+
+- Todos los correos salen `multipart/alternative`: texto plano **y** HTML con el diseño. Engage fuerza el formato **solo en memoria, mientras construye y envía ese mensaje**; la configuración guardada de Joomla no se toca.
+- **HTML:** ninguna dirección a la vista. Botones con texto: «Ver comentarios»; en los correos de moderación «Publicar», «Despublicar», «Eliminar», «Posible spam», «Spam y eliminar» o «No es spam» según el caso; y a los suscriptores, «Darse de baja» (baja firmada). En inglés: «View comments», «Publish»… «Unsubscribe».
+- **Texto:** cada dirección en su propia línea con su etiqueta (`Publicar:` y debajo la dirección), también la de baja. El comentario va como texto limpio: párrafos y saltos de línea, sin etiquetas, entidades decodificadas una sola vez.
+- **Aviso de confidencialidad** en el HTML y en el texto de **todos** los correos (`manage`, `notify`, `notify_author`, `notify_managers`, `spam`), también con plantillas personalizadas o antiguas, mientras la opción esté en Sí (por defecto). En el idioma de quien lo recibe (es-ES con «usted», en-GB).
+- «Incluir enlaces en los correos» = No: desaparecen «Ver comentarios» y los botones de moderación (y sus direcciones del texto); **la baja de los suscriptores se mantiene siempre**.
+- Si por cualquier motivo el diseño no se pudiera aplicar, el correo se envía igualmente y el motivo (solo clase de error y mensaje) queda en el registro de errores de PHP.
+
+Si aun así un correo llega plano, comprobar: que el paquete instalado sea la 3.4.10 o posterior (Sistema > Información > el panel de Engage dice la versión), que no haya un plugin de correo de terceros que reescriba el mensaje al enviarlo y el registro de errores de PHP (busque «Engage: the email was sent without the HTML design»).
+
 ## Capturas
 
 Renderizadas en Chromium a partir de los correos realmente enviados por el Joomla de pruebas (`tests/joomla-live/lib/correos-navegador.js`): escritorio y móvil, claro y oscuro, es-ES y en-GB.
