@@ -60,7 +60,8 @@ class EngageMailer extends Mail
 			}
 			catch (Throwable $e)
 			{
-				// The message goes out undecorated
+				// The message goes out undecorated; the reason is recorded (class and message only, nothing of the message itself)
+				error_log('Engage: the email was sent without the HTML design: ' . get_class($e) . ': ' . substr($e->getMessage(), 0, 200));
 			}
 		}
 

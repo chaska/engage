@@ -526,7 +526,8 @@ final class EmailWrapper
 
 			if (($t['unsub_url'] ?? '') !== '' && self::safeHref((string) $t['unsub_url']))
 			{
-				$s .= ' <a href="' . $e($t['unsub_url']) . '" style="color:#1d4ed8;text-decoration:underline;">' . $e($t['unsub_label'] ?? '') . '</a>';
+				// 0.9.6: a button with text («Unsubscribe»), never the address as the visible text
+				$s .= '</p><p style="' . $p . '"><a href="' . $e($t['unsub_url']) . '" style="display:inline-block;padding:8px 14px;border-radius:6px;background-color:#1d4ed8;color:#ffffff;font-size:13px;font-weight:bold;line-height:1.2;text-decoration:none;" rel="noopener nofollow">' . $e(($t['unsub_button'] ?? '') !== '' ? $t['unsub_button'] : ($t['unsub_label'] ?? '')) . '</a>';
 			}
 
 			$s .= '</p>';
@@ -540,7 +541,7 @@ final class EmailWrapper
 	 *
 	 * @param   array  $t  Texts
 	 */
-	public static function plainFooter(array $t, bool $confidential, bool $rich = true): string
+	public static function plainFooter(array $t, bool $confidential, bool $rich = true, string $already = ''): string
 	{
 		$lines   = [];
 		$lines[] = '';
@@ -560,7 +561,12 @@ final class EmailWrapper
 
 			if (($t['unsub_text'] ?? '') !== '')
 			{
-				$lines[] = trim($t['unsub_text'] . (($t['unsub_url'] ?? '') !== '' && self::safeHref((string) $t['unsub_url']) ? ' ' . $t['unsub_url'] : ''));
+				$lines[] = trim((string) $t['unsub_text']);
+
+				if (($t['unsub_url'] ?? '') !== '' && self::safeHref((string) $t['unsub_url']) && !str_contains($already, (string) $t['unsub_url']))
+				{
+					$lines[] = (string) $t['unsub_url'];
+				}
 			}
 		}
 
@@ -595,7 +601,86 @@ final class EmailWrapper
 			'unsub_text'   => $unsubText,
 			'unsub_label'  => (string) $tr('COM_ENGAGE_MAILWRAP_UNSUB_LABEL'),
 			'unsub_url'    => $unsubUrl,
+			// 0.9.6: the unsubscribe BUTTON of the subscriber emails (the address is never printed in the HTML)
+			'unsub_button' => (string) $tr('COM_ENGAGE_MAILWRAP_UNSUB_BUTTON'),
 		];
+	}
+
+	/**
+	 * 0.9.6: the actions of the plain text part: [[label, url], ...] with the translated label and a safe address (a web address, nothing else).
+	 *
+	 * @param   array     $actions     [[language key of the label, url], ...] (empty urls are dropped: «include links» off)
+	 * @param   callable  $tr          Translator
+	 * @param   string    $unsubUrl    Signed unsubscribe address
+	 * @param   bool      $subscriber  Add «Unsubscribe» (always kept, also with links off)
+	 *
+	 * @return  array<int,array{0:string,1:string}>
+	 */
+	public static function plainActions(array $actions, callable $tr, string $unsubUrl, bool $subscriber): array
+	{
+		$out = [];
+
+		foreach ($actions as $a)
+		{
+			if (is_array($a) && isset($a[0], $a[1]) && is_string($a[0]) && is_string($a[1]) && preg_match('/^COM_ENGAGE_MAILWRAP_ACT_[A-Z_]+$/', $a[0]) === 1)
+			{
+				$url = str_replace('&amp;', '&', trim($a[1]));
+
+				if ($url !== '' && self::safeHref($url))
+				{
+					$out[] = [(string) $tr($a[0]), $url];
+				}
+			}
+		}
+
+		if ($subscriber && $unsubUrl !== '' && self::safeHref($unsubUrl))
+		{
+			$out[] = [(string) $tr('COM_ENGAGE_MAILWRAP_ACT_UNSUB'), $unsubUrl];
+		}
+
+		return $out;
+	}
+
+	/** The lines «Label:\naddress» of the actions whose address is not yet in the text (each address on its own line). */
+	private static function missingActions(string $text, array $actions): string
+	{
+		$lines = [];
+
+		foreach ($actions as [$label, $url])
+		{
+			if (!str_contains($text, $url))
+			{
+				$lines[] = $label . ':';
+				$lines[] = $url;
+				$lines[] = '';
+			}
+		}
+
+		return $lines ? "\n" . implode("\n", $lines) : '';
+	}
+
+	/**
+	 * 0.9.6: the comment (already purified HTML) as clean plain text for the text part of the email: paragraphs and line breaks kept, lists as «- item»,
+	 * links as «text (address)», no tags, entities decoded once, no wrapping of lines. Never raw tags, never double escapes.
+	 */
+	public static function htmlToText(string $html): string
+	{
+		$t = preg_replace('~<\s*(script|style)\b.*?<\s*/\s*\1\s*>~is', '', $html) ?? '';
+		$t = preg_replace_callback('~<\s*a\b[^>]*?\shref\s*=\s*(?:"([^"]*)"|\'([^\']*)\')[^>]*>(.*?)<\s*/\s*a\s*>~is', static function (array $m): string {
+			$url  = html_entity_decode($m[1] !== '' ? $m[1] : ($m[2] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+			$text = trim(html_entity_decode(strip_tags($m[3]), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+
+			return (preg_match('~^https?://~i', $url) === 1 && $text !== '' && $text !== $url) ? $text . ' (' . $url . ')' : ($text !== '' ? $text : $url);
+		}, $t) ?? '';
+		$t = preg_replace('~<\s*br\s*/?>~i', "\n", $t) ?? '';
+		$t = preg_replace('~<\s*li\b[^>]*>~i', "\n- ", $t) ?? '';
+		$t = preg_replace('~<\s*/\s*(p|div|blockquote|pre|h[1-6]|ul|ol|tr|table)\s*>~i', "\n\n", $t) ?? '';
+		$t = html_entity_decode(strip_tags($t), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+		$t = str_replace(["\r\n", "\r", "\xC2\xA0"], ["\n", "\n", ' '], $t);
+		$t = preg_replace('/[ \t]+\n/', "\n", $t) ?? '';
+		$t = preg_replace('/\n{3,}/', "\n\n", $t) ?? '';
+
+		return trim($t);
 	}
 
 	/**
@@ -626,6 +711,9 @@ final class EmailWrapper
 		$hasUnsub = $unsub !== '' && (str_contains($body, $unsub) || str_contains($body, htmlspecialchars($unsub, ENT_QUOTES, 'UTF-8')) || str_contains(html_entity_decode($body, ENT_QUOTES | ENT_HTML5, 'UTF-8'), $unsub));
 		$texts    = self::texts($tr, (string) ($ctx['sitename'] ?? ''), (string) ($ctx['contact'] ?? ''), $unsub, !empty($ctx['subscriber']), $hasUnsub);
 
+		// 0.9.6: the plain text part lists every action (view, moderation, unsubscribe) as «Label: address», each on its own line, unless the template already has it
+		$actions = self::plainActions((array) ($ctx['actions'] ?? []), $tr, $unsub, !empty($ctx['subscriber']));
+
 		if ($isHtml)
 		{
 			if ($rich)
@@ -653,12 +741,15 @@ final class EmailWrapper
 
 			if ($altBody !== '')
 			{
-				$altBody = rtrim($altBody) . "\n" . self::plainFooter($texts, $conf, $rich);
+				$extra   = self::missingActions($altBody, $actions);
+				$altBody = rtrim($altBody) . "\n" . $extra . self::plainFooter($texts, $conf, $rich, $altBody . $extra);
 			}
 
 			return [$body, $altBody];
 		}
 
-		return [rtrim($body) . "\n" . self::plainFooter($texts, $conf, $rich), $altBody];
+		$extra = self::missingActions($body, $actions);
+
+		return [rtrim($body) . "\n" . $extra . self::plainFooter($texts, $conf, $rich, $body . $extra), $altBody];
 	}
 }
