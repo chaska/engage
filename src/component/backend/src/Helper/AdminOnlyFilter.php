@@ -64,6 +64,14 @@ final class AdminOnlyFilter
 				return TrustedBase::validateOption($value);
 			}
 
+			if ($key === 'customfield_avatar')
+			{
+				// 0.9.8: only '' (none) or the id of an existing user field that can carry a photo; anything else keeps the stored value
+				$id = AvatarField::validId($value);
+
+				return ($id === '' || isset(AvatarFieldList::available()[$id])) ? $id : $keep;
+			}
+
 			if ($key === 'captcha')
 			{
 				// the filter that config.xml had before (cmd): letters, digits, dots, dashes and underscores

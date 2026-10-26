@@ -147,7 +147,7 @@ class Avatar
 	}
 
 	/**
-	 * Picks the first non-empty avatar from the plugin event results, with its deferred (consent-gated) URL if any.
+	 * Picks the first PHOTO (not the generic local avatar) or, without one, the first non-empty avatar from the plugin event results, with its deferred (consent-gated) URL if any.
 	 *
 	 * @param   array  $eventData  ['results' => string[], 'deferred' => array<string, array{url: string, notice: bool}>]
 	 *
@@ -165,7 +165,22 @@ class Avatar
 			return ['src' => '', 'deferred' => '', 'notice' => true, 'source' => 'engage', 'group' => ''];
 		}
 
-		$src      = array_shift($avatars);
+		// 0.9.8: a real photo (of a plugin) wins over Gravatar, and Gravatar over the generic local avatar, whatever the order of the plugins (the generic one,
+		// with the Gravatar deferred URL if any, is used only when no plugin has a photo)
+		$src  = null;
+		$best = 3;
+
+		foreach ($avatars as $candidate)
+		{
+			$rank = AvatarField::rank((string) $candidate);
+
+			if ($rank < $best)
+			{
+				$best = $rank;
+				$src  = $candidate;
+			}
+		}
+
 		$deferred = $eventData['deferred'][$src] ?? null;
 
 		return [
@@ -228,7 +243,7 @@ class Avatar
 	private static function getAvatarFromCustomField(?int $user_id): ?string
 	{
 		$cParams       = ComponentHelper::getParams('com_engage');
-		$customFieldId = $cParams->get('customfield_avatar', '');
+		$customFieldId = AvatarField::validId($cParams->get('customfield_avatar', ''));
 
 		if (empty($customFieldId))
 		{
@@ -252,27 +267,29 @@ class Avatar
 			return null;
 		}
 
-		$field         = array_shift($fields);
-		$renderedValue = $field->value;
+		$field = array_shift($fields);
 
-		if (is_array($renderedValue))
+		// 0.9.8: the value is written by the user itself (not trusted). Only a path of this site (or an https URL of the trusted base), only an image,
+		// no «..», nothing else: otherwise there is no photo and the next method is used. The caller escapes the result for the HTML.
+		$origin = (string) (TrustedBase::current()['origin'] ?? '');
+		$base   = '';
+
+		try
 		{
-			$renderedValue = array_shift($renderedValue);
+			$base = \Joomla\CMS\Uri\Uri::root(true);
+		}
+		catch (\Throwable $e)
+		{
 		}
 
-		if (empty($renderedValue))
+		$path = AvatarField::imagePath($field->value ?? '', $origin, $base);
+
+		if ($path === '')
 		{
-			return null;
+			$path = AvatarField::imagePath($field->rawvalue ?? '', $origin, $base);
 		}
 
-		$hasMatch = preg_match('#src\s*=\s*"(.*)"#i', $renderedValue, $matches);
-
-		if (!$hasMatch)
-		{
-			return null;
-		}
-
-		return $matches[1] ?: null;
+		return $path !== '' ? $path : null;
 	}
 
 	/**

@@ -37,7 +37,7 @@ final class SettingsSchema
 	public const ADMIN_ONLY = [
 		'com_engage' => [
 			'email_base_url', 'email_base_learned', 'email_base_audit', 'email_confidential', 'iplookup',
-			'filter_mode', 'htmlpurifier_config_joomla', 'htmlpurifier_configstring', 'htmlpurifier_include', 'captcha', 'captcha_for',
+			'customfield_avatar', 'filter_mode', 'htmlpurifier_config_joomla', 'htmlpurifier_configstring', 'htmlpurifier_include', 'captcha', 'captcha_for',
 		],
 	];
 
@@ -147,6 +147,12 @@ final class SettingsSchema
 				case 'list':
 					$n = count($def['options']) + ($def['useglobal'] ? 1 : 0);
 					$def['control'] = $n <= 5 ? 'segmented' : 'select';
+					break;
+
+				case 'userfieldavatar':
+					// 0.9.8: lista dinamica (campos personalizados de usuario con foto): el servidor la calcula
+					$def['dynamic'] = 'userfields';
+					$def['control'] = 'select';
 					break;
 
 				case 'plugins':
@@ -265,6 +271,10 @@ final class SettingsSchema
 				if ($def['type'] === 'plugins')
 				{
 					$allowed = array_merge($allowed, ['', '-1'], array_map('strval', $dynamic[$def['dynamic']] ?? []));
+				}
+				elseif ($def['type'] === 'userfieldavatar')
+				{
+					$allowed = array_merge($allowed, [''], array_map('strval', $dynamic['userfields'] ?? []));
 				}
 
 				if (!in_array($raw, $allowed, true))

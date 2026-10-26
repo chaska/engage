@@ -79,7 +79,7 @@ class SettingsController extends BaseController
 				[$storage, 'load'],
 				[$storage, 'save'],
 				[SettingsStorage::class, 'filter'],
-				fn(): array => ['captcha' => $storage->captchaPlugins()],
+				fn(): array => ['captcha' => $storage->captchaPlugins(), 'userfields' => array_map('strval', array_keys(\Akeeba\Component\Engage\Administrator\Helper\AvatarFieldList::available()))],
 				static function (string $s, string $k, ?string $old = null, ?string $new = null) use ($user, $storage): void { SettingsStorage::log($user, $s, $k, $old, $new, $storage); },
 				static fn(): bool => $user->authorise('core.admin', 'com_engage')
 			);

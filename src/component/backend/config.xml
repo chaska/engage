@@ -356,6 +356,19 @@
         </field>
 
         <field
+                name="customfield_avatar"
+                type="userfieldavatar"
+                addfieldprefix="Akeeba\Component\Engage\Administrator\Field"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::customfield_avatar"
+               validate="adminonly"
+                default=""
+                label="COM_ENGAGE_CONFIG_CUSTOMFIELD_AVATAR_LABEL"
+                description="COM_ENGAGE_CONFIG_CUSTOMFIELD_AVATAR_DESC"
+        >
+            <option value="">COM_ENGAGE_CONFIG_CUSTOMFIELD_AVATAR_NONE</option>
+        </field>
+
+        <field
                 name="show_badges"
                 type="radio"
                 layout="joomla.form.field.radio.switcher"

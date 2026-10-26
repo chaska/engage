@@ -45,6 +45,9 @@ class HtmlView extends BaseHtmlView
 	/** @var array */
 	protected $captcha = [];
 
+	/** @var array<string,string> 0.9.8: user custom fields that can carry a photo (id => title) */
+	protected $userFields = [];
+
 	public function display($tpl = null)
 	{
 		$user = UserFetcher::getUser();
@@ -96,6 +99,7 @@ class HtmlView extends BaseHtmlView
 
 		$canPlugins = SettingsStorage::authorise($user, 'plg_engage_gravatar');
 		$this->captcha = $storage->captchaPlugins();
+		$this->userFields = \Akeeba\Component\Engage\Administrator\Helper\AvatarFieldList::available();
 
 		foreach ($this->captcha as $el)
 		{

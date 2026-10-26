@@ -62,6 +62,7 @@ namespace {
 	/** Misma lógica que Avatar::pickAvatar + default_list.php (se invoca el Avatar real por reflexión). */
 	function html(array $res): string
 	{
+		require_once dirname(__DIR__) . '/src/component/backend/src/Helper/AvatarField.php';
 		require_once dirname(__DIR__) . '/src/component/backend/src/Helper/Avatar.php';
 		$m = new ReflectionMethod(\Akeeba\Component\Engage\Administrator\Helper\Avatar::class, 'pickAvatar');
 		$m->setAccessible(true);
@@ -132,6 +133,7 @@ namespace {
 		t_ok(strpos($h, 'data-engage-gravatar-group=""') !== false && stripos($h, $malo === 'a"><b' ? '<b' : 'zzzz') === false, 'jbcookies con grupo ' . json_encode($malo) . ' => grupo vacio en el HTML (solo "Aceptar todo" concede)');
 	}
 	// La capa del componente tambien filtra lo que reciba (plugin de terceros o manipulado)
+	require_once dirname(__DIR__) . '/src/component/backend/src/Helper/AvatarField.php';
 	require_once dirname(__DIR__) . '/src/component/backend/src/Helper/Avatar.php';
 	$m = new ReflectionMethod(\Akeeba\Component\Engage\Administrator\Helper\Avatar::class, 'pickAvatar');
 	$m->setAccessible(true);

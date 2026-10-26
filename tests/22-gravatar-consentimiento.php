@@ -65,6 +65,7 @@ namespace {
 	/** Misma lógica que Avatar::pickAvatar + default_list.php (se invoca el Avatar real por reflexión). */
 	function html(array $res): string
 	{
+		require_once dirname(__DIR__) . '/src/component/backend/src/Helper/AvatarField.php';
 		require_once dirname(__DIR__) . '/src/component/backend/src/Helper/Avatar.php';
 		$m = new ReflectionMethod(\Akeeba\Component\Engage\Administrator\Helper\Avatar::class, 'pickAvatar');
 		$m->setAccessible(true);

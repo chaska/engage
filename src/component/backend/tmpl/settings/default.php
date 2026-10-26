@@ -183,6 +183,11 @@ echo I::sprite();
 										$options[$el] = $tx === 'PLG_CAPTCHA_' . strtoupper($el) ? $el : $tx;
 									}
 								}
+								elseif ($def['type'] === 'userfieldavatar')
+								{
+									// 0.9.8: «None» + the user fields that can carry a photo (titles escaped below)
+									$options = $options + $this->userFields;
+								}
 								elseif ($def['useglobal'])
 								{
 									$options = ['' => 'JGLOBAL_USE_GLOBAL'] + $options;
