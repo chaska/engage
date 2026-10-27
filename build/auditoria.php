@@ -47,7 +47,7 @@ const AUD_URL_CSS  = ['www.w3.org/2000/svg']; // solo el espacio de nombres xmln
 const AUD_CORREOS = '/@(example\.(com|org|net)|[a-z0-9.-]*\.invalid|[a-z0-9.-]*\.test|akeeba\.com|dionysopoulos\.me|chuggnutt\.com|ejemplo\.[a-z]+|domain\.tld|email\.invalid)$/i';
 
 /** Cadenas que delatan el entorno de quien desarrolla o prueba. */
-const AUD_ENTORNO = '/sitio de pruebas|\bjos_|el hosting|\/home\/[a-z]|\/Users\/[A-Za-z]|C:\\\\Users|Aa1!|BEGIN (RSA |EC |OPENSSH |)PRIVATE KEY|AKIA[0-9A-Z]{16}/i';
+const AUD_ENTORNO = '/hue' . 'va|\bhv' . '6_|hosting' . 'er|\/home\/[a-z]|\/Users\/[A-Za-z]|C:\\\\Users|Aa1!|BEGIN (RSA |EC |OPENSSH |)PRIVATE KEY|AKIA[0-9A-Z]{16}/i';
 
 function audTipo(string $ruta): string
 {

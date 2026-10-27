@@ -26,7 +26,7 @@ t_ok($p('media/js/a.js', 'a.textContent="x"; setTimeout(function(){},10); x.eval
 foreach (['a.png', 'x/captura.jpg', 'f.JPEG', 'g.gif', 'h.webp', 'm.eml', 'd.sqlite', 'v.dump', 'v.sql.gz', 'e.log', '.env', 'k.pem'] as $f) { t_ok($p($f, 'x') !== [], "fichero $f: prohibido"); }
 t_ok($p('tests/x.php', '<?php') !== [] && $p('docs/a.php', '<?php') !== [] && $p('.git/config', 'x') !== [] && $p('upstream/a.php', '<?php') !== [], 'directorios tests, docs, .git y upstream: prohibidos');
 t_ok($p('a.exe', 'x') !== [] && $p('a.sh', 'x') !== [] && $p('a.phar', 'x') !== [], 'extension fuera de la lista cerrada (exe, sh, phar): problema');
-t_ok($p('src/a.php', '<?php // sitio de pruebas') !== [] && $p('src/a.php', '$t="jos_content";') !== [] && $p('src/a.php', '$p="/home/chas/x";') !== [] && $p('src/a.php', '$p="Aa1!secreto";') !== [] && $p('src/a.php', '-----BEGIN PRIVATE KEY-----') !== [], 'cadenas del entorno (sitio real, prefijo de tablas, ruta /home, contraseña de prueba, clave privada): problema');
+t_ok($p('src/a.php', '<?php // hue' . 'va') !== [] && $p('src/a.php', '$t="hv' . '6_content";') !== [] && $p('src/a.php', '$p="/home/chas/x";') !== [] && $p('src/a.php', '$p="Aa1!secreto";') !== [] && $p('src/a.php', '-----BEGIN PRIVATE KEY-----') !== [], 'cadenas del entorno (sitio real, prefijo de tablas, ruta /home, contraseña de prueba, clave privada): problema');
 t_ok($p('src/a.php', '$m="persona@gmail.com";') !== [] && $p('src/a.php', '$m="a@example.com"; $n="b@x.invalid"; $o="c@sitio.test"; $q="nicholas@dionysopoulos.me";') === [], 'correo real: problema; example/invalid/test y los de los creditos: permitidos');
 t_ok($p('vendor/x/a.js', 'eval("1"); var u="https://x.evil.example/";', true) === [] && $p('vendor/x/a.png', 'x', true) !== [], 'terceros: el contenido se fija por huella, pero una imagen sigue prohibida');
 
@@ -61,7 +61,7 @@ $casos = [
 	'correo guardado dentro de la extension' => [fn($d) => file_put_contents("$d/component/media/mensaje.eml", "From: x"), 'tipo de fichero prohibido'],
 	'innerHTML inyectado en un JS propio' => [fn($d) => file_put_contents("$d/component/media/js/tools.js", "\nel.innerHTML = s;\n", FILE_APPEND), 'innerHTML'],
 	'eval inyectado en un JS propio' => [fn($d) => file_put_contents("$d/component/media/js/reactions.js", "\neval(x);\n", FILE_APPEND), 'eval('],
-	'cadena del entorno (sitio real)' => [fn($d) => file_put_contents("$d/component/backend/src/Helper/Timer.php", "\n// example.com\n", FILE_APPEND), 'entorno'],
+	'cadena del entorno (sitio real)' => [fn($d) => file_put_contents("$d/component/backend/src/Helper/Timer.php", "\n// hue" . "va.net\n", FILE_APPEND), 'entorno'],
 	'correo real' => [fn($d) => file_put_contents("$d/component/backend/src/Helper/Timer.php", "\n// persona.real@gmail.com\n", FILE_APPEND), 'correo que no es de ejemplo'],
 	'libreria de terceros modificada' => [fn($d) => file_put_contents("$d/component/backend/vendor/ezyang/htmlpurifier/library/HTMLPurifier.php", "\n// puerta trasera\n", FILE_APPEND), 'tercero MODIFICADO'],
 	'libreria de terceros anadida' => [fn($d) => file_put_contents("$d/component/backend/vendor/ezyang/extra.php", "<?php // x", FILE_APPEND), 'tercero NUEVO'],
