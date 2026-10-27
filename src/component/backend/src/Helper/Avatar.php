@@ -77,6 +77,13 @@ class Avatar
 	{
 		$data = self::resolveAvatarData($user_id, $size, $fallbackEmail, $context);
 
+		// 0.9.10: a comment with no user and no e-mail (imported from another system) or with a provider that gave nothing: the generic local avatar of Engage, like
+		// every other card (no request to a third party, no consent notice)
+		if ($data['src'] === '')
+		{
+			$data['src'] = self::genericSrc($context !== self::CONTEXT_PAGE);
+		}
+
 		/**
 		 * 0.8.3 (H4): the page NEVER receives the third party URL (it carries the hash of the e-mail address). `deferred` is now the opaque reference
 		 * `<comment id>.<size>.<token>` (AvatarResolver) that gravatar.js trades for the real URL, through an endpoint with ACL, after the visitor consents.
@@ -99,6 +106,31 @@ class Avatar
 		}
 
 		return $data;
+	}
+
+	/** The generic local avatar (`avatar-generico.svg`): a path of the site, or absolute on the trusted base for emails ('' without base). */
+	public static function genericSrc(bool $absolute = false): string
+	{
+		$base = '';
+
+		try
+		{
+			$base = \Joomla\CMS\Uri\Uri::root(true);
+		}
+		catch (\Throwable $e)
+		{
+		}
+
+		$path = $base . '/media/com_engage/images/avatar-generico.svg';
+
+		if (!$absolute)
+		{
+			return $path;
+		}
+
+		$origin = (string) (TrustedBase::current()['origin'] ?? '');
+
+		return $origin === '' ? '' : $origin . $path;
 	}
 
 	/**

@@ -1,6 +1,6 @@
 <?php
 /**
- * 0.6.0 / 0.7.0 / 0.8.2: versión propia del paquete (3.4.2.1 y 3.4.3 ya publicadas; 3.4.4 a 3.4.12 saltadas, nunca publicadas; 3.4.13 la vigente, sin publicar). Todos los manifiestos y joomla.asset.json declaran la misma versión,
+ * 0.6.0 / 0.7.0 / 0.8.2: versión propia del paquete (3.4.2.1 y 3.4.3 ya publicadas; 3.4.4 a 3.4.13 saltadas, nunca publicadas; 3.4.14 la vigente, sin publicar). Todos los manifiestos y joomla.asset.json declaran la misma versión,
  * mayor que 3.4.2 según version_compare (Joomla la trata como actualización en sitio) y distinta de la original.
  * Copyright del fork (c)2026 fork comunitario de Engage iniciado por ChasKa; GPL v3 o posterior.
  */
@@ -9,7 +9,7 @@ $raiz = dirname(__DIR__);
 $pkg  = simplexml_load_file("$raiz/src/package/pkg_engage.xml");
 $ver  = (string) $pkg->version;
 
-t_ok($ver === '3.4.13', "pkg_engage.xml declara 3.4.13 (es '$ver')");
+t_ok($ver === '3.4.14', "pkg_engage.xml declara 3.4.14 (es '$ver')");
 t_ok(version_compare($ver, '3.4.2', '>'), 'version_compare: mayor que 3.4.2');
 t_ok(version_compare($ver, '3.4.2.1', '>'), 'version_compare: mayor que la 3.4.2.1 ya publicada (Joomla la ofrece como actualización)');
 t_ok(version_compare($ver, '3.4.3', '>') && version_compare($ver, '3.4.4', '>'), 'version_compare: mayor que la 3.4.3 publicada y que la 3.4.4 saltada');
@@ -36,8 +36,8 @@ t_ok(($asset['version'] ?? '') === $ver, 'joomla.asset.json: misma versión (cac
 $sql = array_map('basename', glob("$raiz/src/component/backend/sql/updates/mysql/*.sql"));
 sort($sql, SORT_NATURAL);
 t_ok(in_array('3.4.3-20261007.sql', $sql, true), 'existe sql/updates/mysql/3.4.3-20261007.sql');
-// 0.8.2 a 0.9.1 (paquete 3.4.13): SIN esquema nuevo. Un fichero mas no haria falta y obligaria a Joomla a ejecutar SQL que no existe; el ultimo sigue siendo el de la 3.4.3.
-t_ok(end($sql) === '3.4.3-20261007.sql', 'el ultimo fichero de esquema sigue siendo 3.4.3-20261007.sql (la 3.4.13 no cambia tablas)');
+// 0.8.2 a 0.9.1 (paquete 3.4.14): SIN esquema nuevo. Un fichero mas no haria falta y obligaria a Joomla a ejecutar SQL que no existe; el ultimo sigue siendo el de la 3.4.3.
+t_ok(end($sql) === '3.4.3-20261007.sql', 'el ultimo fichero de esquema sigue siendo 3.4.3-20261007.sql (la 3.4.14 no cambia tablas)');
 t_ok(version_compare('3.4.3-20261007', '3.0.2-20220107', '>'), 'su nombre es mayor que el último esquema de la 3.4.2 / 3.4.2.1 (3.0.2-20220107)');
 $s = (string) file_get_contents("$raiz/src/component/backend/sql/updates/mysql/3.4.3-20261007.sql");
 t_ok(str_contains($s, 'CREATE TABLE IF NOT EXISTS `#__engage_reactions`') && !preg_match('/ALTER TABLE|DROP TABLE|`#__engage_comments`\s*\(/i', preg_replace('/^--.*$/m', '', $s)), 'solo CREATE TABLE IF NOT EXISTS de la tabla nueva (sin ALTER ni DROP ni tocar comentarios)');

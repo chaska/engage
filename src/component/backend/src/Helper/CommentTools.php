@@ -559,4 +559,25 @@ final class CommentTools
 			return $new === '' ? $m[0] : $m[1] . htmlspecialchars($new, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . $m[3];
 		}, $html);
 	}
+
+	/**
+	 * 0.9.10: the IP address of a comment to show to the moderators: only a valid public/private IPv4 or IPv6 address (filter_var); empty for «0», «0.0.0.0», «::»,
+	 * empty and any other junk (comments imported from other systems often carry «0»). Never returns something that is not an IP address.
+	 */
+	public static function validIp($ip): string
+	{
+		$ip = is_scalar($ip) ? trim((string) $ip) : '';
+
+		if ($ip === '' || strlen($ip) > 45 || filter_var($ip, FILTER_VALIDATE_IP) === false)
+		{
+			return '';
+		}
+
+		if (in_array($ip, ['0.0.0.0', '::', '0:0:0:0:0:0:0:0'], true) || preg_match('/^[0:.]+$/D', $ip) === 1)
+		{
+			return '';
+		}
+
+		return $ip;
+	}
 }

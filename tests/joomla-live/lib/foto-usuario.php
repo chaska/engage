@@ -36,7 +36,7 @@ $FOTO = '/images/avatars/chaska.jpg'; $GEN = '/media/com_engage/images/avatar-ge
 $setCom(['customfield_avatar' => (string) $fid]);
 foreach (['ask', 'off', 'always'] as $m) {
 	$modo($m); $valor('images/avatars/chaska.jpg#joomlaImage://local-images/avatars/chaska.jpg?width=200&height=200');
-	$h = $pagina(); [$s, $d] = $avatar($h, 'F9R-FOTO 1'); [$s2, $d2] = $avatar($h, 'F9R-FOTO 2'); [$sg, $dg] = $avatar($h, 'F9N-LIBRO-001');
+	$h = $pagina(); [$s, $d] = $avatar($h, 'F9R-FOTO 1'); [$s2, $d2] = $avatar($h, 'F9R-FOTO 2'); [$sg, $dg] = $avatar($h, 'F9B libro');
 	r("FT-$m-1", "Gravatar «{$m}»: el usuario con foto en su campo muestra SU foto ($FOTO), sin Gravatar ni referencia diferida", str_contains($s, $FOTO) && $d === '' && !str_contains($s, 'gravatar'), "src=$s $d");
 	$esperadoSin = $m === 'always' ? true : str_contains($s2, 'avatar-generico') || str_contains($s2, 'avatar-blanco');
 	r("FT-$m-2", "Gravatar «{$m}»: el usuario SIN foto y el invitado siguen como antes (" . ($m === 'always' ? 'Gravatar' : 'generico') . ')', $esperadoSin && ($m === 'always' || str_contains($sg, 'avatar-')), "sin foto=$s2 $d2 | invitado=$sg $dg");

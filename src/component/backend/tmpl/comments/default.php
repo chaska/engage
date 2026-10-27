@@ -201,7 +201,7 @@ $initials = static function (string $name): string {
 											<?= $e(Text::_('COM_ENGAGE_COMMENTS_LBL_BROWSERTYPE_' . ($jBrowser->isMobile() ? 'mobile' : 'desktop'))) ?>
 										</span>
 									<?php endif; ?>
-									<?php if (!empty($item->ip)) : ?>
+									<?php if (trim((string) ($item->ip ?? '')) !== '') : // 0.9.10: «0» (imported comments) is shown as it is; empty() would hide it ?>
 										<span class="eg-meta__ip">
 											<span class="visually-hidden"><?= $e(Text::_('COM_ENGAGE_COMMENTS_FILTER_IP')) ?></span>
 											<?php if (!empty($ipLookupUrl)) : ?>

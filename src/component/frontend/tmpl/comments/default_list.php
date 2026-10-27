@@ -13,6 +13,7 @@ defined('_JEXEC') or die();
  * Loaded from default.php
  */
 
+use Akeeba\Component\Engage\Administrator\Helper\CommentTools;
 use Akeeba\Component\Engage\Administrator\Helper\Avatar;
 use Akeeba\Component\Engage\Administrator\Helper\UserFetcher;
 use Joomla\CMS\Factory;
@@ -94,7 +95,9 @@ if ($avatarDeferred !== '')
 }
 $profile       = Avatar::getProfileURL($user);
 $commentDate   = Factory::getDate($comment->created)->setTimezone($this->userTimezone);
-$ipLookupURL   = $this->getIPLookupURL($comment->ip);
+// 0.9.10: only a valid IP address is shown (imported comments carry «0»)
+$ipShown       = CommentTools::validIp($comment->ip ?? '');
+$ipLookupURL   = $ipShown !== '' ? $this->getIPLookupURL($ipShown) : '';
 $isModified    = !empty($comment->modified_by) && !empty($comment->modified) && (
 		empty($comment->created_by) || empty($comment->created) || (
 			($comment->modified_by != $comment->created_by) &&
@@ -246,17 +249,17 @@ $favView = $this->isFavoritesView();
 					<?php endif; ?>
 					</div>
 				</div>
-				<?php if ($this->perms['edit'] || $this->user->authorise('core.manage', $comment->asset_id)): ?>
+				<?php if ($ipShown !== '' && ($this->perms['edit'] || $this->user->authorise('core.manage', $comment->asset_id))): ?>
 				<div>
 					<?php if (!empty($ipLookupURL)): ?>
 					<span class="akengage-comment-ip">
 						<a href="<?= htmlspecialchars((string) $ipLookupURL, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">
-							<?= Text::sprintf('COM_ENGAGE_COMMENTS_IP', htmlspecialchars((string) ($comment->ip ?? '???'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) ?>
+							<?= Text::sprintf('COM_ENGAGE_COMMENTS_IP', htmlspecialchars($ipShown, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) ?>
 						</a>
 					</span>
 					<?php else: ?>
 					<span class="akengage-comment-ip">
-						<?= Text::sprintf('COM_ENGAGE_COMMENTS_IP', htmlspecialchars((string) ($comment->ip ?? '???'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) ?>
+						<?= Text::sprintf('COM_ENGAGE_COMMENTS_IP', htmlspecialchars($ipShown, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) ?>
 					</span>
 					<?php endif; ?>
 				</div>

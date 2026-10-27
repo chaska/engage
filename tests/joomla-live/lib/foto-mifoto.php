@@ -53,7 +53,7 @@ foreach (['' => ['ask', 'off', 'always'], '/sub' => ['ask']] as $sub => $modos) 
 	$crearPlugin($sub); $setCom([]);
 	foreach ($modos as $m) {
 		foreach ([['a', 1, 9], ['d', 9, 1]] as [$ord, $og, $of]) {
-			$modo($m, $og, $of); $h = $pagina(); [$s, $d, $tag] = $imgDe($h, 'F9R-FOTO propietario'); $real = html_entity_decode($s); [$sg, $dg] = $imgDe($h, 'F9N-LIBRO-001');
+			$modo($m, $og, $of); $h = $pagina(); [$s, $d, $tag] = $imgDe($h, 'F9R-FOTO propietario'); $real = html_entity_decode($s); [$sg, $dg] = $imgDe($h, 'F9B libro');
 			r("MF-" . ($sub === '' ? '' : 'sub-') . "$m-$ord", "Gravatar «{$m}», " . ($ord === 'a' ? 'antes' : 'despues') . ' del plugin de fotos' . ($sub === '' ? '' : ', sitio en subcarpeta') . ': el img lleva EXACTAMENTE la URL del plugin (sin extension, con parametros), escapada (&amp;), sin data-engage-gravatar', preg_match($patron($sub), $real) === 1 && str_contains($s, '&amp;task=photo.show') && !preg_match('/&(?!amp;)/', $s) && $d === '' && !str_contains($tag, 'gravatar.com'), "src=$s $d");
 			if ($m === 'ask' && $ord === 'a') { r('MF-ask-invitado', 'en «preguntar» los demas comentarios siguen igual (generico + referencia diferida)', str_contains($sg, 'avatar-') && $dg === 'diferida', "$sg $dg"); }
 		}
