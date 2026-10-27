@@ -1,12 +1,12 @@
 // 0.9.11: aviso del panel de control «Plugins de fotos visibles para invitados» en Chromium REAL: verde con todo Publico; ambar al poner el plugin gravatar (grupo engage)
 // en Registered, con su nombre, el nivel y el arreglo; email/akismet fuera de Publico no avisan; vuelve a verde al restaurar. Restaura el acceso al acabar.
 const fs = require('fs'); const { execFileSync } = require('child_process');
-const { chromium } = require(process.env.PW_MODULE || '/opt/node-tools/node_modules/playwright');
+const { chromium } = require(process.env.PW_MODULE || 'playwright');
 const WORK = process.env.WORK; const BASE = process.env.BASE_URL || 'http://127.0.0.1:8080'; const AP = 'Aa1!' + fs.readFileSync(WORK + '/adminpass.txt', 'utf8').trim();
 const opc = (...a) => execFileSync('php', [__dirname + '/avatar-opciones.php', ...a], { env: process.env });
 let ok = 0, ko = 0; const r = (id, d, c, ev = '') => { (c ? ok++ : ko++); console.log(`${id.padEnd(8)} ${c ? 'PASA ' : 'FALLA'} ${d}${ev ? '  [' + String(ev).slice(0, 300) + ']' : ''}`); };
 (async () => {
-  const b = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+  const b = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox'] });
   try {
     const ctx = await b.newContext({ viewport: { width: 1280, height: 900 } }); const p = await ctx.newPage(); const ext = [];
     p.on('request', (q) => { if (!q.url().startsWith(BASE)) ext.push(q.url()); });

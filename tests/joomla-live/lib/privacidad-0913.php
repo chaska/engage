@@ -58,9 +58,9 @@ r('PV-A5', 'el panel de control muestra el plazo vigente', $cp['code'] === 200 &
 $blkOf = fn(string $h) => preg_match('#<aside[^>]*akengage-privacy-info.*?</aside>#s', $h, $mb) ? $mb[0] : '';
 $pg = $g->get($PAGE)['body'];
 r('PV-B1', 'bajo el formulario hay un bloque de informacion (role=note) con el plazo y sin enlace si no esta configurado', str_contains($pg, 'id="akengage-privacy-info"') && str_contains($pg, 'role="note"') && preg_match('/12 (months|meses)/', $blkOf($pg)) === 1 && !str_contains($blkOf($pg), 'href='));
-$setCom(['privacy_url' => 'https://www.example.com/?option=com_content&view=article&id=45', 'retention_months' => '6']);
+$setCom(['privacy_url' => 'https://example.com/privacidad', 'retention_months' => '6']);
 $pg = $g->get($PAGE)['body']; $blk = $blkOf($pg);
-r('PV-B2', 'con la politica configurada: enlace https con rel noopener noreferrer nofollow y el plazo de 6 meses', str_contains($blk, 'href="https://www.example.com/?option=com_content&amp;view=article&amp;id=45"') && str_contains($blk, 'rel="noopener noreferrer nofollow"') && preg_match('/6 (months|meses)/', $blk) === 1);
+r('PV-B2', 'con la politica configurada: enlace https con rel noopener noreferrer nofollow y el plazo de 6 meses', str_contains($blk, 'href="https://example.com/privacidad"') && str_contains($blk, 'rel="noopener noreferrer nofollow"') && preg_match('/6 (months|meses)/', $blk) === 1);
 foreach (['javascript:alert(1)', '//evil.example/x', 'http://insegura.example/p', '/a"onmouseover=alert(1)', 'https://u:p@evil.example/'] as $hostil) {
 	$setCom(['privacy_url' => $hostil]); $pg = $g->get($PAGE)['body']; $blk = $blkOf($pg);
 	r('PV-B3', 'valor hostil guardado ' . json_encode($hostil) . ': el enlace NO sale', str_contains($pg, 'akengage-privacy-info') && !str_contains($blk, 'href=') && !str_contains($blk, 'evil.example') && !str_contains($blk, 'onmouseover'));

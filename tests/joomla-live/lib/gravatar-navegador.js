@@ -70,7 +70,7 @@ const esLocal = (s) => /\/media\/com_engage\/images\/avatar-generico\.svg$/.test
 const esGrav = (s) => /^https:\/\/www\.gravatar\.com\/avatar\/[0-9a-f]{64}\?/.test(s);
 
 (async () => {
-    const browser = await chromium.launch({executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox']});
+    const browser = await chromium.launch({executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox']});
 
     let t;
     if (process.env.CACHE_PAGINA === '1') {

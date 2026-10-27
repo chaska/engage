@@ -315,7 +315,7 @@ akeeba.Engage.Comments.onSubmit = function (e) {
 
     elButton.classList.add('disabled');
     elButton.style.disabled = "disabled";
-    elButton.innerHTML      = Joomla.Text._("COM_ENGAGE_COMMENTS_FORM_BTN_SUBMIT_PLEASE_WAIT");
+    elButton.textContent    = Joomla.Text._("COM_ENGAGE_COMMENTS_FORM_BTN_SUBMIT_PLEASE_WAIT");
 
     // The small delay is necessary for the browser to have the chance to redraw the button
     window.setTimeout(() => elForm.submit(), 150);

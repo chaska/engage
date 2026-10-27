@@ -147,7 +147,7 @@ const medir = (arg) => {
 };
 
 (async () => {
-    const b = await chromium.launch({executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox']});
+    const b = await chromium.launch({executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox']});
     const errores = [];
     const hosts = new Set();
     const nuevoCtx = async (opts = {}) => {
@@ -361,7 +361,7 @@ const medir = (arg) => {
         r('P defecto', 'con las opciones por defecto (sin las claves) todo esta activado', o.v === 5 && o.dis === 5 && o.fav === 5 && o.js);
     }
 
-    // ================= CAPTURAS de la documentacion (CAPTURAS=1): docs/img/reacciones-*.png
+    // ================= CAPTURAS de la documentacion (CAPTURAS=1): $WORK/capturas/reacciones-*.png
     if (process.env.CAPTURAS) {
         Object.assign(cid, sembrar());
         const lista = async (nombre, vp, vp2, esq, css) => {

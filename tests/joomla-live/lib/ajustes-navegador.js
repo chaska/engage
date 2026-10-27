@@ -63,7 +63,7 @@ for (const u of ['mgrpanel', 'mgradmin']) {
 const permisos = (com) => sql(`UPDATE jos_assets SET rules=${q(JSON.stringify(com))} WHERE name='com_engage'`);
 
 (async () => {
-    const b = await chromium.launch({executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox']});
+    const b = await chromium.launch({executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox']});
     const login = async (user, pass, viewport, colorScheme) => {
         const c = await b.newContext({viewport, colorScheme: colorScheme || 'light'});
         const p = await c.newPage();

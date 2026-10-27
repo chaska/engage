@@ -3,7 +3,7 @@
 // Gravatar «preguntar»: el circulo se mantiene (marcador del Gravatar tras el consentimiento); «desactivado»: se oculta; «siempre»: Gravatar no cambia;
 // moderador/invitado, claro/oscuro, escritorio/movil. Requiere importados-datos.php crear, foto-usuario (campo) preparado por este script.
 const fs = require('fs'); const path = require('path'); const { execFileSync } = require('child_process');
-const { chromium } = require(process.env.PW_MODULE || '/opt/node-tools/node_modules/playwright');
+const { chromium } = require(process.env.PW_MODULE || 'playwright');
 const WORK = process.env.WORK; const BASE = process.env.BASE_URL || 'http://127.0.0.1:8080'; const PAGE = BASE + '/index.php?option=com_content&view=article&id=1&catid=8';
 const opc = (...a) => execFileSync('php', [__dirname + '/avatar-opciones.php', ...a], { env: process.env });
 let ok = 0, ko = 0; const r = (id, d, c, ev = '') => { (c ? ok++ : ko++); console.log(`${id.padEnd(9)} ${c ? 'PASA ' : 'FALLA'} ${d}${ev ? '  [' + String(ev).slice(0, 240) + ']' : ''}`); };
@@ -18,7 +18,7 @@ const medir = (p) => p.evaluate(() => {
   return out;
 });
 (async () => {
-  const b = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+  const b = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox'] });
   try {
     const casos = [['ask', '0'], ['ask', '1'], ['off', '0'], ['off', '1'], ['always', '0']];
     for (const [modo, gen] of casos) {

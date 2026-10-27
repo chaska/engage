@@ -19,8 +19,8 @@ JOOMLA_SITE="$WORK/$SITE_DIR" php "$AQUI/lib/siembra-categorias-071.php" >/dev/n
 php "$AQUI/lib/reacciones-071-http.php" | tail -n "${LINEAS_071:-60}" || rc=1
 # 0.7.1: carrera me gusta / no me gusta con READ COMMITTED, REPEATABLE READ y SERIALIZABLE (RONDAS=25 por defecto; sustituye el servidor php -S por uno de 16 procesos y lo restaura)
 echo "== Carrera me gusta / no me gusta (8+8 peticiones simultaneas por ronda)"; PORT="$PORT" RONDAS="${RONDAS:-25}" php "$AQUI/lib/reacciones-concurrencia.php" | tail -n 12 || rc=1
-PW="${PW_MODULE:-/opt/node-tools/node_modules/playwright}"
-if [ -d "$PW" ] && [ -x "${CHROMIUM:-/opt/pw-browsers/chromium}" ]; then
+PW="${PW_MODULE:-}"
+if [ -d "$PW" ] && [ -x "${CHROMIUM:-}" ]; then
 	export PW_MODULE="$PW"; echo "== Navegador"; node "$AQUI/lib/reacciones-navegador.js" || rc=1
 else
 	echo "NO PROBADO: falta Playwright o Chromium (PW_MODULE / CHROMIUM); no se ejecuto la parte del navegador"; rc=2

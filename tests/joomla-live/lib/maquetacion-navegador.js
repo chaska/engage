@@ -105,7 +105,7 @@ function medirFilas(rem) {
 }
 
 (async () => {
-    const b = await chromium.launch({executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox']});
+    const b = await chromium.launch({executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox']});
     const login = async vp => {
         const c = await b.newContext({viewport: vp, colorScheme: 'light', locale: 'es-ES'});
         const p = await c.newPage();

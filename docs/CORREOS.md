@@ -29,19 +29,9 @@ Los botones solo aparecen si hay dirección: con «Incluir enlaces en los correo
 
 Si aun así un correo llega plano, comprobar: que el paquete instalado sea la 3.4.10 o posterior (Sistema > Información > el panel de Engage dice la versión), que no haya un plugin de correo de terceros que reescriba el mensaje al enviarlo y el registro de errores de PHP (busque «Engage: the email was sent without the HTML design»).
 
-## Capturas
+## Cómo se ha comprobado
 
-Renderizadas en Chromium a partir de los correos realmente enviados por el Joomla de pruebas (`tests/joomla-live/lib/correos-navegador.js`): escritorio y móvil, claro y oscuro, es-ES y en-GB.
-
-| Moderador, claro, escritorio | Moderador, oscuro, escritorio |
-|---|---|
-| ![Moderador claro](img/correo-es-ES-moderador-claro-escritorio.png) | ![Moderador oscuro](img/correo-es-ES-moderador-oscuro-escritorio.png) |
-
-| Suscriptor, claro, móvil | Suscriptor, oscuro, móvil (en-GB) |
-|---|---|
-| ![Suscriptor claro móvil](img/correo-es-ES-suscriptor-claro-movil.png) | ![Suscriptor oscuro móvil](img/correo-en-GB-suscriptor-oscuro-movil.png) |
-
-Todas las variantes están en [`img/`](img/) (`correo-<idioma>-<moderador|suscriptor>-<claro|oscuro>-<escritorio|movil>.png`).
+Renderizados en Chromium a partir de los correos realmente enviados por un Joomla de pruebas (`tests/joomla-live/lib/correos-navegador.js`): escritorio y móvil, claro y oscuro, es-ES y en-GB. Las capturas no se incluyen en el repositorio; la prueba las genera en su directorio de trabajo.
 
 ## Aviso de confidencialidad: texto estándar
 
@@ -60,4 +50,4 @@ Panel de control > «Vista previa de los correos y correo de prueba» (solo con 
 
 ## Compatibilidad
 
-Probado en Joomla 6.1.4 con SMTP de captura y Chromium (claro y oscuro, escritorio y móvil; capturas en `docs/img/`). No se ha probado en Gmail, Outlook ni Apple Mail reales: el diseño sigue las prácticas habituales (tablas, CSS en línea, sin dependencias) para funcionar en ellos.
+Probado en Joomla 6.1.4 con SMTP de captura y Chromium (claro y oscuro, escritorio y móvil; las capturas las genera la prueba, no se incluyen). No se ha probado en Gmail, Outlook ni Apple Mail reales: el diseño sigue las prácticas habituales (tablas, CSS en línea, sin dependencias) para funcionar en ellos.

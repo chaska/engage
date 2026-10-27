@@ -2,8 +2,6 @@
 
 Desde la 0.6.24, al pulsar **Akeeba Engage** en el menú de administración de Joomla se abre un **panel de control** en lugar de caer directamente en la lista de comentarios. Los comentarios, las plantillas de email y las opciones siguen donde estaban y funcionan igual.
 
-![Panel en el diseño Claro](img/panel-claro.png)
-
 ## Qué hay
 
 - **Accesos rápidos**, con icono en cuadrado de color: Comentarios (con insignias de comentarios pendientes y de spam), Plantillas de email, Opciones y Permisos (solo si usted puede administrar el componente) y Acerca de.
@@ -32,9 +30,6 @@ Desde la 0.6.24, al pulsar **Akeeba Engage** en el menú de administración de J
 ## Tres diseños y «Automático»
 
 El selector de la cabecera tiene **Claro**, **Medio** (pizarra de tono cálido), **Oscuro** y **Automático** (sigue el modo claro/oscuro del dispositivo). La preferencia se guarda en el navegador (`localStorage`, clave `eg-admin-theme`, dentro de `try/catch`) y se aplica **antes de pintar** la página (un script pequeño sin `defer` en la cabecera), así que no hay parpadeo. Sin JavaScript, o sin preferencia guardada, manda el dispositivo por CSS puro.
-
-![Panel en el diseño Medio](img/panel-medio.png)
-![Panel en el diseño Oscuro](img/panel-oscuro.png)
 
 El diseño del panel es independiente del tema de administración de Joomla (Atum claro u oscuro): todo el CSS cuelga del contenedor `.eg-admin` y de variables `--eg-admin-*`, y no toca nada fuera de él. El selector se maneja con teclado (flechas, Inicio y Fin) y anuncia el cambio a los lectores de pantalla.
 
@@ -66,8 +61,6 @@ Comprobado en un Joomla 6.1.4 real, actualizando desde el paquete 3.4.2 original
 # Opciones modernas (0.6.25)
 
 La pantalla **Opciones** (menú de Engage > Opciones, o la tarjeta «Opciones» del panel) es una alternativa a la pantalla de opciones de Joomla: categorías a la izquierda, a la derecha filas «etiqueta + control» con una ayuda breve debajo, y **cada cambio se guarda al instante**, sin pulsar «Guardar y cerrar». La pantalla clásica sigue disponible con el botón **Opciones clásicas** (barra de herramientas y cabecera), y siempre es la que tiene todos los campos.
-
-![Opciones en el diseño Claro](img/config-claro.png)
 
 ## Categorías y controles
 
@@ -112,8 +105,6 @@ Nada de esto puede tocar permisos, parámetros de otras extensiones ni escalar p
 
 La fila «etiqueta + control» es ahora una fila flexible con salto de línea: la columna de texto pide como mínimo 16 rem y, si el control no cabe a su lado, baja a la línea siguiente (a la izquierda). Los controles segmentados con opciones largas (más de 40 caracteres en total o alguna de más de 24; desde la 0.6.27 ya no cuenta el número de opciones; p. ej. «Modo de Gravatar» y «Clasificación») pasan siempre a pila: etiqueta y ayuda arriba y el control debajo a todo el ancho, con las opciones repartidas y envueltas en varias líneas. Es CSS y un criterio del servidor (clase `eg-row--wide`); no depende de JavaScript. Los interruptores, selectores, números y segmentados cortos no cambian.
 
-![Privacidad y Gravatar](img/config-gravatar.png)
-
 ## Controles segmentados por ancho real (0.6.27)
 
 El apilado ya no depende del número de opciones sino del ancho real del texto (clase del servidor en cada fila):
@@ -123,8 +114,6 @@ El apilado ya no depende del número de opciones sino del ancho real del texto (
 - **Largos** (`eg-row--wide`): pila a todo el ancho con rejilla regular de columnas iguales.
 
 **Ayudas acortadas**: el texto de ayuda de una fila se acorta en el servidor a 200 caracteres (termina en «…»); no es un recorte por CSS (`line-clamp`). El texto completo está siempre en «Más información», un `<details>` nativo con `<summary>`: se abre con Tab + Intro/Espacio y lo anuncian los lectores de pantalla como expandido o contraído.
-
-![Opciones de Diseño con los segmentados cortos](img/config-segmentados.png)
 
 Prueba: `tests/joomla-live/14-opciones-segmentados.sh`.
 
@@ -153,15 +142,6 @@ Opciones en **Opciones > Notificaciones**: «Diseño HTML enriquecido en los cor
 ## Rediseño de Comentarios, Plantillas de email y Edición (0.9.3)
 
 Las tres pantallas usan el diseño `.eg-admin` del panel (variables de `panel.css`, hoja `admin-lists.css`): se adaptan al tema claro u oscuro de Joomla, son accesibles (estado con color y texto, foco visible, contraste mínimo 4,5), sin estilos en línea, sin recursos externos y sin Gravatar (avatar de iniciales). En escritorio la lista es una tabla compacta; en móvil cada comentario es una tarjeta. Arriba, el filtro «Tipo de elemento» (con recuento) y, debajo, «Elemento».
-
-| | Claro | Oscuro |
-|---|---|---|
-| Comentarios, escritorio | ![](img/admin-comentarios-claro-escritorio.png) | ![](img/admin-comentarios-oscuro-escritorio.png) |
-| Comentarios, móvil | ![](img/admin-comentarios-claro-movil.png) | ![](img/admin-comentarios-oscuro-movil.png) |
-| Plantillas de email, escritorio | ![](img/admin-plantillas-claro-escritorio.png) | ![](img/admin-plantillas-oscuro-escritorio.png) |
-| Plantillas de email, móvil | ![](img/admin-plantillas-claro-movil.png) | ![](img/admin-plantillas-oscuro-movil.png) |
-| Edición, escritorio | ![](img/admin-edicion-claro-escritorio.png) | ![](img/admin-edicion-oscuro-escritorio.png) |
-| Edición, móvil | ![](img/admin-edicion-claro-movil.png) | ![](img/admin-edicion-oscuro-movil.png) |
 
 ## Lista de comentarios del administrador (0.8.5)
 

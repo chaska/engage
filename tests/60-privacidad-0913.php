@@ -20,7 +20,7 @@ t_ok(P::cutoff(12, $now) === '2025-10-27 12:00:00' && P::cutoff(1, $now) === '20
 t_ok(P::MAX_MONTHS === 12 && P::DEFAULT_MONTHS === 12, 'maximo y defecto 12: no hay «para siempre»');
 
 echo "B) Enlace a la politica de privacidad\n";
-foreach (['' => '', 'https://www.example.com/?option=com_content&view=article&id=45' => 'https://www.example.com/?option=com_content&view=article&id=45', '/privacidad' => '/privacidad', '/index.php?option=com_content&view=article&id=45' => '/index.php?option=com_content&view=article&id=45',
+foreach (['' => '', 'https://example.com/privacidad' => 'https://example.com/privacidad', '/privacidad' => '/privacidad', '/index.php?option=com_content&view=article&id=45' => '/index.php?option=com_content&view=article&id=45',
 	'//evil.com/x' => '', 'http://example.com/p' => '', 'javascript:alert(1)' => '', 'data:text/html,x' => '', 'https://user:pw@example.com/' => '', 'https://exa mple.com/' => '', '/a b' => '', '/x"onclick=1' => '', "/x\ny" => '', '/\\evil.com' => '', 'privacidad' => '', 'https://' => '', 'https://example.com/<script>' => '',
 	'ftp://example.com' => '', 'HTTPS://example.com/p' => '', 'https://-bad.com/' => '', 'https://example.com:99999x/' => ''] as $in => $exp) {
 	t_ok(P::policyUrl($in) === $exp, 'policyUrl ' . json_encode($in) . ' -> ' . json_encode($exp));
@@ -38,7 +38,7 @@ t_ok(S::requiresAdmin('com_engage', 'retention_months') && S::requiresAdmin('com
 $def = S::parse($cfg, 'com_engage')['fields'];
 foreach (['6', '1', '12'] as $v) { t_ok(S::validate($def['retention_months'], $v) === $v, "retention_months $v valido"); }
 foreach (['0', '13', '-1', 'abc', '', '6.5', '99999', " 6;DROP"] as $v) { $ex = false; try { S::validate($def['retention_months'], $v); } catch (\InvalidArgumentException $e) { $ex = true; } t_ok($ex, 'retention_months ' . json_encode($v) . ' rechazado'); }
-foreach (['', '/privacidad', 'https://www.example.com/?option=com_content&view=article&id=45'] as $v) { t_ok(S::validate($def['privacy_url'], $v) === $v, 'privacy_url ' . json_encode($v) . ' valido'); }
+foreach (['', '/privacidad', 'https://example.com/privacidad'] as $v) { t_ok(S::validate($def['privacy_url'], $v) === $v, 'privacy_url ' . json_encode($v) . ' valido'); }
 foreach (['//evil.com', 'http://a.com', 'javascript:alert(1)', '/a b', 'https://a.com/"x', "/x\ny", 'privacidad'] as $v) { $ex = false; try { S::validate($def['privacy_url'], $v); } catch (\InvalidArgumentException $e) { $ex = true; } t_ok($ex, 'privacy_url ' . json_encode($v) . ' rechazado'); }
 foreach (['es-ES', 'en-GB'] as $l) {
 	$sys = parse_ini_string($lee("$c/backend/language/$l/com_engage.sys.ini"), false, INI_SCANNER_RAW);

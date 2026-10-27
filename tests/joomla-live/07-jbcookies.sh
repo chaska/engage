@@ -3,7 +3,7 @@
 # El ZIP del modulo NO esta en el repositorio (su licencia es ambigua: GPL v3 en LICENSE/XML, "Non-Commercial" en su README):
 # se pasa por variable de entorno y solo se usa para instalarlo en el sitio de pruebas desechable.
 #   JBCOOKIES_ZIP=/ruta/JBCookies-6.0.2.zip bash 07-jbcookies.sh
-# Requisitos: 02 y 03 ya ejecutados (sitio con Engage y articulos sembrados), Playwright + /opt/pw-browsers/chromium
+# Requisitos: 02 y 03 ya ejecutados (sitio con Engage y articulos sembrados), Playwright + un Chromium (variables PW_MODULE y CHROMIUM)
 # (PW_MODULE, CHROMIUM, PLAYWRIGHT_BROWSERS_PATH). Sale con 1 si algo FALLA y con 2 si no se pudo probar (NO PROBADO).
 set -uo pipefail
 source "$(dirname "$0")/config.sh"
@@ -13,7 +13,7 @@ if [ -z "$JBCOOKIES_ZIP" ] || [ ! -f "$JBCOOKIES_ZIP" ]; then
 	echo "NO PROBADO: define JBCOOKIES_ZIP con la ruta al ZIP de JBCookies (mod_jbcookies); no se incluye en el repositorio"; exit 2
 fi
 PW="${PW_MODULE:-$(npm root -g 2>/dev/null)/playwright}"
-if [ ! -d "$PW" ] || [ ! -x "${CHROMIUM:-/opt/pw-browsers/chromium}" ]; then
+if [ ! -d "$PW" ] || [ ! -x "${CHROMIUM:-}" ]; then
 	echo "NO PROBADO: no hay Playwright/Chromium (PW_MODULE, CHROMIUM)"; exit 2
 fi
 export PW_MODULE="$PW"

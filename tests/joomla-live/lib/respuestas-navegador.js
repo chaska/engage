@@ -29,7 +29,7 @@ const ins = (parent, body, name, created) => sql(`INSERT INTO jos_engage_comment
     const raiz = ins('NULL', 'Raiz', 'Lute', '2025-03-12 10:00:00');
     const resp = ins(raiz, 'Respuesta', 'ChasKa', '2026-10-04 10:00:00');
     ins(resp, 'Nieta', 'Lute', '2026-10-04 11:00:00');
-    const b = await chromium.launch({executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox']});
+    const b = await chromium.launch({executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox']});
     const medir = () => document.querySelectorAll('article[id^=akengage-comment-]').length && [...document.querySelectorAll('article[id^=akengage-comment-]')].map(a => ({
         t: a.querySelector('.akengage-comment-body').textContent.trim().slice(0, 9), x: Math.round(a.getBoundingClientRect().left),
         cita: a.querySelector('.akengage-comment-replyto') ? a.querySelector('.akengage-comment-replyto').textContent.trim().replace(/\s+/g, ' ') : null}));

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 0.6.17: pruebas de Gravatar con consentimiento previo: HTTP (curl/PHP), navegador real (Playwright + Chromium) y
 # navegador con la cache de pagina de Joomla activada. Requiere 03-sembrar-y-probar.sh ya ejecutado. Sale con 1 si algo FALLA.
-# Variables: PW_MODULE (ruta de node_modules/playwright), CHROMIUM (ejecutable; por defecto /opt/pw-browsers/chromium),
+# Variables: PW_MODULE (ruta de node_modules/playwright), CHROMIUM (ejecutable; sin valor por defecto: hay que indicarlo),
 # PLAYWRIGHT_BROWSERS_PATH. Si no hay navegador, la parte de navegador se marca NO PROBADO y el script sale con 2.
 set -uo pipefail
 source "$(dirname "$0")/config.sh"
@@ -10,7 +10,7 @@ rc=0
 CACHE_PAGE="${WORK:?}/${SITE_DIR:?}/administrator/cache/page"
 php "$AQUI/lib/gravatar-http.php" || rc=1
 PW="${PW_MODULE:-$(npm root -g 2>/dev/null)/playwright}"
-if [ -d "$PW" ] && [ -x "${CHROMIUM:-/opt/pw-browsers/chromium}" ]; then
+if [ -d "$PW" ] && [ -x "${CHROMIUM:-}" ]; then
 	export PW_MODULE="$PW"
 	node "$AQUI/lib/gravatar-navegador.js" || rc=1
 	# Con la cache de pagina de Joomla (plugin system/cache + caching=1) y el plugin engagecache

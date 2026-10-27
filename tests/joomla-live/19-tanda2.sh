@@ -8,7 +8,7 @@
 #     reinstala la version actual y compara byte a byte; si no hay git o el commit, se salta con aviso);
 #   0.8.1: ejecuta ademas 20-xss.sh (XSS reflejado y almacenado por la cache, Host hostil, crecimiento de la cache, favoritos con padre sin publicar);
 #   Navegador (Chromium): 5 variantes de tema x pagina clara/oscura x 390/768/1280, contraste, solapes, teclado, portapapeles real, aviso, insignias, cache.
-# Requisitos: 03-sembrar-y-probar.sh y el paquete actual instalado (02). Variables: PW_MODULE, CHROMIUM, OUT, CAPTURAS=1 (imagenes de docs/img), COMMIT_071.
+# Requisitos: 03-sembrar-y-probar.sh y el paquete actual instalado (02). Variables: PW_MODULE, CHROMIUM, OUT, CAPTURAS=1 (imagenes de $WORK/capturas), COMMIT_071.
 # Sale con 1 si algo FALLA y con 2 si no se pudo ejecutar el navegador (NO PROBADO). Contrasenas al azar en $WORK/tanda2pass.txt (no en el repo).
 set -uo pipefail
 source "$(dirname "$0")/config.sh"
@@ -29,8 +29,8 @@ if command -v git >/dev/null && git -C "$REPO" cat-file -e "$COMMIT_071^{commit}
 	else echo "AVISO: no se pudo construir la 0.7.1 desde $COMMIT_071 (NO PROBADO)"; rc=1; fi
 	rm -rf "$TMP71"
 else echo "AVISO: falta git o el commit $COMMIT_071 (NO PROBADO)"; rc=1; fi
-PW="${PW_MODULE:-/opt/node-tools/node_modules/playwright}"
-if [ -d "$PW" ] && [ -x "${CHROMIUM:-/opt/pw-browsers/chromium}" ]; then
+PW="${PW_MODULE:-}"
+if [ -d "$PW" ] && [ -x "${CHROMIUM:-}" ]; then
 	export PW_MODULE="$PW"; echo "== Navegador"; node "$AQUI/lib/tanda2-navegador.js" || rc=1
 else
 	echo "NO PROBADO: falta Playwright o Chromium (PW_MODULE / CHROMIUM); no se ejecuto la parte del navegador"; rc=2

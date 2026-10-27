@@ -80,5 +80,5 @@ q("DELETE FROM jos_extensions WHERE element='fotodemo' AND folder='engage'");
 $setCom(['customfield_avatar' => (string) $fid]);
 $nav = (string) shell_exec('node ' . escapeshellarg(__DIR__ . '/foto-navegador.js') . ' 2>&1');
 r('FT-panel', 'panel moderno de Opciones (Chromium): «Campo de usuario con la foto» es una lista cerrada con «Ninguno» y el campo «Foto de prueba»', str_starts_with($nav, 'OK '), trim($nav));
-r('FT-sin-admin', 'la opcion solo la cambia core.admin: va en SettingsSchema::ADMIN_ONLY y el filtro AdminOnlyFilter la valida contra la lista', str_contains((string) file_get_contents('/ruta/proyecto/engage/src/component/backend/src/Helper/SettingsSchema.php'), "'customfield_avatar'") && str_contains((string) file_get_contents('/ruta/proyecto/engage/src/component/backend/config.xml'), 'AdminOnlyFilter::customfield_avatar'), '');
+r('FT-sin-admin', 'la opcion solo la cambia core.admin: va en SettingsSchema::ADMIN_ONLY y el filtro AdminOnlyFilter la valida contra la lista', str_contains((string) file_get_contents('' . dirname(__DIR__, 3) . '/src/component/backend/src/Helper/SettingsSchema.php'), "'customfield_avatar'") && str_contains((string) file_get_contents('' . dirname(__DIR__, 3) . '/src/component/backend/config.xml'), 'AdminOnlyFilter::customfield_avatar'), '');
 resumen('foto-usuario');

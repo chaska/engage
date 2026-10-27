@@ -39,7 +39,7 @@ const restaurar = () => {
 };
 
 (async () => {
-    const b = await chromium.launch({executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox']});
+    const b = await chromium.launch({executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox']});
     const c = await b.newContext({viewport: {width: 1400, height: 900}, locale: 'es-ES'});
     const p = await c.newPage();
     await p.goto(`${BASE}/administrator/`);

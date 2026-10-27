@@ -3,13 +3,13 @@
 // cargan y sus formularios responden. Ningun paso puede acabar en «403 No esta autorizado a poder ver este recurso».
 // Requiere lib/filtro-datos.php crear (200+ comentarios). Variables: WORK, PW_MODULE, CHROMIUM, BASE_URL.
 const fs = require('fs');
-const { chromium } = require(process.env.PW_MODULE || '/opt/node-tools/node_modules/playwright');
+const { chromium } = require(process.env.PW_MODULE || 'playwright');
 const WORK = process.env.WORK; const BASE = process.env.BASE_URL || 'http://127.0.0.1:8080';
 const AP = 'Aa1!' + fs.readFileSync(WORK + '/adminpass.txt', 'utf8').trim();
 let ok = 0, ko = 0;
 const r = (id, d, c, ev = '') => { (c ? ok++ : ko++); console.log(`${id.padEnd(7)} ${c ? 'PASA ' : 'FALLA'} ${d}${ev ? '  [' + String(ev).slice(0, 220) + ']' : ''}`); };
 (async () => {
-  const b = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+  const b = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox'] });
   const ctx = await b.newContext({ viewport: { width: 1400, height: 1000 } }); await ctx.route(/guidedtours/, (rt) => rt.abort()); /* el recorrido guiado de Joomla (primera vez) navega solo al escritorio */ const p = await ctx.newPage();
   const errs = []; p.on('pageerror', (e) => errs.push(String(e)));
   await p.goto(BASE + '/administrator/index.php'); await p.fill('#mod-login-username', 'admintest'); await p.fill('#mod-login-password', AP);

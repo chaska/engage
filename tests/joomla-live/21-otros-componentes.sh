@@ -52,9 +52,9 @@ if command -v git >/dev/null && git -C "$REPO" cat-file -e "$COMMIT_081^{commit}
 	else echo "AVISO: no se pudo construir la 0.8.1 desde $COMMIT_081 (NO PROBADO)"; rc=1; fi
 	rm -rf "$TMP81"
 else echo "AVISO: falta git o el commit $COMMIT_081 (NO PROBADO)"; rc=1; fi
-PW="${PW_MODULE:-/opt/node-tools/node_modules/playwright}"
-if [ -d "$PW" ] && [ -x "${CHROMIUM:-/opt/pw-browsers/chromium}" ]; then
-	export PW_MODULE="$PW" CHROMIUM="${CHROMIUM:-/opt/pw-browsers/chromium}"
+PW="${PW_MODULE:-}"
+if [ -d "$PW" ] && [ -x "${CHROMIUM:-}" ]; then
+	export PW_MODULE="$PW" CHROMIUM="${CHROMIUM:-}"
 	echo "== Navegador (Chromium)"; node "$AQUI/lib/otros-navegador.js" || rc=1
 else
 	echo "NO PROBADO: falta Playwright o Chromium (PW_MODULE / CHROMIUM); no se ejecuto la parte del navegador"; rc=2

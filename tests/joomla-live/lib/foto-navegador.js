@@ -1,10 +1,10 @@
 // 0.9.8: el panel moderno de Opciones en Chromium: «Campo de usuario con la foto» es una lista cerrada con «Ninguno» y los campos de usuario con foto.
 const fs = require('fs');
-const { chromium } = require(process.env.PW_MODULE || '/opt/node-tools/node_modules/playwright');
+const { chromium } = require(process.env.PW_MODULE || 'playwright');
 const WORK = process.env.WORK; const BASE = process.env.BASE_URL || 'http://127.0.0.1:8080';
 const AP = 'Aa1!' + fs.readFileSync(WORK + '/adminpass.txt', 'utf8').trim();
 (async () => {
-  const b = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+  const b = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox'] });
   const ctx = await b.newContext({ viewport: { width: 1300, height: 900 } }); await ctx.route(/guidedtours/, (rt) => rt.abort());
   const p = await ctx.newPage(); const errs = []; p.on('pageerror', (e) => errs.push(String(e)));
   await p.goto(BASE + '/administrator/index.php'); await p.fill('#mod-login-username', 'admintest'); await p.fill('#mod-login-password', AP);

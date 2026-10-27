@@ -113,7 +113,7 @@ function medirIconos() {
 (async () => {
     sql("UPDATE jos_extensions SET params='{\"administrator\":\"es-ES\",\"site\":\"es-ES\"}' WHERE element='com_languages'");
     sql("UPDATE jos_extensions SET enabled=1, params='{\"mode\":\"ask\"}' WHERE type='plugin' AND folder='engage' AND element='gravatar'");
-    const b = await chromium.launch({executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox']});
+    const b = await chromium.launch({executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox']});
     const abrir = async (w, bloqueaFA) => {
         const c = await b.newContext({viewport: {width: w, height: 900}, locale: 'es-ES', colorScheme: 'light'});
         await c.route(/gravatar\.com/, rt => rt.abort());

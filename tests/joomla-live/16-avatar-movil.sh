@@ -9,7 +9,7 @@ export WORK SITE_DIR IDS_FILE DB_NAME BASE_URL
 export OUT="${OUT:-$WORK/avatar-movil-capturas}"
 export FASE="${FASE:-despues}"
 PW="${PW_MODULE:-$(npm root -g 2>/dev/null)/playwright}"
-if [ -d "$PW" ] && [ -x "${CHROMIUM:-/opt/pw-browsers/chromium}" ]; then
+if [ -d "$PW" ] && [ -x "${CHROMIUM:-}" ]; then
 	export PW_MODULE="$PW"; node "$AQUI/lib/avatar-movil.js"
 else
 	echo "NO PROBADO: falta Playwright o Chromium (PW_MODULE / CHROMIUM); no se ejecuto la prueba"; exit 2

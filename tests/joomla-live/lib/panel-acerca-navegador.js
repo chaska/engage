@@ -1,11 +1,11 @@
-// 0.9.7: la tarjeta «Acerca de Engage» del panel de control en Joomla real: muestra «Fork iniciado y dirigido por ChasKa» detras del autor original, sin desbordar en movil, en claro y oscuro; captura en docs/img.
+// 0.9.7: la tarjeta «Acerca de Engage» del panel de control en Joomla real: muestra «Fork iniciado y dirigido por ChasKa» detras del autor original, sin desbordar en movil, en claro y oscuro; captura en $WORK/capturas.
 const fs = require('fs'); const path = require('path');
-const { chromium } = require(process.env.PW_MODULE || '/opt/node-tools/node_modules/playwright');
+const { chromium } = require(process.env.PW_MODULE || 'playwright');
 const WORK = process.env.WORK; const BASE = process.env.BASE_URL || 'http://127.0.0.1:8080';
-const AP = 'Aa1!' + fs.readFileSync(WORK + '/adminpass.txt', 'utf8').trim(); const OUT = path.join(__dirname, '../../../docs/img');
+const AP = 'Aa1!' + fs.readFileSync(WORK + '/adminpass.txt', 'utf8').trim(); const OUT = (process.env.OUT_IMG || path.join(process.env.WORK || require('os').tmpdir(), 'capturas')); fs.mkdirSync(OUT, { recursive: true });
 let ok = 0, ko = 0; const r = (id, d, c, ev = '') => { (c ? ok++ : ko++); console.log(`${id.padEnd(6)} ${c ? 'PASA ' : 'FALLA'} ${d}${ev ? '  [' + String(ev).slice(0, 200) + ']' : ''}`); };
 (async () => {
-  const b = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+  const b = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox'] });
   for (const [vp, w, h, esq] of [['escritorio', 1280, 900, 'light'], ['movil-oscuro', 390, 844, 'dark']]) {
     const ctx = await b.newContext({ viewport: { width: w, height: h }, colorScheme: esq }); await ctx.route(/guidedtours/, (rt) => rt.abort());
     const p = await ctx.newPage(); const errs = []; p.on('pageerror', (e) => errs.push(String(e)));

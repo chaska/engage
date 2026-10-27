@@ -9,16 +9,6 @@ Desde la 0.6.23 puede elegir el aspecto de los comentarios sin pegar CSS: **Comp
 | `minimal` | Minimalista | Sin sombras, líneas finas, mucho aire y la tipografía de su plantilla. Fondo blanco y texto oscuro. |
 | `dark` | Oscuro | Panel y tarjetas oscuros con texto claro. Pensado para plantillas oscuras; también se lee sobre páginas claras, porque el panel lleva su propio fondo. |
 
-## Capturas
-
-Hilo de tres niveles (invitado, página clara, 1100 px). Se generan con `tests/joomla-live/10-temas.sh`.
-
-| Clásico | Moderno |
-|---|---|
-| ![Clásico](img/temas-classic.png) | ![Moderno](img/temas-modern.png) |
-| **Minimalista** | **Oscuro** |
-| ![Minimalista](img/temas-minimal.png) | ![Oscuro](img/temas-dark.png) |
-
 ## Cómo funcionan
 
 - Cada tema es **una hoja CSS** (`media/com_engage/css/themes/moderno.css`, `minimalista.css`, `oscuro.css`) registrada en `joomla.asset.json` como `com_engage.theme.modern`, `com_engage.theme.minimal` y `com_engage.theme.dark`. Se carga **solo si está elegido**, después de `replies.css` y de `comments.css` (si usa «Cargar CSS personalizado», el tema manda sobre ella). Con `classic` no se carga nada.

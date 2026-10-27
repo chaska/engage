@@ -73,7 +73,7 @@ async function abrirAjustes(page) {
 const ENC = (o) => encodeURIComponent(typeof o === 'string' ? o : JSON.stringify(o));
 
 (async () => {
-    const browser = await chromium.launch({executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox']});
+    const browser = await chromium.launch({executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox']});
     let t, s;
 
     if (process.env.CACHE_PAGINA === '1') {

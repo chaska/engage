@@ -4,12 +4,6 @@ Copyright (c)2026 fork comunitario de Engage iniciado por ChasKa; GNU General Pu
 
 Petición de ChasKa: botones de **me gusta** (pulgar arriba), **no me gusta** (pulgar abajo) y **favorito** (estrella), dibujados solo con contorno y **rellenos cuando están pulsados**, abajo a la derecha de cada comentario, en la misma línea que «Responder». Los me gusta y no me gusta **se acumulan** y llevan un **contador**. Un comentario marcado como favorito muestra la estrella amarilla rellena y **el cuerpo del mensaje en amarillo suave**, para localizarlo en una lista larga.
 
-![Reacciones con el tema Moderno](img/reacciones-escritorio.png)
-
-![Reacciones con el tema Oscuro en móvil](img/reacciones-movil-oscuro.png)
-
-![Reacciones con el tema Clásico](img/reacciones-clasico.png)
-
 ## Cómo funciona (decisiones de diseño)
 
 1. **Solo reaccionan usuarios con sesión iniciada** (igual que comentar exige registro en la mayoría de sitios). Los invitados ven los contadores en solo lectura y los botones deshabilitados, con una pista accesible («Inicie sesión para reaccionar a los comentarios»). La opción `reactions_who` elige quién: `registered` (por defecto, cualquier usuario con sesión) o `commenters` (solo quien tiene permiso de comentar: `core.create` del componente).

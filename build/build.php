@@ -14,14 +14,22 @@ if (PHP_SAPI !== 'cli') {
 }
 
 $root    = dirname(__DIR__);
-$srcDir  = $root . '/src';
-$distDir = $root . '/dist';
+// ENGAGE_BUILD_SRC / ENGAGE_BUILD_DIST: solo para las pruebas del propio candado (otro arbol de fuentes y otro destino; no se toca updates/ ni dist/)
+$srcDir  = getenv('ENGAGE_BUILD_SRC') ?: $root . '/src';
+$distDir = getenv('ENGAGE_BUILD_DIST') ?: $root . '/dist';
+$pruebas = (bool) getenv('ENGAGE_BUILD_DIST');
+require_once __DIR__ . '/auditoria.php';
 $pkgXml  = $srcDir . '/package/pkg_engage.xml';
 
 function fallo(string $m): void
 {
 	fwrite(STDERR, "ERROR: $m\n");
 	exit(1);
+}
+
+if (in_array('--fijar-terceros', $argv ?? [], true)) {
+	printf("%d ficheros de terceros fijados en build/terceros.sha256\n", auditoriaFijarTerceros($srcDir, __DIR__ . '/terceros.sha256'));
+	exit(0);
 }
 
 $xml = simplexml_load_file($pkgXml);
@@ -148,12 +156,27 @@ foreach ($paquete as $nombre => $ruta) {
 $final = "$distDir/pkg_engage-$version.zip";
 crearZip($final, $archivos, $mtime);
 
+// Candado (0.9.15): el contenido REAL del paquete y de cada extension, y la huella de los terceros. Si algo no cuadra, no hay paquete.
+$problemas = array_merge(auditoriaTerceros($srcDir, __DIR__ . '/terceros.sha256'), auditoriaZip($final));
+if ($problemas) {
+	@unlink($final);
+	foreach ($paquete as $ruta) {
+		@unlink($ruta);
+	}
+	fwrite(STDERR, "CANDADO DEL EMPAQUETADOR: " . count($problemas) . " problema(s); no se genera el paquete:\n");
+	foreach (array_slice($problemas, 0, 40) as $x) {
+		fwrite(STDERR, "  - $x\n");
+	}
+	exit(1);
+}
+echo "Candado del empaquetador: sin problemas (URLs externas, JS peligroso, tipos de fichero, entorno, huellas de terceros)\n";
+
 printf("\nPaquete: %s (%d entradas, %d bytes)\n", $final, count($archivos), filesize($final));
 
 // Servidor de actualizaciones: escribe el SHA-256 real del ZIP en updates/pkgengage.xml (solo si existe).
 // Comprueba antes que la entrada del XML es la de esta versión y que apunta al ZIP con este nombre.
 $updXml = $root . '/updates/pkgengage.xml';
-if (is_file($updXml)) {
+if (is_file($updXml) && !$pruebas) {
 	$contenido = file_get_contents($updXml);
 	$upd       = simplexml_load_string($contenido);
 	if ($upd === false) {

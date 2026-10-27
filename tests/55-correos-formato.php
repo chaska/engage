@@ -15,8 +15,8 @@ $ini = function (string $lang) use ($root): array { $a = parse_ini_file("$root/c
 $tr  = fn(array $i) => fn(string $k, ...$a): string => $a ? vsprintf((string) ($i[$k] ?? $k), $a) : (string) ($i[$k] ?? $k);
 
 echo "A) Comentario como texto limpio\n";
-$tt = W::htmlToText('<p>Viajeros &amp; viajeros!!!</p><p>Segunda <b>l</b>inea<br>tres <a href="https://x.es/a?b=1&amp;c=2">enlace</a></p><ul><li>uno</li><li>dos</li></ul>');
-t_ok($tt === "Viajeros & viajeros!!!\n\nSegunda linea\ntres enlace (https://x.es/a?b=1&c=2)\n\n- uno\n- dos", 'parrafos, saltos, lista y enlace; sin etiquetas; entidades decodificadas una vez (' . json_encode($tt) . ')');
+$tt = W::htmlToText('<p>Viajeros &amp; curiosos!!!</p><p>Segunda <b>l</b>inea<br>tres <a href="https://x.es/a?b=1&amp;c=2">enlace</a></p><ul><li>uno</li><li>dos</li></ul>');
+t_ok($tt === "Viajeros & curiosos!!!\n\nSegunda linea\ntres enlace (https://x.es/a?b=1&c=2)\n\n- uno\n- dos", 'parrafos, saltos, lista y enlace; sin etiquetas; entidades decodificadas una vez (' . json_encode($tt) . ')');
 t_ok(W::htmlToText('<p>a &amp;amp; b</p>') === 'a &amp; b' && W::htmlToText('<p>&lt;script&gt;x&lt;/script&gt;</p>') === '<script>x</script>', 'un comentario que dice «&amp;» o «<script>» lo sigue diciendo en el texto (decodifica UNA vez, sin doble decodificado)');
 t_ok(!preg_match('~<[a-z/]|&amp;|&nbsp;~i', W::htmlToText('<div><p>a&nbsp;b</p><script>alert(1)</script><style>p{}</style></div>')) && W::htmlToText('<div><p>a&nbsp;b</p></div>') === 'a b', 'sin etiquetas, sin script ni style, espacio duro como espacio');
 t_ok(W::htmlToText('') === '' && W::htmlToText('texto') === 'texto', 'casos limite');

@@ -264,6 +264,13 @@ exec('php ' . escapeshellarg("$root/build/build.php") . ' > /dev/null 2>&1');
 $h2 = hash_file('sha256', "$dist/pkg_engage-$ver.zip");
 $h1 === $h2 ? ok("dos builds dan el mismo SHA-256 ($h1)") : ko('el build no es reproducible');
 
+echo "== (h) Candado del empaquetador sobre dist/ y contenido del paquete\n";
+require_once __DIR__ . '/auditoria.php';
+$pr = array_merge(auditoriaTerceros($src, __DIR__ . '/terceros.sha256'), auditoriaZip("$dist/pkg_engage-$ver.zip"));
+$pr ? array_map(static fn($x) => ko("candado: $x"), $pr) : ok('sin URLs externas, JS peligroso, imagenes/correos/volcados ni cadenas del entorno; huellas de terceros correctas');
+$extra = array_values(array_diff(array_map('basename', glob("$dist/*") ?: []), array_map('basename', glob("$dist/*.zip") ?: [])));
+$extra ? ko('dist/ contiene ficheros que no son ZIP: ' . implode(', ', $extra)) : ok('dist/ solo contiene ZIP');
+
 echo "== (g) Pruebas ejecutables (tests/run.php)\n";
 if (is_file("$root/tests/run.php")) {
 	exec('php ' . escapeshellarg("$root/tests/run.php") . ' 2>&1', $tout, $trc);

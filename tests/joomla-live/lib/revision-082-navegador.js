@@ -28,7 +28,7 @@ async function login(ctx) {
 
 (async () => {
   datos('sembrar');
-  const browser = await chromium.launch({executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox']});
+  const browser = await chromium.launch({executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox']});
   try {
     for (const modo of ['joomla', 'htmlpurifier', 'strict']) {
       datos('modo', modo);

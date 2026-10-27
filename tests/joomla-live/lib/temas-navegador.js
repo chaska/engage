@@ -132,7 +132,7 @@ function medirBoton(i) {
     ins('NULL', '<p>Comentario marcado como posible spam</p>', 'Spammer', -3, '2026-10-04 13:00:00');
     setParams(base);
 
-    const b = await chromium.launch({executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox']});
+    const b = await chromium.launch({executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox']});
     const ctxAdmin = async (viewport, colorScheme) => {
         const c = await b.newContext({viewport, colorScheme: colorScheme || 'light'});
         const p = await c.newPage();

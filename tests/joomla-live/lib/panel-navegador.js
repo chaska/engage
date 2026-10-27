@@ -74,7 +74,7 @@ function peorDe(m, clave) {
 }
 
 (async () => {
-    const b = await chromium.launch({executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox']});
+    const b = await chromium.launch({executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox']});
     const login = async (user, pass, viewport, colorScheme) => {
         const c = await b.newContext({viewport, colorScheme: colorScheme || 'light', locale: ES ? 'es-ES' : 'en-GB'});
         const p = await c.newPage();

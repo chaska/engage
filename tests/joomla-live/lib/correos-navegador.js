@@ -1,16 +1,16 @@
 // 0.9.0: renderiza en Chromium el HTML de los correos CAPTURADOS (lib/correos-html.php los deja en $WORK/correos-html) en claro y oscuro, escritorio y movil.
 // Comprueba: ninguna peticion de red (el correo no carga nada), sin desbordamiento horizontal en movil, ancho de la tarjeta <= 600 px, modo oscuro aplicado
-// (fondo oscuro y texto claro), contraste minimo 4.5:1 en los textos visibles, sin errores de JavaScript (no hay). Guarda capturas en docs/img.
+// (fondo oscuro y texto claro), contraste minimo 4.5:1 en los textos visibles, sin errores de JavaScript (no hay). Guarda capturas en $WORK/capturas (OUT_IMG), nunca dentro del repositorio.
 const fs = require('fs'); const path = require('path');
-const { chromium } = require(process.env.PW_MODULE || '/opt/node-tools/node_modules/playwright');
-const WORK = process.env.WORK; const OUT = process.env.OUT_IMG || path.join(__dirname, '../../../docs/img');
+const { chromium } = require(process.env.PW_MODULE || 'playwright');
+const WORK = process.env.WORK; const OUT = process.env.OUT_IMG || path.join(process.env.WORK || require('os').tmpdir(), 'capturas');
 fs.mkdirSync(OUT, { recursive: true });
 let ok = 0, ko = 0;
 const r = (id, desc, cond, ev = '') => { (cond ? ok++ : ko++); console.log(`${id.padEnd(8)} ${cond ? 'PASA ' : 'FALLA'} ${desc}${ev ? '  [' + String(ev).slice(0, 240) + ']' : ''}`); };
 const lum = (rgb) => { const c = rgb.map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
 const cr = (a, b) => { const la = lum(a), lb = lum(b); return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05); };
 (async () => {
-  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox'] });
   const dir = path.join(WORK, 'correos-html');
   const files = fs.readdirSync(dir).filter((f) => f.endsWith('.html'));
   r('N-00', 'Hay correos capturados para renderizar', files.length >= 4, files.join(','));

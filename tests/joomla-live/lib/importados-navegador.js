@@ -2,9 +2,9 @@
 // el avatar generico local con el mismo tamano y alineacion que una normal; ninguna muestra «IP 0»; la IP valida de la normal si (solo a quien modera); sin peticiones
 // externas; microdatos con image local; administracion con el valor tal cual. Requiere lib/importados-datos.php crear.
 const fs = require('fs'); const path = require('path');
-const { chromium } = require(process.env.PW_MODULE || '/opt/node-tools/node_modules/playwright');
+const { chromium } = require(process.env.PW_MODULE || 'playwright');
 const WORK = process.env.WORK; const BASE = process.env.BASE_URL || 'http://127.0.0.1:8080';
-const AP = 'Aa1!' + fs.readFileSync(WORK + '/adminpass.txt', 'utf8').trim(); const OUT = path.join(__dirname, '../../../docs/img');
+const AP = 'Aa1!' + fs.readFileSync(WORK + '/adminpass.txt', 'utf8').trim(); const OUT = (process.env.OUT_IMG || path.join(process.env.WORK || require('os').tmpdir(), 'capturas')); fs.mkdirSync(OUT, { recursive: true });
 let ok = 0, ko = 0; const r = (id, d, c, ev = '') => { (c ? ok++ : ko++); console.log(`${id.padEnd(8)} ${c ? 'PASA ' : 'FALLA'} ${d}${ev ? '  [' + String(ev).slice(0, 260) + ']' : ''}`); };
 const PAGE = BASE + '/index.php?option=com_content&view=article&id=1&catid=8';
 const medir = (p) => p.evaluate(() => {
@@ -19,7 +19,7 @@ const medir = (p) => p.evaluate(() => {
   return out;
 });
 (async () => {
-  const b = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+  const b = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox'] });
   const ext = [];
   for (const [vp, w, h, esq] of [['escritorio-claro', 1280, 900, 'light'], ['movil-oscuro', 390, 844, 'dark'], ['escritorio-oscuro', 1280, 900, 'dark']]) {
     for (const quien of ['moderador', 'invitado']) {

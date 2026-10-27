@@ -1,12 +1,16 @@
 // 0.9.3: renderiza en Chromium REAL las pantallas de administracion rediseñadas (Comentarios, Plantillas de correo, Editar comentario), en claro y
-// oscuro, escritorio y movil, con capturas en docs/img. Comprueba: ninguna peticion externa (ni Gravatar), sin errores de JavaScript, sin desbordamiento
+// oscuro, escritorio y movil, con capturas en $WORK/capturas (OUT_IMG), nunca dentro del repositorio. Comprueba: ninguna peticion externa (ni Gravatar), sin errores de JavaScript, sin desbordamiento
 // horizontal, tema aplicado, contraste >= 4.5 de los textos de la pantalla (.eg-admin), insignias con texto, tarjetas en movil.
-// Requiere lib/filtro-datos.php crear. Variables: WORK, PW_MODULE, CHROMIUM, BASE_URL, OUT_IMG.
+// Crea sus propios datos (lib/filtro-datos.php crear) al empezar y los borra al acabar. Variables: WORK, PW_MODULE, CHROMIUM, BASE_URL, OUT_IMG.
 const fs = require('fs'); const path = require('path');
-const { chromium } = require(process.env.PW_MODULE || '/opt/node-tools/node_modules/playwright');
+const { chromium } = require(process.env.PW_MODULE || 'playwright');
 const WORK = process.env.WORK; const BASE = process.env.BASE_URL || 'http://127.0.0.1:8080';
-const OUT = process.env.OUT_IMG || path.join(__dirname, '../../../docs/img'); fs.mkdirSync(OUT, { recursive: true });
+const OUT = process.env.OUT_IMG || path.join(process.env.WORK || require('os').tmpdir(), 'capturas'); fs.mkdirSync(OUT, { recursive: true });
 const AP = 'Aa1!' + fs.readFileSync(WORK + '/adminpass.txt', 'utf8').trim();
+// Datos propios: la pantalla de edicion necesita un comentario (F9N-RANK-1); se crean aqui y se borran al final
+const { execFileSync } = require('child_process');
+let datosPropios = false;
+try { execFileSync('php', [path.join(__dirname, 'filtro-datos.php'), 'crear'], { env: process.env, stdio: 'ignore' }); datosPropios = true; } catch (e) { console.log('AVISO no se pudieron crear los datos de prueba: la pantalla de edicion se saltara con motivo'); }
 let ok = 0, ko = 0; const r = (id, d, c, ev = '') => { (c ? ok++ : ko++); console.log(`${id.padEnd(22)} ${c ? 'PASA ' : 'FALLA'} ${d}${ev ? '  [' + String(ev).slice(0, 230) + ']' : ''}`); };
 const lum = (c) => { const v = c.map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
 const cr = (a, b) => { const la = lum(a), lb = lum(b); return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05); };
@@ -16,7 +20,7 @@ const pantallas = [
   ['edicion', '/administrator/index.php?option=com_engage&view=comment&task=comment.edit&id=__ID__', '#eg-admin-comment'],
 ];
 (async () => {
-  const b = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+  const b = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox'] });
   let idc = '';
   for (const esquema of ['light', 'dark']) {
     for (const [vp, dims, mobile] of [['escritorio', { width: 1366, height: 900 }, false], ['movil', { width: 390, height: 844 }, true]]) {
@@ -30,6 +34,7 @@ const pantallas = [
       for (const [nombre, url0, sel] of pantallas) {
         let url = url0;
         if (nombre === 'edicion') {
+          if (!datosPropios && !idc) { console.log('SALTADA edicion: no hay comentario de prueba (falta lib/filtro-datos.php / base de datos)'); continue; }
           if (!idc) { await p.goto(BASE + pantallas[0][1] + '&filter[search]=F9N-RANK-1'); await p.waitForTimeout(800); idc = await p.$eval('input[name="cid[]"]', (e) => e.value).catch(() => ''); }
           url = url.replace('__ID__', idc);
         }
@@ -61,6 +66,7 @@ const pantallas = [
     }
   }
   await b.close();
+  if (datosPropios) { try { execFileSync('php', [path.join(__dirname, 'filtro-datos.php'), 'borrar'], { env: process.env, stdio: 'ignore' }); } catch (e) { /* nada */ } }
   console.log(`RESUMEN admin-navegador: ${ok} PASA / ${ko} FALLA`);
   process.exit(ko ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(2); });

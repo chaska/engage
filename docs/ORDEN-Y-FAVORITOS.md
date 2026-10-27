@@ -4,12 +4,6 @@ Copyright (c)2026 fork comunitario de Engage iniciado por ChasKa; GNU General Pu
 
 Segunda tanda de peticiones de ChasKa sobre la lista de comentarios del sitio. Son cuatro funciones que se apoyan en las reacciones de la 0.7.x ([`REACCIONES.md`](REACCIONES.md)) y en el permalink que el componente ya generaba (`akengage_cid` + ancla `#akengage-comment-<id>`).
 
-![Barra de orden, insignias y botón de copiar con el tema Moderno](img/tanda2-escritorio-moderno.png)
-
-![Móvil con el tema Oscuro](img/tanda2-movil-oscuro.png)
-
-![Lista «Solo mis favoritos» con el tema Minimalista](img/tanda2-favoritos-minimalista.png)
-
 ## Qué hay
 
 1. **Ordenar por** (cabecera de la lista): **Más recientes**, **Más antiguos** y **Más valorados** (me gusta menos no me gusta; a igualdad, el más reciente primero). El orden afecta a los comentarios de **primer nivel**; las respuestas siguen **debajo de su comentario, de la más antigua a la más reciente**. Respeta la paginación (la elección viaja en los enlaces de las páginas) y `max_level` (el nivel máximo solo decide a quién contesta el botón «Responder»; el hilo se ve igual). «Más valorados» solo existe con las reacciones activadas.

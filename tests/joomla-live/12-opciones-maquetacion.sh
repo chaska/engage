@@ -8,7 +8,7 @@ source "$(dirname "$0")/config.sh"
 export WORK SITE_DIR IDS_FILE DB_NAME BASE_URL
 export OUT="${OUT:-$WORK/maquetacion-capturas}"
 PW="${PW_MODULE:-$(npm root -g 2>/dev/null)/playwright}"
-if [ -d "$PW" ] && [ -x "${CHROMIUM:-/opt/pw-browsers/chromium}" ]; then
+if [ -d "$PW" ] && [ -x "${CHROMIUM:-}" ]; then
 	export PW_MODULE="$PW"; node "$AQUI/lib/maquetacion-navegador.js"
 else
 	echo "NO PROBADO: falta Playwright o Chromium (PW_MODULE / CHROMIUM); no se ejecuto la prueba de maquetacion"; exit 2

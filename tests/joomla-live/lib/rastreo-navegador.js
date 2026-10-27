@@ -4,7 +4,7 @@
 // dentro de un CreativeWork (https) y el autor sin url inventada; las personas siguen pudiendo usarlo todo; el semaforo del panel. Requiere filtro-datos.php crear.
 const fs = require('fs');
 const { execFileSync } = require('child_process');
-const { chromium } = require(process.env.PW_MODULE || '/opt/node-tools/node_modules/playwright');
+const { chromium } = require(process.env.PW_MODULE || 'playwright');
 const WORK = process.env.WORK; const BASE = process.env.NGINX_URL || 'http://127.0.0.1:8090';
 const AP = 'Aa1!' + fs.readFileSync(WORK + '/adminpass.txt', 'utf8').trim();
 const php = (...a) => execFileSync('php', [__dirname + '/' + a[0], ...a.slice(1)], { env: process.env });
@@ -14,7 +14,7 @@ const ART = '/component/content/article/a-art-publico?catid=8';
 (async () => {
   php('rastreo-opciones.php', 'on'); php('rastreo-opciones.php', 'sef'); php('rastreo-datos.php', 'crear');
   const restaura = () => { try { php('rastreo-datos.php', 'borrar'); php('rastreo-opciones.php', 'cfg-restore'); php('rastreo-opciones.php', 'restore'); } catch (e) { console.log('restauracion: ' + e.message); } };
-  const b = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+  const b = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox'] });
   try {
     const ctx = await b.newContext({ viewport: { width: 1280, height: 900 } }); await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE }).catch(() => null);
     await ctx.route(/guidedtours/, (rt) => rt.abort());

@@ -13,9 +13,9 @@ source "$(dirname "$0")/config.sh"
 export WORK SITE_DIR IDS_FILE DB_NAME BASE_URL DB_USER
 rc=0
 echo "== HTTP (XSS, Host, cache, favoritos, returnurl, semaforo)"; php "$AQUI/lib/xss-http.php" | tail -n "${LINEAS:-60}" || rc=1
-PW="${PW_MODULE:-/opt/node-tools/node_modules/playwright}"
-if [ -d "$PW" ] && [ -x "${CHROMIUM:-/opt/pw-browsers/chromium}" ]; then
-	export PW_MODULE="$PW" CHROMIUM="${CHROMIUM:-/opt/pw-browsers/chromium}"
+PW="${PW_MODULE:-}"
+if [ -d "$PW" ] && [ -x "${CHROMIUM:-}" ]; then
+	export PW_MODULE="$PW" CHROMIUM="${CHROMIUM:-}"
 	echo "== Navegador (Chromium)"; node "$AQUI/lib/xss-navegador.js" || rc=1
 else
 	echo "NO PROBADO: falta Playwright o Chromium (PW_MODULE / CHROMIUM); no se ejecuto la parte del navegador"; rc=2

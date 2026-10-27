@@ -6,7 +6,7 @@
  *   - el SIGUIENTE visitante (otro contexto del navegador, URL normal) recibe la pagina normal (lo que dejo la cache);
  *   - se pulsa el enlace de la fecha de cada comentario y el boton Copiar: se queda en el mismo sitio y copia un enlace con el origen real;
  *   - con una cabecera Host hostil enviada con Node (un navegador no puede) y la cache vacia, la visita normal del navegador no tiene rastro.
- * Uso: PW_MODULE=/opt/node-tools/node_modules/playwright CHROMIUM=/opt/pw-browsers/chromium WORK=... SITE_DIR=... node xss-navegador.js
+ * Uso: PW_MODULE=<ruta a node_modules/playwright> CHROMIUM=<ejecutable de Chromium> WORK=... SITE_DIR=... node xss-navegador.js
  */
 'use strict';
 const {execFileSync} = require('child_process');
@@ -61,7 +61,7 @@ async function mide(page) {
 }
 
 (async () => {
-  const b = await chromium.launch({executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox']});
+  const b = await chromium.launch({executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox']});
   cfg('seed');
   try {
     let total = 0, malos = [];

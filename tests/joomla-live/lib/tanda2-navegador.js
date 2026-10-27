@@ -13,7 +13,7 @@
  *   con ambas rotas (aviso de error), aviso role=status, boton falso inyectado en un comentario (no copia), Host distinto del de la pagina (se reconstruye con el
  *   origen real), sin JavaScript, cache de pagina de Joomla (la pagina cacheada del invitado sin estado de usuario; el usuario ve su conmutador), el moderador
  *   (estrella existente no duplicada), cero peticiones a otros hosts y cero errores de consola.
- * Entorno: BASE_URL, WORK, IDS_FILE, DB_NAME, PW_MODULE, CHROMIUM, OUT (capturas), CAPTURAS=1 (imagenes de docs/img). Sale con 1 si algo FALLA.
+ * Entorno: BASE_URL, WORK, IDS_FILE, DB_NAME, PW_MODULE, CHROMIUM, OUT (capturas), CAPTURAS=1 (imagenes de $WORK/capturas). Sale con 1 si algo FALLA.
  */
 const {execFileSync} = require('child_process');
 const fs = require('fs');
@@ -172,7 +172,7 @@ const medir = () => {
 };
 
 (async () => {
-    const b = await chromium.launch({executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox']});
+    const b = await chromium.launch({executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox']});
     const errores = [];
     const hosts = new Set();
     const nuevoCtx = async (opts = {}) => {

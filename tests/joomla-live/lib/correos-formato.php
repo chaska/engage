@@ -45,7 +45,7 @@ $leer = function (string $f): array { $t = (string) shell_exec('python3 -I ' . e
 $enviar = function (string $tag, ?int $padre = null, string $email = '') use ($BASE, $WORK, $PAGE, $ASSET_PUB, $mailDir, $leer) {
 	$antes = glob("$mailDir/*.eml") ?: [];
 	$c = new Cliente($BASE, "$WORK/tmp", 'r9' . $tag); $p = $c->get($PAGE); $tk = Cliente::token($p['body']);
-	$c->post('/index.php?option=com_engage&task=comment.save', ['returnurl' => base64_encode('/'), $tk => 1, 'jform' => ['asset_id' => $ASSET_PUB, 'parent_id' => (string) ($padre ?? 0), 'name' => "R3N-H12-$tag", 'email' => $email ?: "h12$tag@example.invalid", 'body' => "R3B-F-$tag Viajeros & viajeros!!!\nSegunda linea del comentario"]]);
+	$c->post('/index.php?option=com_engage&task=comment.save', ['returnurl' => base64_encode('/'), $tk => 1, 'jform' => ['asset_id' => $ASSET_PUB, 'parent_id' => (string) ($padre ?? 0), 'name' => "R3N-H12-$tag", 'email' => $email ?: "h12$tag@example.invalid", 'body' => "R3B-F-$tag Viajeros & curiosos!!!\nSegunda linea del comentario"]]);
 	usleep(1500000);
 	$out = []; foreach (array_diff(glob("$mailDir/*.eml") ?: [], $antes) as $f) { $out[] = $leer($f); }
 	if (getenv('DEPURA')) { fwrite(STDERR, "[$tag] correos=" . count($out) . ' para=' . implode('|', array_map(fn($x) => $x['para'], $out)) . "\n"); }
@@ -93,10 +93,10 @@ foreach (['en-GB', 'es-ES'] as $lang) {
 			if ($tipo === 'sub' && !in_array($L['baja'], $textos, true)) { $fallos[] = 'sin boton «' . $L['baja'] . '»'; }
 			if ($tipo === 'sub' && count(array_filter($bt, fn($b) => str_contains($b[1], 'comments.unsubscribe'))) !== 1) { $fallos[] = 'la baja no sale exactamente una vez'; }
 			foreach ($bt as [$tx, $href]) { if (preg_match('~^https?://~i', $tx)) { $fallos[] = 'boton con la direccion como texto'; } if (str_contains($href, 'amp;') || str_contains($href, '<')) { $fallos[] = 'href con doble escape'; } }
-			if (!str_contains($vis, 'Viajeros & viajeros!!!') || !str_contains($vis, 'Segunda linea del comentario') || str_contains($h, '&lt;p&gt;')) { $fallos[] = 'comentario en el HTML mal'; }
+			if (!str_contains($vis, 'Viajeros & curiosos!!!') || !str_contains($vis, 'Segunda linea del comentario') || str_contains($h, '&lt;p&gt;')) { $fallos[] = 'comentario en el HTML mal'; }
 			if (preg_match('~</?p>|&amp;|&lt;|&gt;|<br~i', $t)) { $fallos[] = 'etiquetas o entidades crudas en el texto'; }
-			if (!str_contains($t, 'Viajeros & viajeros!!!') || !str_contains($t, 'Segunda linea del comentario')) { $fallos[] = 'comentario en el texto mal'; }
-			if (!preg_match('~Viajeros & viajeros!!!\s*\n+\s*Segunda linea~', $t)) { $fallos[] = 'parrafos del comentario no conservados en el texto'; }
+			if (!str_contains($t, 'Viajeros & curiosos!!!') || !str_contains($t, 'Segunda linea del comentario')) { $fallos[] = 'comentario en el texto mal'; }
+			if (!preg_match('~Viajeros & curiosos!!!\s*\n+\s*Segunda linea~', $t)) { $fallos[] = 'parrafos del comentario no conservados en el texto'; }
 			if ($mal = $lineasUrl($t)) { $fallos[] = 'URL del texto que no va en su linea con etiqueta: ' . $mal[0]; }
 			if (!str_contains($visible($h), $fraseC[$lang]) || !str_contains(trim(preg_replace('/\s+/', ' ', $t)), $fraseC[$lang])) { $fallos[] = 'sin aviso de confidencialidad en HTML y texto'; }
 			if ($lang === 'es-ES' && (preg_match('/\busted\b/i', $vis) !== 1)) { $fallos[] = 'sin «usted»'; }

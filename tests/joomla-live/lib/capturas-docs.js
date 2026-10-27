@@ -1,7 +1,7 @@
 /**
- * Capturas para docs/img (panel-claro.png, panel-medio.png, panel-oscuro.png y, desde 0.6.25, config-*.png) con datos de ejemplo
+ * Capturas (fuera del repositorio; antes iban a $WORK/capturas) (panel-claro.png, panel-medio.png, panel-oscuro.png y, desde 0.6.25, config-*.png) con datos de ejemplo
  * en espanol y el panel en es-ES. Cada PNG se reduce a paleta de 128 colores (GD) para quedar por debajo de 200 KB.
- * Entorno: BASE_URL, WORK, IDS_FILE, DB_NAME, PW_MODULE, CHROMIUM, DOCS_OUT (por defecto <repo>/docs/img).
+ * Entorno: BASE_URL, WORK, IDS_FILE, DB_NAME, PW_MODULE, CHROMIUM, DOCS_OUT (por defecto $WORK/capturas, fuera del repositorio).
  */
 const {execFileSync} = require('child_process');
 const fs = require('fs');
@@ -10,7 +10,7 @@ const {chromium} = require(process.env.PW_MODULE || 'playwright');
 const BASE = process.env.BASE_URL || 'http://127.0.0.1:8080';
 const WORK = process.env.WORK;
 const DB = process.env.DB_NAME || 'joomla_test';
-const OUT = process.env.DOCS_OUT || path.resolve(__dirname, '../../../docs/img');
+const OUT = process.env.DOCS_OUT || path.join(process.env.WORK || require('os').tmpdir(), 'capturas');
 const ids = JSON.parse(fs.readFileSync(`${WORK}/${process.env.IDS_FILE || 'ids.json'}`, 'utf8'));
 const PASS = 'Aa1!' + fs.readFileSync(`${WORK}/adminpass.txt`, 'utf8').trim();
 const sql = s => execFileSync('mysql', ['-uroot', '--default-character-set=utf8mb4', '-N', DB, '-e', s]).toString().trim();
@@ -42,13 +42,13 @@ function sqlq(s) { return `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "''
     sql("UPDATE jos_extensions SET params=JSON_SET(IFNULL(NULLIF(params,''),'{}'),'$.key','demo-key') WHERE type='plugin' AND folder='engage' AND element='akismet'");
     sql("UPDATE jos_extensions SET params='{\"administrator\":\"es-ES\",\"site\":\"es-ES\"}' WHERE element='com_languages'");
     execFileSync('sh', ['-c', `rm -rf ${S}/cache/* ${S}/administrator/cache/* 2>/dev/null; true`]);
-    const b = await chromium.launch({executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox']});
+    const b = await chromium.launch({executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox']});
     const ctx = await b.newContext({viewport: {width: 1280, height: 1000}, locale: 'es-ES'});
     const p = await ctx.newPage();
     await p.goto(`${BASE}/administrator/`);
     await p.fill('#mod-login-username', 'admintest'); await p.fill('#mod-login-password', PASS);
     await Promise.all([p.waitForNavigation(), p.press('#mod-login-password', 'Enter')]);
-    const tmp = fs.mkdtempSync('/tmp/capdocs-');
+    const tmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'capdocs-'));
     const grab = async (name, url, tema, alto, kb = 190) => {
         await p.goto(`${BASE}/administrator/${url}`, {waitUntil: 'networkidle'});
         await p.evaluate(t => { try { localStorage.setItem('eg-admin-theme', t); } catch (e) {} }, tema);

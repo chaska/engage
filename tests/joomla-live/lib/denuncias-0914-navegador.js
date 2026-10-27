@@ -1,14 +1,14 @@
 // 0.9.14: denunciar comentarios en Chromium REAL. Invitado (sin boton); registrado: boton, formulario con teclado, envio y mensaje; claro/oscuro y movil 390
 // sin desbordamiento; cola de administracion (Manager) con filtros y acciones por la interfaz. Requiere denuncias-datos.php crear.
 const fs = require('fs'); const path = require('path');
-const { chromium } = require(process.env.PW_MODULE || '/opt/node-tools/node_modules/playwright');
+const { chromium } = require(process.env.PW_MODULE || 'playwright');
 const WORK = process.env.WORK; const BASE = process.env.BASE_URL || 'http://127.0.0.1:8080'; const PAGE = BASE + '/index.php?option=com_content&view=article&id=1&catid=8';
-const PASS = fs.readFileSync(WORK + '/rev082pass.txt', 'utf8').trim(); const OUT = path.join(__dirname, '../../../docs/img');
+const PASS = fs.readFileSync(WORK + '/rev082pass.txt', 'utf8').trim(); const OUT = (process.env.OUT_IMG || path.join(process.env.WORK || require('os').tmpdir(), 'capturas')); fs.mkdirSync(OUT, { recursive: true });
 let ok = 0, ko = 0; const r = (id, d, c, ev = '') => { (c ? ok++ : ko++); console.log(`${id.padEnd(8)} ${c ? 'PASA ' : 'FALLA'} ${d}${ev ? '  [' + String(ev).slice(0, 240) + ']' : ''}`); };
 const loginSitio = async (p, u) => { await p.goto(BASE + '/index.php?option=com_users&view=login'); await p.fill('#username', u); await p.fill('#password', PASS); await Promise.all([p.waitForNavigation(), p.click('button[type=submit].btn-primary, form#com-users-login__form button[type=submit]')]); };
 const loginAdmin = async (p, u) => { await p.goto(BASE + '/administrator/index.php'); await p.fill('#mod-login-username', u); await p.fill('#mod-login-password', PASS); await Promise.all([p.waitForNavigation(), p.click('button.login-button, button[type=submit]')]); await p.waitForLoadState('networkidle'); await p.waitForTimeout(1500); };
 (async () => {
-  const b = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+  const b = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox'] });
   try {
     // invitado
     let ctx = await b.newContext({ viewport: { width: 1280, height: 900 } }); let p = await ctx.newPage();

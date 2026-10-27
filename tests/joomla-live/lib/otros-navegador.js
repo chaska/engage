@@ -39,7 +39,7 @@ async function visita(b, url, usuario) {
 }
 
 (async () => {
-  const b = await chromium.launch({executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox']});
+  const b = await chromium.launch({executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox']});
   try {
     for (const [nombre, c] of [['sin cache', ['0', '0', '1', '1']], ['cache de pagina', ['1', '1', '1', '1']]]) {
       cfg('set', ...c);

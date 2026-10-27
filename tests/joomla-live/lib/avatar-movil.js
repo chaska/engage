@@ -150,7 +150,7 @@ function medirContraste() {
 
 (async () => {
     sql("UPDATE jos_extensions SET params='{\"administrator\":\"es-ES\",\"site\":\"es-ES\"}' WHERE element='com_languages'");
-    const b = await chromium.launch({executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox']});
+    const b = await chromium.launch({executablePath: process.env.CHROMIUM || undefined, args: ['--no-sandbox']});
     const reqs = {gravatar: 0, imagenes: 0};
     const abrir = async w => {
         const c = await b.newContext({viewport: {width: w, height: 900}, locale: 'es-ES', colorScheme: 'light'});

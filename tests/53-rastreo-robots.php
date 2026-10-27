@@ -94,7 +94,7 @@ t_ok(preg_match('/ignoran|ignora/i', $md) === 1 && preg_match('/cortafuegos/i', 
 
 echo "F) 0.9.5: canonical con base fiable o relativa, paginacion en la ruta amigable\n";
 $cl = fn(string $u, string $o = '') => T::canonicalHref($u, $o);
-t_ok($cl('/libro-de-visitas?akengage_cid=5&akengage_sort=top') === '/libro-de-visitas' && $cl('/index.php/juegos/hueveros-por-el-mundo?akengage_limitstart=50') === '/index.php/juegos/hueveros-por-el-mundo', 'sin base fiable: canonical RELATIVA a la raiz con la ruta amigable limpia (sin akengage_*)');
+t_ok($cl('/libro-de-visitas?akengage_cid=5&akengage_sort=top') === '/libro-de-visitas' && $cl('/index.php/juegos/viajes-por-el-mundo?akengage_limitstart=50') === '/index.php/juegos/viajes-por-el-mundo', 'sin base fiable: canonical RELATIVA a la raiz con la ruta amigable limpia (sin akengage_*)');
 t_ok($cl('/libro-de-visitas?akengage_cid=5', 'https://example.com') === 'https://example.com/libro-de-visitas', 'con base fiable: absoluta sobre ese origen');
 t_ok($cl('/') === '/' && $cl('/x?option=com_content&view=article&id=23&akengage_fav=1') === '/x?option=com_content&view=article&id=23', 'la URL base (sin parametros) tambien tiene canonical (autocanonical); se conservan los parametros de Joomla de la lista blanca');
 t_ok($cl('//evil.com/x?akengage_cid=1') === '' && $cl('?akengage_cid=1') === '' && $cl('/a b?x') === '' && $cl('') === '' && $cl('/' . str_repeat('a', 2100)) === '', 'rutas inseguras (//host, solo consulta, espacios, vacia, enorme): ninguna canonical (falla cerrado)');
