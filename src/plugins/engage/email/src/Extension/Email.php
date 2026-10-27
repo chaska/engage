@@ -398,7 +398,7 @@ class Email extends CMSPlugin implements SubscriberInterface
 
 		try
 		{
-			$avatarUrl = Avatar::getUserAvatar($commentUser->id, 48, $commentUser->email);
+			$avatarUrl = Avatar::getUserAvatar($commentUser->id, 48, $commentUser->email, 'email');
 		}
 		catch (Exception $e)
 		{

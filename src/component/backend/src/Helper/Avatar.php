@@ -33,6 +33,16 @@ class Avatar
 	private static $avatarImages = [];
 
 	/**
+	 * 0.9.9: contexts. `page` = an interactive page seen by ONE person (the plugins of the `engage` group are asked; their photo may depend on who is looking,
+	 * e.g. a photo served with the session cookie of the viewer). Any other value (`email`, `static`: emails, previews, exports, anything that is stored or sent to
+	 * somebody else) NEVER asks the plugins: only sources that are public by nature (the validated user field, as an absolute address on the trusted base) or nothing.
+	 */
+	public const CONTEXT_PAGE = 'page';
+
+	/** @var string[] contexts that are not interactive */
+	public const STATIC_CONTEXTS = ['email', 'static'];
+
+	/**
 	 * Get the user's avatar image for a specific size
 	 *
 	 * @param   int|null  $user_id        User ID to get the avatar for
@@ -44,9 +54,9 @@ class Avatar
 	 * @throws  Exception
 	 * @since   3.0.0
 	 */
-	public static function getUserAvatar(?int $user_id, int $size = 128, $fallbackEmail = null): string
+	public static function getUserAvatar(?int $user_id, int $size = 128, $fallbackEmail = null, string $context = self::CONTEXT_PAGE): string
 	{
-		return self::getUserAvatarData($user_id, $size, $fallbackEmail)['src'];
+		return self::getUserAvatarData($user_id, $size, $fallbackEmail, null, $context)['src'];
 	}
 
 	/**
@@ -63,9 +73,9 @@ class Avatar
 	 * @throws  Exception
 	 * @since   0.6.17
 	 */
-	public static function getUserAvatarData(?int $user_id, int $size = 128, $fallbackEmail = null, ?int $commentId = null): array
+	public static function getUserAvatarData(?int $user_id, int $size = 128, $fallbackEmail = null, ?int $commentId = null, string $context = self::CONTEXT_PAGE): array
 	{
-		$data = self::resolveAvatarData($user_id, $size, $fallbackEmail);
+		$data = self::resolveAvatarData($user_id, $size, $fallbackEmail, $context);
 
 		/**
 		 * 0.8.3 (H4): the page NEVER receives the third party URL (it carries the hash of the e-mail address). `deferred` is now the opaque reference
@@ -105,9 +115,42 @@ class Avatar
 	/**
 	 * @internal  The full data, including the third party URL: only for getUserAvatarData() and getDeferredURL().
 	 */
-	private static function resolveAvatarData(?int $user_id, int $size, $fallbackEmail): array
+	private static function resolveAvatarData(?int $user_id, int $size, $fallbackEmail, string $context = self::CONTEXT_PAGE): array
 	{
 		$empty = ['src' => '', 'deferred' => '', 'notice' => true, 'source' => 'engage', 'group' => ''];
+
+		// 0.9.9: not interactive (email, preview, export…): no plugin is asked, nothing that depends on who looks is stored or sent
+		if ($context !== self::CONTEXT_PAGE)
+		{
+			$id = (is_numeric($user_id) && ($user_id > 0)) ? (int) $user_id : 0;
+			$key = $id . '|static';
+
+			if ($id === 0)
+			{
+				return $empty;
+			}
+
+			if (!array_key_exists($key, self::$avatarImages))
+			{
+				$path = self::getAvatarFromCustomField($id);
+				$origin = (string) (TrustedBase::current()['origin'] ?? '');
+				// Without a photo in the user field: the generic avatar of Engage (public, local to the site). An empty src would be turned by Joomla's mail layer into
+				// the address of the site root.
+				$base = '';
+
+				try
+				{
+					$base = \Joomla\CMS\Uri\Uri::root(true);
+				}
+				catch (\Throwable $e)
+				{
+				}
+
+				self::$avatarImages[$key] = $origin === '' ? $empty : ['src' => $origin . ($path ?? ($base . '/media/com_engage/images/avatar-generico.svg'))] + $empty;
+			}
+
+			return self::$avatarImages[$key];
+		}
 
 		// Get the user and the normalised user ID.
 		$user    = (is_numeric($user_id) && ($user_id > 0)) ? UserFetcher::getUser($user_id) : null;
@@ -309,7 +352,7 @@ class Avatar
 
 			$dispatcher = Factory::getApplication()->getDispatcher();
 			$eventName  = 'onAkeebaEngageUserAvatarURL';
-			$event      = new Event($eventName, [$user, $size]);
+			$event      = new Event($eventName, [$user, $size, self::CONTEXT_PAGE]);
 			$result     = $dispatcher->dispatch($eventName, $event);
 
 			$results  = !isset($result['result']) || \is_null($result['result']) ? [] : $result['result'];

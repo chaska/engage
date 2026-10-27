@@ -65,4 +65,17 @@ t_ok(str_contains($lee("$root/backend/src/Helper/AdminOnlyFilter.php"), "AvatarF
 t_ok(str_contains($lee("$root/backend/src/Helper/AvatarFieldList.php"), "->whereIn(\$db->quoteName('type'), \$types, ParameterType::STRING)") && str_contains($lee("$root/backend/src/Helper/AvatarFieldList.php"), "->bind(':ctx'"), 'la lista de campos: consulta con parametros ligados');
 foreach (['es-ES', 'en-GB'] as $lg) { $ini = $lee("$root/backend/language/$lg/com_engage.sys.ini"); foreach (['LABEL', 'DESC', 'NONE'] as $k) { t_ok(str_contains($ini, "COM_ENGAGE_CONFIG_CUSTOMFIELD_AVATAR_$k=\""), "$lg: $k"); } }
 t_ok(is_file(dirname($root, 2) . '/docs/AVATARES.md'), 'docs/AVATARES.md');
+echo "F) 0.9.9: la foto que depende del espectador no sale de la pagina interactiva\n";
+$av = $lee("$root/backend/src/Helper/Avatar.php"); $em = $lee(dirname($root) . '/plugins/engage/email/src/Extension/Email.php');
+t_ok(str_contains($av, "CONTEXT_PAGE = 'page'") && str_contains($av, "STATIC_CONTEXTS = ['email', 'static']") && str_contains($av, 'if ($context !== self::CONTEXT_PAGE)'), 'Avatar: contexto «page» (interactivo) y los demas (email, static) sin plugins');
+$i = strpos($av, 'if ($context !== self::CONTEXT_PAGE)'); $j = strpos($av, '// Get the user and the normalised user ID.');
+t_ok($i !== false && $j !== false && $i < $j && !str_contains(substr($av, $i, $j - $i), 'getAvatarFromPluginEvents') && str_contains(substr($av, $i, $j - $i), 'getAvatarFromCustomField'), 'en contexto no interactivo se sale ANTES de consultar a los plugins; solo el campo de usuario validado');
+t_ok(str_contains($av, 'new Event($eventName, [$user, $size, self::CONTEXT_PAGE])'), 'el evento lleva el contexto como tercer argumento');
+t_ok(str_contains($em, "Avatar::getUserAvatar(\$commentUser->id, 48, \$commentUser->email, 'email')"), 'el correo pide el avatar en contexto «email»');
+t_ok(!preg_match('/getUserAvatar(Data)?\([^;]*\)/', $lee(dirname($root) . '/component/backend/src/Helper/EmailPreview.php')), 'la vista previa y el correo de prueba no piden ningun avatar (AVATAR_URL vacio)');
+$pa = $m->invoke(null, ['results' => ['/index.php?option=com_mifoto&task=photo.show&u=0123456789abcdef&s=64&v=00000000', $gen], 'deferred' => $def]);
+t_ok($pa['src'] === '/index.php?option=com_mifoto&task=photo.show&u=0123456789abcdef&s=64&v=00000000' && $pa['deferred'] === '' && A::rank($pa['src']) === 0, 'una URL del sitio SIN extension y con parametros (como MiFoto) es una foto: gana a Gravatar y al generico, sin referencia diferida');
+$pb = $m->invoke(null, ['results' => [$gen, '/sub/index.php?option=com_mifoto&task=photo.show&u=0123456789abcdef&s=64&v=00000000'], 'deferred' => $def]);
+t_ok(str_starts_with($pb['src'], '/sub/index.php?option=com_mifoto') && $pb['deferred'] === '', 'con subcarpeta y en el otro orden, igual');
+t_ok(A::rank('/index.php?x=/media/com_engage/images/avatar-generico.svg') === 0 && A::rank('/media/com_engage/images/avatar-generico.svg') === 2, 'el nombre del generico en la consulta de una URL no la convierte en generica');
 t_fin();

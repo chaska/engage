@@ -117,7 +117,7 @@ t_ok($r['status'] === 400, 'mas de 10 contenidos distintos en una peticion: se r
 echo "E) El codigo\n";
 $lee = fn(string $f): string => str_replace("\r\n", "\n", (string) file_get_contents($f));
 $av = $lee("$root/backend/src/Helper/Avatar.php");
-t_ok(preg_match('/function getUserAvatarData\(.*?\?int \$commentId = null\).*?AvatarResolver::reference\(\$secret, \$commentId, \$size\)/s', $av) === 1, 'Avatar::getUserAvatarData devuelve la referencia opaca, no la URL');
+t_ok(preg_match('/function getUserAvatarData\(.*?\?int \$commentId = null, string \$context = self::CONTEXT_PAGE\).*?AvatarResolver::reference\(\$secret, \$commentId, \$size\)/s', $av) === 1, 'Avatar::getUserAvatarData devuelve la referencia opaca, no la URL');
 t_ok(preg_match('/function getDeferredURL.*?resolveAvatarData/s', $av) === 1, 'la URL real solo sale por Avatar::getDeferredURL (la usa el endpoint)');
 $tpl = $lee("$root/frontend/tmpl/comments/default_list.php");
 t_ok(str_contains($tpl, '(int) $comment->id);') && str_contains($tpl, "addScriptOptions('akeeba.Engage.Gravatar.endpoint'"), 'la plantilla pasa el id del comentario y registra el endpoint');
