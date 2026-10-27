@@ -753,11 +753,14 @@ final class Meta
 	 *
 	 * @return  int
 	 */
-	public static function getNumCommentsForAsset(int $asset_id): int
+	public static function getNumCommentsForAsset(int $asset_id, bool $onlyPublished = true): int
 	{
-		if (isset(self::$numCommentsPerAsset[$asset_id]))
+		// 0.9.12: public counters count only published comments; the administrator list passes false to see all of them
+		$cacheKey = $onlyPublished ? $asset_id : -$asset_id;
+
+		if (isset(self::$numCommentsPerAsset[$cacheKey]))
 		{
-			return self::$numCommentsPerAsset[$asset_id];
+			return self::$numCommentsPerAsset[$cacheKey];
 		}
 
 		/** @var CommentsModel $model */
@@ -765,9 +768,14 @@ final class Meta
 
 		$model->setState('filter.asset_id', $asset_id);
 
-		self::$numCommentsPerAsset[$asset_id] = $model->getTotal() ?: 0;
+		if ($onlyPublished)
+		{
+			$model->setState('filter.enabled', 1);
+		}
 
-		return self::$numCommentsPerAsset[$asset_id];
+		self::$numCommentsPerAsset[$cacheKey] = $model->getTotal() ?: 0;
+
+		return self::$numCommentsPerAsset[$cacheKey];
 	}
 
 	/**

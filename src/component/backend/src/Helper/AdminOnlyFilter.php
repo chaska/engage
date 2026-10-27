@@ -78,7 +78,23 @@ final class AdminOnlyFilter
 				return (string) preg_replace('/[^A-Za-z0-9_.\-]/', '', $value);
 			}
 
-			return $value;
+			// 0.9.12: every other admin-only option (iplookup, filter_mode, htmlpurifier_*, email_confidential, captcha_for…) goes through the SAME strict rules as the modern
+			// panel (SettingsSchema::validate: closed lists, formats, length). Classic form and API included. An invalid value keeps the stored one.
+			$def = self::fieldDef($key);
+
+			if ($def === null)
+			{
+				return $keep;
+			}
+
+			try
+			{
+				return SettingsSchema::validate($def, $value);
+			}
+			catch (\InvalidArgumentException $e)
+			{
+				return $keep;
+			}
 		}
 		catch (Throwable $e)
 		{
@@ -143,6 +159,21 @@ final class AdminOnlyFilter
 		$posted = is_array($jform) ? (is_array($jform['params'] ?? null) ? $jform['params'] : $jform) : [];
 
 		return [$user && !$user->guest && $user->authorise('core.admin', 'com_engage'), $stored, $posted];
+	}
+
+	/** The definition of the field in config.xml (SettingsSchema::parse), or null. */
+	private static function fieldDef(string $key): ?array
+	{
+		try
+		{
+			$xml = dirname(__DIR__, 2) . '/config.xml';
+
+			return is_file($xml) ? (SettingsSchema::parse((string) file_get_contents($xml), 'com_engage')['fields'][$key] ?? null) : null;
+		}
+		catch (Throwable $e)
+		{
+			return null;
+		}
 	}
 
 	/** The default of the field in config.xml (what applies while nothing is stored). */

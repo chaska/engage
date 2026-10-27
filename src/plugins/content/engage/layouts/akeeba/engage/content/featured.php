@@ -30,6 +30,8 @@ extract($displayData);
 
 // Get the number of comments for this article
 $model->setState('filter.asset_id', $row->asset_id);
+// 0.9.12: the public counter counts only PUBLISHED comments (not the moderation queue nor spam)
+$model->setState('filter.enabled', 1);
 $numComments = $model->getTotal();
 
 // Language key to use

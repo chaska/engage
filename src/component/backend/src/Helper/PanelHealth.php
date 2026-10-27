@@ -330,9 +330,15 @@ final class PanelHealth
 	{
 		$bad = [];
 
+		// the query failed (the fact is explicitly null): unknown, never green
+		if (array_key_exists('engage_plugin_access', $f) && $f['engage_plugin_access'] === null)
+		{
+			return self::item('avataraccess', self::WARN, ['state' => 'unknown']);
+		}
+
 		foreach ((array) ($f['engage_plugin_access'] ?? []) as $r)
 		{
-			if (!is_array($r) || (int) ($r['access'] ?? 1) === 1 || in_array((string) ($r['element'] ?? ''), self::OWN_NON_VISITOR, true))
+			if (!is_array($r) || in_array((int) ($r['access'] ?? 1), [1, 5], true) || in_array((string) ($r['element'] ?? ''), self::OWN_NON_VISITOR, true))
 			{
 				continue;
 			}
@@ -346,7 +352,8 @@ final class PanelHealth
 		}
 
 		$clean = static fn(string $s): string => trim((string) preg_replace('/[^\p{L}\p{N} _.\-\/()]/u', '', $s));
-		$list  = implode(', ', array_map(static fn(array $r): string => $clean((string) ($r['name'] ?? $r['element'] ?? '')) . ' (' . ($clean((string) ($r['level'] ?? '')) ?: ('#' . (int) ($r['access'] ?? 0))) . ')', array_slice($bad, 0, 5)));
+		$list  = implode(', ', array_map(static fn(array $r): string => $clean((string) ($r['name'] ?? $r['element'] ?? '')) . ' (' . ($clean((string) ($r['level'] ?? '')) ?: ('#' . (int) ($r['access'] ?? 0))) . ')', array_slice($bad, 0, 5)))
+			. (count($bad) > 5 ? ' (+' . (count($bad) - 5) . ')' : '');
 		$first = $bad[0];
 		$fix   = (!empty($f['can_edit_plugins']) && (int) ($first['id'] ?? 0) > 0) ? ['kind' => 'plugin', 'id' => (int) $first['id']] : null;
 

@@ -365,7 +365,7 @@ t_ok(str_contains($ctl, '$info[\'class\'] === Engage::class && $info[\'function\
 $pos = fn(string $n) => strpos($ctl, $n);
 $ini = $pos('function onBeforeMain');
 // 0.8.3: el guard es un metodo (assertCalledByThePlugin) que llaman display() y onBeforeMain()
-t_ok(strpos($ctl, 'assertCalledByThePlugin();', $ini) < $pos('Meta::isAssetViewable') && $pos('Meta::isAssetViewable') < $pos('$model->setState(\'filter.asset_id\''), 'el guard va primero y despues la comprobacion del activo, antes de pasar nada a la vista');
+t_ok(strpos($ctl, 'assertCalledByThePlugin();', $ini) < strpos($ctl, 'Meta::isAssetViewable', $ini) && strpos($ctl, 'Meta::isAssetViewable', $ini) < $pos('$model->setState(\'filter.asset_id\''), 'el guard va primero y despues la comprobacion del activo, antes de pasar nada a la vista');
 t_ok(str_contains($ctl, "!== 'article' && !Meta::isAssetViewable("), 'la vista exige que el activo (que no sea un articulo) lo pueda ver el usuario');
 $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . '/src', FilesystemIterator::SKIP_DOTS));
 $usos = [];

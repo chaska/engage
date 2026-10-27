@@ -36,6 +36,23 @@ trait ControllerFrontendCommentsTrait
 	 */
 	public function checkToken($method = 'request', $redirect = true): bool
 	{
+		if ($this->hasValidSignedLink())
+		{
+			return true;
+		}
+
+		return parent::checkToken($method, $redirect);
+	}
+
+	/**
+	 * Is the request a valid SIGNED link (0.9.12: split from checkToken() so that the unsubscribe task can demand it)?
+	 * The signature covers the task, the email, the asset, the expiry and ONE comment; any mismatch is simply false.
+	 *
+	 * @return  bool
+	 * @throws  Exception
+	 */
+	protected function hasValidSignedLink(): bool
+	{
 		try
 		{
 			/** @var CommentTable $table */
@@ -86,6 +103,16 @@ trait ControllerFrontendCommentsTrait
 
 			// If the token is valid we can return true
 			$task     = $this->input->get->getCmd('task');
+			// 0.9.12: the signature covers the task of the URL. If the task that is actually executed (request, where a POST value wins) is not that one,
+			// the signed link does not authorise it: fall through to the form token.
+			// (Joomla's dispatcher replaces the request task «controller.task» by the bare «task» before the controller runs: the last part is compared)
+			$tail = static fn(string $t): string => strtolower(substr(strrchr('.' . $t, '.'), 1));
+
+			if ($tail((string) $this->input->getCmd('task', '')) !== $tail((string) $task))
+			{
+				throw new RuntimeException('', 0xDEAD);
+			}
+
 			$email    = $this->input->get->getString('email');
 			$expires  = $this->input->get->getInt('expires');
 			$asset_id = $table->asset_id;
@@ -104,7 +131,7 @@ trait ControllerFrontendCommentsTrait
 			}
 		}
 
-		return parent::checkToken($method, $redirect);
+		return false;
 	}
 
 	/**

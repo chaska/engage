@@ -231,8 +231,19 @@ class Avatar
 	 */
 	private static function pickAvatar(array $eventData): array
 	{
-		$avatars = array_filter($eventData['results'] ?? [], function ($x) {
-			return is_string($x) && !empty($x);
+		// 0.9.12: the plugin results are untrusted: only a path of the site (one «/»), an https address on the trusted base or a Gravatar address (docs/AVATARES.md)
+		$origin = '';
+
+		try
+		{
+			$origin = (string) (TrustedBase::current()['origin'] ?? '');
+		}
+		catch (\Throwable $e)
+		{
+		}
+
+		$avatars = array_filter($eventData['results'] ?? [], function ($x) use ($origin) {
+			return AvatarField::pluginResultOk($x, $origin);
 		});
 
 		if (empty($avatars))

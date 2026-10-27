@@ -27,7 +27,7 @@ T::$namesOverride = null;
 
 echo "B) El codigo\n";
 $m = $lee("$root/src/Model/CommentsModel.php");
-t_ok(preg_match("/CommentTypes::validate\(\\\$this->getState\('filter\.itemtype'\), CommentTypes::available\(\\\$db\)\).*?'ast\.name'\) \. ' LIKE :itemtype'\).*?->bind\(':itemtype', \\\$typeLike, ParameterType::STRING\)/s", $m) === 1, 'modelo: valida contra la lista cerrada y SQL ligado');
+t_ok(preg_match("/CommentTypes::validate\(\\\$rawType, CommentTypes::available\(\\\$db\)\).*?'ast\.name'\) \. ' LIKE :itemtype'\).*?->bind\(':itemtype', \\\$typeLike, ParameterType::STRING\)/s", $m) === 1, 'modelo: valida contra la lista cerrada y SQL ligado');
 t_ok(str_contains($m, "'itemtype'           => 'string'") && str_contains($m, "'search', 'from', 'to', 'itemtype'"), 'el filtro es un campo de estado del modelo');
 t_ok(str_contains($m, "->join('LEFT', \$db->quoteName('#__content', 'a')"), 'el LEFT JOIN con #__content de los articulos se conserva');
 $v = $lee("$root/src/View/Comments/HtmlView.php");

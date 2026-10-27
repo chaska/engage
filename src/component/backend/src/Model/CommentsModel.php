@@ -634,6 +634,7 @@ class CommentsModel extends ListModel
 		{
 			$user       = Factory::getApplication()->getIdentity() ?? (new User());
 			$userAccess = $user->getAuthorisedViewLevels() ?: [];
+			$pubNow     = (new \Joomla\CMS\Date\Date())->toSql();
 			$query
 				->select([
 					$db->quoteName('a.id', 'article_id'),
@@ -641,6 +642,11 @@ class CommentsModel extends ListModel
 				])
 				->where($db->quoteName('cat.published') . ' = 1')
 				->where($db->quoteName('a.state') . ' = 1')
+				// 0.9.12: scheduled (not yet published) and expired articles do not show their title or comments in the public listing / module
+				->where('(' . $db->quoteName('a.publish_up') . ' IS NULL OR ' . $db->quoteName('a.publish_up') . ' <= :pubnow1)')
+				->where('(' . $db->quoteName('a.publish_down') . ' IS NULL OR ' . $db->quoteName('a.publish_down') . ' >= :pubnow2)')
+				->bind(':pubnow1', $pubNow, ParameterType::STRING)
+				->bind(':pubnow2', $pubNow, ParameterType::STRING)
 				->whereIn($db->quoteName('a.access'), $userAccess, ParameterType::INTEGER)
 				->whereIn($db->quoteName('cat.access'), $userAccess, ParameterType::INTEGER);
 		}
@@ -671,7 +677,9 @@ class CommentsModel extends ListModel
 		}
 
 		// 0.8.5: item type filter (closed list of the types that really have comments; anything else is ignored)
-		$fltType = CommentTypes::validate($this->getState('filter.itemtype'), CommentTypes::available($db));
+		// 0.9.12: the closed list (heavy queries on the comments table) is only computed when a type was asked for, never on a normal public visit
+		$rawType = $this->getState('filter.itemtype');
+		$fltType = (is_string($rawType) && $rawType !== '') ? CommentTypes::validate($rawType, CommentTypes::available($db)) : '';
 
 		if ($fltType !== '')
 		{

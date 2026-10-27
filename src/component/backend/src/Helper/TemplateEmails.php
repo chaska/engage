@@ -454,7 +454,7 @@ abstract class TemplateEmails
 				}
 			}
 		}
-		catch (Exception $e)
+		catch (\Throwable $e)
 		{
 			if ($throw)
 			{

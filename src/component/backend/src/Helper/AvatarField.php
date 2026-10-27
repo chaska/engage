@@ -153,6 +153,36 @@ final class AvatarField
 		return in_array($ext, self::EXTENSIONS, true) ? $raw : '';
 	}
 
+	/**
+	 * 0.9.12: what a photo plugin may return (the string goes into an `<img src>`; it is untrusted code of a third party): ONLY
+	 *  - a path of this site that starts with ONE «/» (never «//», never «/\\»: those are other hosts for the browser), or
+	 *  - an https address on the trusted base of the site (`$origin`), or
+	 *  - a Gravatar avatar address (https, www.gravatar.com, /avatar/<hash>).
+	 * No spaces, quotes, angle brackets, backslashes or control characters; at most 2000 characters. Anything else is discarded.
+	 *
+	 * @param   mixed   $s       What the plugin returned
+	 * @param   string  $origin  Trusted origin (scheme + host), '' if there is none
+	 */
+	public static function pluginResultOk($s, string $origin = ''): bool
+	{
+		if (!is_string($s) || $s === '' || strlen($s) > 2000 || preg_match('#[\x00-\x20\x7f\\\\"\'<>`]#', $s))
+		{
+			return false;
+		}
+
+		if ($s[0] === '/')
+		{
+			return !isset($s[1]) || $s[1] !== '/';
+		}
+
+		if (preg_match('#^https://www\.gravatar\.com/avatar/[0-9a-f]{32,64}(\?[A-Za-z0-9_=&%.+\-]*)?$#D', $s))
+		{
+			return true;
+		}
+
+		return $origin !== '' && str_starts_with($origin, 'https://') && str_starts_with($s, $origin . '/') && !str_contains(substr($s, strlen($origin)), '//');
+	}
+
 	/** Prioridad de un avatar: 0 = foto (de un plugin o del campo), 1 = Gravatar, 2 = avatar generico local. Gana la menor; a igualdad, la primera. */
 	public static function rank(string $src): int
 	{

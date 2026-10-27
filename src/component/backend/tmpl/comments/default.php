@@ -132,7 +132,7 @@ $initials = static function (string $name): string {
 						$registered = empty($item->name) && empty($item->email);
 						// Metadata
 						$meta        = $this->itemMeta((int) $item->asset_id);
-						$numComments = Meta::getNumCommentsForAsset($item->asset_id);
+						$numComments = Meta::getNumCommentsForAsset($item->asset_id, false);
 						$itemType    = $this->typeOf((int) $item->asset_id);
 						// IP and User Agent
 						$ipLookupUrl = HTMLHelper::_('engage.getIPLookupURL', $item->ip);

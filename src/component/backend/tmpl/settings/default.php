@@ -172,6 +172,9 @@ echo I::sprite();
 								$value = $cur($def);
 								$ctl   = $def['control'];
 								$options = $def['options'];
+								// 0.9.12: the Akismet API key is a secret: a password input (masked, no autofill)
+								$isSecret  = ($def['key'] ?? '') === 'key' && ($def['scope'] ?? '') === 'plg_engage_akismet';
+								$inputType = $isSecret ? 'password' : 'text';
 
 								if ($def['type'] === 'plugins')
 								{
@@ -242,7 +245,7 @@ echo I::sprite();
 											<textarea class="eg-input eg-input--area" id="<?= $e($fid) ?>" rows="4" maxlength="<?= (int) ($def['maxlength'] ?: 4000) ?>" spellcheck="false"
 													  aria-describedby="<?= $e($fid) ?>-h <?= $e($fid) ?>-e"><?= $e($value) ?></textarea>
 										<?php else : ?>
-											<input class="eg-input" type="text" id="<?= $e($fid) ?>" value="<?= $e($value) ?>" maxlength="<?= (int) ($def['maxlength'] ?: 255) ?>"
+											<input class="eg-input" type="<?= $e($inputType) ?>"<?php if ($isSecret) : ?> autocomplete="new-password"<?php endif; ?> id="<?= $e($fid) ?>" value="<?= $e($value) ?>" maxlength="<?= (int) ($def['maxlength'] ?: 255) ?>"
 												   placeholder="<?= $e($def['hint']) ?>" autocomplete="off" spellcheck="false" aria-describedby="<?= $e($fid) ?>-h <?= $e($fid) ?>-e">
 										<?php endif; ?>
 									</div>

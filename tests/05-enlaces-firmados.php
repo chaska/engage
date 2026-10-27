@@ -25,6 +25,7 @@ namespace {
 		public function __construct(public array $request, array $get) { $this->get = new FInputGet($get); }
 		public function get($n, $d = null, $f = null) { return $this->request[$n] ?? $d; }
 		public function getInt($n, $d = 0) { return (int) ($this->request[$n] ?? $d); }
+		public function getCmd($n, $d = null) { return isset($this->request[$n]) ? preg_replace('/[^A-Z0-9_.-]/i', '', (string) $this->request[$n]) : $d; }
 	}
 	class FInputGet
 	{
@@ -113,6 +114,8 @@ namespace {
 	t_ok(ctl($x)->checkToken() === false, 'sin token: rechazado');
 	$x = $base; $x['task'] = 'comments.delete';
 	t_ok(ctl($x)->checkToken() === false, 'cambiando la tarea a delete: rechazado');
+	t_ok(ctl($base, array_merge($base, ['task' => 'comments.delete']))->checkToken() === false, '0.9.12: GET firmado de publish pero la tarea ejecutada (POST) es delete: cae al token de formulario');
+	t_ok(ctl($base, $base)->checkToken() === true, '0.9.12: misma tarea en GET y en la peticion: aceptado');
 	$q6 = query(SignedURL::getSignedURL('index.php?option=com_engage&task=comments.publish', $otro, $email));
 	$x = $base; $x['token'] = $q6['token'];
 	t_ok(ctl($x)->checkToken() === false, 'token del comentario 6 usado en el 5: rechazado');

@@ -16,6 +16,10 @@ use Akeeba\Component\Engage\Administrator\Mixin\ControllerReturnURLTrait;
 use Akeeba\Component\Engage\Administrator\Mixin\ControllerReusableModelsTrait;
 use Akeeba\Component\Engage\Administrator\Table\CommentTable;
 use Akeeba\Component\Engage\Site\Helper\CommentAccess;
+use Akeeba\Component\Engage\Site\Helper\PostRateLimit;
+use Joomla\Database\DatabaseInterface;
+use Joomla\CMS\Factory;
+use Joomla\Utilities\IpHelper;
 use Akeeba\Component\Engage\Site\Mixin\ControllerFrontendCommentsTrait;
 use Exception;
 use Joomla\CMS\Language\Text;
@@ -112,6 +116,29 @@ class CommentController extends AdminCommentController
 		}
 
 		return $table->created_by == $user->id;
+	}
+
+	/**
+	 * 0.9.12: frequency limit for NEW comments (per user and per IP). A refusal is a clear message and a redirect back; nothing is saved.
+	 */
+	public function save($key = null, $urlVar = null)
+	{
+		$isNew = (int) $this->input->get('id', 0, 'int') === 0 && empty($this->input->post->get('jform', [], 'array')['id']);
+
+		if ($isNew)
+		{
+			$user = UserFetcher::getUser();
+
+			if (!PostRateLimit::allowed(Factory::getContainer()->get(DatabaseInterface::class), (int) $user->id, IpHelper::getIp()))
+			{
+				$this->setMessage(Text::_('COM_ENGAGE_COMMENTS_ERR_RATELIMIT'), 'error');
+				$this->applyReturnUrl();
+
+				return false;
+			}
+		}
+
+		return parent::save($key, $urlVar);
 	}
 
 	protected function onAfterApply()

@@ -50,6 +50,9 @@ defined('_JEXEC') or die;
 #[\AllowDynamicProperties]
 class CommentTable extends AbstractTable
 {
+	/** Absolute ceiling of a comment body, in bytes, whatever the max_length option says (0.9.12). */
+	public const HARD_MAX_LENGTH = 20000;
+
 	use TriggerEventTrait;
 	use TableColumnAliasTrait;
 	use TableCreateModifyTrait
@@ -216,6 +219,10 @@ class CommentTable extends AbstractTable
 		{
 			$maxLength = 0;
 		}
+
+		// 0.9.12: hard server-side ceiling even when the option is 0 (unlimited) or larger: the renderer, the e-mails and the admin list pay for every byte
+		$hardMax   = self::HARD_MAX_LENGTH;
+		$maxLength = ($maxLength > 0) ? min((int) $maxLength, $hardMax) : $hardMax;
 
 		if ($minLength && $commentLength < $minLength)
 		{

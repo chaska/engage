@@ -196,16 +196,15 @@ class CommentsController extends AdminCommentsController
 	 */
 	public function unsubscribe(): void
 	{
-		$this->checkToken();
-
 		$this->disableJoomlaCache();
 
-		// I need at least a comment ID and an email to unsubscribe
+		// 0.9.12: a form token is NOT enough (any page carries one). Either a valid SIGNED link (the ones in the emails) or a logged in user who
+		// unsubscribes THEIR OWN address with a valid form token. Every refusal is the same 403, whether the comment exists or not (no oracle of IDs).
 		$id               = $this->input->get->getInt('id', 0);
 		$cid              = $this->input->get->get('cid', [], 'raw');
-		$unsubscribeEmail = $this->input->get->getString('email', '');
+		$unsubscribeEmail = trim((string) $this->input->get->getString('email', ''));
 
-		$cid = array_filter(ArrayHelper::toInteger($cid));
+		$cid = array_filter(ArrayHelper::toInteger(is_array($cid) ? $cid : [$cid]));
 
 		if (empty($id) && !empty($cid))
 		{
@@ -214,10 +213,23 @@ class CommentsController extends AdminCommentsController
 
 		/** @var CommentTable $comment */
 		$comment = $this->getModel()->getTable('Comment', 'Administrator');
+		$denied  = static fn() => new RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
 
-		if (($id <= 0) || empty($unsubscribeEmail) || !$comment->load($id))
+		if (($id <= 0) || $unsubscribeEmail === '' || strlen($unsubscribeEmail) > 100 || !filter_var($unsubscribeEmail, FILTER_VALIDATE_EMAIL) || !$comment->load($id))
 		{
-			throw new RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
+			throw $denied();
+		}
+
+		if (!$this->hasValidSignedLink())
+		{
+			$user = UserFetcher::getUser();
+
+			if ($user->guest || !strlen((string) $user->email) || strcasecmp((string) $user->email, $unsubscribeEmail) !== 0
+				|| !\Joomla\CMS\Session\Session::checkToken('request')
+				|| !Meta::isAssetViewable(Meta::getAssetAccessMeta((int) $comment->asset_id), $user))
+			{
+				throw $denied();
+			}
 		}
 
 		// Try to unsubscribe -- if already unsubscribed redirect back with an error

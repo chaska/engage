@@ -11,6 +11,9 @@ defined('_JEXEC') or die;
 
 final class BBCode
 {
+	/** Maximum number of «[» characters in a comment that is parsed as BBCode (the rest is shown as plain text). */
+	public const MAX_BRACKETS = 500;
+
 	/**
 	 * Convert BBcode to HTML
 	 *
@@ -24,6 +27,12 @@ final class BBCode
 	{
 		// Convert linebreaks (the CODE tag will revert them)
 		$text = nl2br($text);
+
+		// 0.9.12: the parser is quadratic in the number of brackets. More than MAX_BRACKETS is not legitimate BBCode: literal text (the input is already escaped).
+		if ($nestingLevel === 0 && substr_count($text, '[') > self::MAX_BRACKETS)
+		{
+			return str_replace('[', '&#91;', $text);
+		}
 
 		// Parse the following tags: size, color, b, i, list, *, img
 		$bracketStart = strpos($text, '[');

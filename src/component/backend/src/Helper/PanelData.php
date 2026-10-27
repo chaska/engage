@@ -26,7 +26,10 @@ use Throwable;
 final class PanelData
 {
 	/** Version del fork segun el CHANGELOG (la prueba tests/28 comprueba que coincide con su primera entrada). */
-	public const FORK_VERSION = '0.9.11';
+	public const FORK_VERSION = '0.9.12';
+
+	/** Version of the package (pkg_engage.xml); tests/11 checks that it matches. */
+	public const PACKAGE_VERSION = '3.4.16';
 
 	public const REPO_URL      = 'https://github.com/chaska/engage';
 	public const CHANGELOG_URL = 'https://github.com/chaska/engage/blob/main/CHANGELOG.md';
@@ -462,7 +465,7 @@ final class PanelData
 				->where($db->quoteName('e.type') . ' = :type')
 				->where($db->quoteName('e.folder') . ' = :grp')
 				->where($db->quoteName('e.enabled') . ' = 1')
-				->where($db->quoteName('e.access') . ' <> 1')
+				->where($db->quoteName('e.access') . ' NOT IN (1, 5)')  // 0.9.12: Public and Guest (the default «Guest» level) are visible to visitors without a session
 				->bind(':type', $type, ParameterType::STRING)
 				->bind(':grp', $grp, ParameterType::STRING);
 			$rows = [];
@@ -470,14 +473,28 @@ final class PanelData
 			foreach ($db->setQuery($q, 0, 50)->loadAssocList() ?: [] as $r)
 			{
 				$name = (string) ($r['name'] ?? '');
+				$el   = (string) $r['element'];
+
+				try
+				{
+					$lang = Factory::getApplication()->getLanguage();
+					$lang->load('plg_engage_' . $el . '.sys', JPATH_ADMINISTRATOR);
+					$lang->load('plg_engage_' . $el . '.sys', JPATH_PLUGINS . '/engage/' . $el);
+				}
+				catch (Throwable $e)
+				{
+				}
+
 				$tr   = $name !== '' ? Text::_($name) : '';
-				$rows[] = ['id' => (int) $r['id'], 'element' => (string) $r['element'], 'name' => ($tr !== '' && $tr !== $name) ? $tr : (string) $r['element'], 'access' => (int) $r['access'], 'level' => (string) ($r['level'] ?? '')];
+				$rows[] = ['id' => (int) $r['id'], 'element' => $el, 'name' => ($tr !== '' && $tr !== $name) ? $tr : ucfirst($el), 'access' => (int) $r['access'], 'level' => (string) ($r['level'] ?? '')];
 			}
 
 			$facts['engage_plugin_access'] = $rows;
 		}
 		catch (Throwable $e)
 		{
+			// the query failed: UNKNOWN (not green)
+			$facts['engage_plugin_access'] = null;
 		}
 
 		// 0.9.4: el elemento con mas comentarios publicados (para el semaforo del rastreo de robots): una consulta, solo lectura

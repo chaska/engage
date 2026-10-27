@@ -12,6 +12,9 @@
 #   N      lib/listas-navegador.js   (0.9.2) cada formulario de lista del backend en Chromium (la tarea vacia y «browse» no pueden volver a dar 403)
 #   N2     lib/admin-navegador.js    (0.9.3) rediseno .eg-admin de Comentarios, Plantillas de email y Edicion en Chromium: claro/oscuro x escritorio/movil, sin desbordamiento, sin estilos en linea, contraste, capturas en docs/img
 #   R      lib/rastreo-http.php, lib/rastreo-navegador.js (0.9.4/0.9.5, con nginx + php-fpm: lib/nginx-fpm.sh) rastreo de robots con SEF y sin SEF, con y sin live_site / opcion / base aprendida: URL base indexable con su canonical; variantes akengage_* con noindex, follow (meta y X-Robots-Tag), canonical a la base y rel nofollow en todos los enlaces; modulo; opcion apagada; clic de personas; semaforo del panel
+#   AV     lib/avatar-generico-navegador.js, lib/avatar-opciones.php (0.9.11) opcion «Avatar generico en los comentarios sin foto»: Gravatar preguntar/desactivado/siempre x Mostrar/No mostrar, escritorio claro y movil oscuro (requiere lib/importados-datos.php crear)
+#   PA     lib/panel-acceso-navegador.js (0.9.11/0.9.12) semaforo del panel «Plugins de fotos y acceso»: verde, ambar con plugin y nivel, enlace de arreglo, email/akismet sin aviso
+#   AU     lib/auditoria-0912.php (0.9.12) DoS de BBCode, tope de longitud, baja de avisos (token de formulario no basta; enlace firmado y usuario con su correo), enlaces firmados de moderacion, re-suscripcion y limitador de comment.save
 #   H6/H7  no tienen script propio: se comprueban con tests/41 (ficha del activo) y con 21-otros-componentes.sh (terceros con activos en #__assets); ejecute 21 aparte.
 # Ademas de este script hay que pasar: 05 (Gravatar con cache de pagina y Chromium), 03, 17, 19, 20, 21 y 04 (actualizacion).
 # Requisitos: 03-sembrar-y-probar.sh y el paquete actual instalado (02); MariaDB, SMTP de captura (00). Variables: PW_MODULE, CHROMIUM.
@@ -28,6 +31,7 @@ echo "== correos HTML (0.9.0)"
 php "$AQUI/lib/correos-html.php" || rc=1
 echo "== opciones sensibles (0.9.1): core.options sin core.admin"
 php "$AQUI/lib/opciones-sensibles.php" || rc=1
+php "$AQUI/lib/auditoria-0912.php" || rc=1
 PW="${PW_MODULE:-/opt/node-tools/node_modules/playwright}"
 if [ -d "$PW" ] && [ -x "${CHROMIUM:-/opt/pw-browsers/chromium}" ]; then
 	export PW_MODULE="$PW" CHROMIUM="${CHROMIUM:-/opt/pw-browsers/chromium}"

@@ -82,7 +82,13 @@ class CommentModel extends AdminCommentModel
 	 */
 	public function resubscribeUser(int $asset_id, ?User $user, ?string $email)
 	{
-		$email = $user->guest ? $email : $user->email;
+		// 0.9.12: only a logged in user (who owns the address of their account) resubscribes by commenting. A guest could type anybody's address and undo their unsubscription.
+		if ($user === null || $user->guest)
+		{
+			return;
+		}
+
+		$email = $user->email;
 
 		if (empty($email))
 		{
@@ -349,7 +355,7 @@ class CommentModel extends AdminCommentModel
 				break;
 
 			case 'nonmanager':
-				$showCaptcha = !$user->guest && !$user->authorise('core.manage', 'com_engage');
+				$showCaptcha = (bool) ($user->guest || !$user->authorise('core.manage', 'com_engage'));
 				break;
 
 			default:

@@ -36,3 +36,13 @@ Desde la 0.9.8 **una foto real gana siempre a un avatar genérico**, da igual el
 ## Comprobar
 
 Entre como el usuario con foto en un artículo con comentarios suyos: el comentario muestra su foto. Si no sale: ¿está elegido el campo? ¿el valor es una ruta de imagen de este sitio con una de las extensiones permitidas? Los invitados no tienen foto de campo (solo Gravatar o el genérico).
+
+## Qué acepta Engage del resultado de un plugin de fotos (0.9.12)
+
+El resultado de un plugin del grupo `engage` va a un `<img src>`: es código de un tercero y no se da por bueno. `Avatar::pickAvatar` solo acepta:
+
+- una **ruta del propio sitio que empiece por una sola «/»** (nunca «//» ni «/\», que para el navegador son otro servidor). La dirección de MiFoto (`/index.php?option=com_mifoto&view=...&id=...`) sigue valiendo;
+- una dirección **https de la base de confianza** del sitio (la misma que usan los correos);
+- una dirección de avatar de **Gravatar** (`https://www.gravatar.com/avatar/<hash>`).
+
+Se descarta todo lo demás: otros dominios, `http:`, `javascript:`, `data:`, rutas relativas sin «/», cadenas con espacios, comillas, ángulos, barras invertidas o caracteres de control, y las de más de 2000 caracteres. Si todo lo que devuelven los plugins se descarta, se usa el avatar genérico local.
