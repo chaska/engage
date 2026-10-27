@@ -68,6 +68,7 @@ namespace {
 	t_ok(count($pkg->updateservers->server) === 1 && (string) $pkg->updateservers->server['type'] === 'extension', 'un único update server de tipo extension (Joomla reubica el update site existente solo si hay uno)');
 	$x = simplexml_load_file($xmlFile);
 	t_ok(count($x->update) === 1, 'una sola entrada <update>');
+	t_ok((string) ($x->update->client ?? '') === 'site', '<client>site</client>: sin el, Joomla (ExtensionAdapter) toma client_id = 1, no encuentra el paquete (client_id 0) y dice «No hay actualizaciones disponibles» (0.9.11)');
 	t_ok((string) $x->update->element === (string) $pkg->name && (string) $x->update->type === 'package', 'element/type coinciden con el paquete (pkg_engage, package)');
 	t_ok((string) $x->update->version === $ver, "version del XML = version del manifiesto ($ver)");
 	$url = trim((string) $x->update->downloads->downloadurl);

@@ -74,3 +74,14 @@ La 3.4.3 añade UNA tabla (`#__engage_reactions`) con el fichero `sql/updates/my
 2. Cambia `<version>` y la `downloadurl` (carpeta `v<versión>` y nombre del ZIP) en `updates/pkgengage.xml`. `php build/build.php` se niega a continuar si la versión del XML no coincide con la del paquete.
 3. `php build/build.php` (escribe el `<sha256>` en el XML) y `php tests/run.php`.
 4. Sincroniza `main` y publica la release siguiendo los pasos de arriba. **Primero la release con el ZIP, y después (o a la vez) `main` con el XML nuevo**, para que ninguna instalación vea una descarga inexistente.
+
+
+## Comprobar que Joomla OFRECE la actualización (0.9.11)
+
+Después de publicar la release y de que `main` sirva el `updates/pkgengage.xml` nuevo, en un Joomla con una versión anterior de Engage instalada:
+
+1. **Sistema > Instalar > Extensiones > Gestionar sitios de actualización**: debe haber una fila «Engage (fork comunitario) Updates» activada con la dirección `https://raw.githubusercontent.com/chaska/engage/main/updates/pkgengage.xml`.
+2. **Sistema > Actualizar > Extensiones**, botón **Borrar caché** y luego **Buscar actualizaciones**: debe aparecer la fila «Engage» con la versión nueva (tipo Paquete, sitio «Site»). Si dice «No hay actualizaciones disponibles», mire `<client>site</client>` en el XML: sin esa etiqueta Joomla guarda la oferta como del administrador y no la muestra (así pasó con la 3.4.14).
+3. Marque la fila y pulse **Actualizar**: Joomla descarga el ZIP, comprueba su `sha256` con el del XML (si no coincide, rechaza la actualización) e instala. La versión en **Sistema > Información del sistema > Extensiones** pasa a la nueva.
+
+Automático: `PKG_ANTES=<zip anterior> bash tests/joomla-live/23-oferta-actualizacion.sh` instala la versión anterior, sirve en local una copia del XML con la descarga local y recorre esos pasos en Chromium (también con una huella mala: se rechaza).

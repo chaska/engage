@@ -12,6 +12,7 @@
 		<description>Engage, sistema de comentarios para Joomla (fork comunitario)</description>
 		<element>pkg_engage</element>
 		<type>package</type>
+		<client>site</client>
 		<version>3.4.14</version>
 		<infourl title="Engage (fork comunitario)">https://github.com/chaska/engage</infourl>
 		<downloads>
