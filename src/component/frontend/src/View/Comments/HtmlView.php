@@ -14,6 +14,8 @@ use Akeeba\Component\Engage\Administrator\Helper\TrustedBase;
 use Akeeba\Component\Engage\Administrator\Helper\ListOrdering;
 use Akeeba\Component\Engage\Administrator\Helper\ReactionIcons;
 use Akeeba\Component\Engage\Administrator\Helper\Reactions;
+use Akeeba\Component\Engage\Administrator\Helper\ReportRules;
+use Akeeba\Component\Engage\Administrator\Helper\ReportStore;
 use Akeeba\Component\Engage\Administrator\Helper\UserFetcher;
 use Akeeba\Component\Engage\Administrator\Mixin\ViewLoadAnyTemplateTrait;
 use Akeeba\Component\Engage\Site\Helper\Meta;
@@ -989,6 +991,78 @@ class HtmlView extends BaseHtmlView
 		}
 
 		return $html . '</span>';
+	}
+
+	/** @var array|null  0.9.14: what the report buttons need (lazy; null = not computed yet) */
+	private $reportCtx = null;
+
+	/**
+	 * 0.9.14: the «Report» button of a comment (a small form with a closed list of reasons and an optional short note). Only a LOGGED IN person sees it, only
+	 * on published comments that are not theirs, once the account is old enough and while they have not reported that comment; the server checks everything
+	 * again (ReportController). Nothing is printed for guests.
+	 */
+	public function reportHtml(object $comment): string
+	{
+		if ($this->reportCtx === null)
+		{
+			$this->reportCtx = ['on' => false, 'reported' => []];
+
+			try
+			{
+				$u = $this->user;
+				$p = ComponentHelper::getParams('com_engage');
+
+				if ($u && !$u->guest && (int) $u->id > 0 && (int) $p->get('reports_enabled', 1) === 1)
+				{
+					$age = strtotime((string) $u->registerDate . ' UTC');
+					$ok  = $age && (int) floor((time() - $age) / 3600) >= ReportRules::limit('reports_min_account', $p->get('reports_min_account', null));
+
+					if ($ok)
+					{
+						$ids = [];
+
+						foreach ((array) $this->items as $c)
+						{
+							$ids[] = (int) $c->id;
+						}
+
+						$this->reportCtx = ['on' => true, 'reported' => (new ReportStore(Factory::getContainer()->get(DatabaseInterface::class)))->reportedBy((int) $u->id, $ids)];
+					}
+				}
+			}
+			catch (Throwable $e)
+			{
+				$this->reportCtx = ['on' => false, 'reported' => []];
+			}
+		}
+
+		$id = (int) $comment->id;
+
+		if (!$this->reportCtx['on'] || $id <= 0 || (int) $comment->enabled !== 1 || (int) $comment->created_by === (int) $this->user->id || in_array($id, $this->reportCtx['reported'], true))
+		{
+			return '';
+		}
+
+		$e   = static fn(string $s): string => htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+		$ret = base64_encode(CommentTools::relativeUrl($this->requestUri()));
+		$opt = '';
+
+		foreach (ReportRules::REASONS as $code => $key)
+		{
+			$opt .= '<option value="' . (int) $code . '">' . $e(Text::_('COM_ENGAGE_REPORT_REASON_' . strtoupper($key))) . '</option>';
+		}
+
+		return '<details class="akengage-report">'
+			. '<summary class="akengage-report-btn">' . $e(Text::_('COM_ENGAGE_REPORT_BTN')) . '</summary>'
+			. '<form method="post" action="' . $e(Route::_('index.php?option=com_engage&task=report.submit', false)) . '" class="akengage-report-form">'
+			. '<input type="hidden" name="comment_id" value="' . $id . '"><input type="hidden" name="returnurl" value="' . $e($ret) . '">' . HTMLHelper::_('form.token')
+			. '<p class="akengage-report-help">' . $e(Text::_('COM_ENGAGE_REPORT_HELP')) . '</p>'
+			. '<label for="akengage-rr-' . $id . '">' . $e(Text::_('COM_ENGAGE_REPORT_REASON_LABEL')) . '</label>'
+			. '<select name="reason" id="akengage-rr-' . $id . '" required><option value="">' . $e(Text::_('COM_ENGAGE_REPORT_REASON_CHOOSE')) . '</option>' . $opt . '</select>'
+			. '<label for="akengage-rn-' . $id . '">' . $e(Text::_('COM_ENGAGE_REPORT_NOTE_LABEL')) . '</label>'
+			. '<input type="text" name="note" id="akengage-rn-' . $id . '" maxlength="' . ReportRules::NOTE_MAX . '" autocomplete="off">'
+			. '<button type="submit" class="akengage-report-send">' . $e(Text::_('COM_ENGAGE_REPORT_SEND')) . '</button>'
+			. '</form></details>';
 	}
 
 	/**

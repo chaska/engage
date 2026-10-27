@@ -572,3 +572,15 @@ section.akengage-outer-container article[id^="akengage-comment-"]:target {
 	outline-offset: 3px;
 	scroll-margin-top: 4rem;
 }
+
+/* 0.9.14: report button of a comment (logged in people only). Same look in light and dark: it follows the text colour of the theme */
+.akengage-report { display: inline-block; margin: 0 .25rem .25rem 0; }
+.akengage-report > summary { list-style: none; cursor: pointer; display: inline-block; padding: .2rem .6rem; border: 1px solid currentColor; border-radius: .375rem; font-size: .875rem; line-height: 1.4; opacity: .85; }
+.akengage-report > summary::-webkit-details-marker { display: none; }
+.akengage-report > summary:hover, .akengage-report > summary:focus-visible { opacity: 1; }
+.akengage-report[open] > summary { opacity: 1; }
+.akengage-report-form { display: grid; gap: .4rem; margin-top: .5rem; padding: .75rem; max-width: 26rem; border: 1px solid currentColor; border-radius: .5rem; font-size: .875rem; }
+.akengage-report-form select, .akengage-report-form input[type="text"] { width: 100%; max-width: 100%; box-sizing: border-box; }
+.akengage-report-help { margin: 0; }
+.akengage-report-send { justify-self: start; padding: .3rem .8rem; cursor: pointer; }
+@media (max-width: 575.98px) { .akengage-report-form { max-width: 100%; } }

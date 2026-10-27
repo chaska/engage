@@ -4,7 +4,7 @@
 # Usa un segundo Joomla (SITE_DIR=site2, DB joomla_upg, puerto 8081). Requisitos: 00-entorno.sh y 01-montar-joomla.sh con esas variables.
 # 0.7.0: PKG_ANTES=/ruta/pkg_engage-3.4.2.1.zip instala ese paquete (p. ej. el PUBLICADO, descargado de la release v3.4.2.1) en lugar del 3.4.2 original
 # y actualiza desde el. Sin la variable se parte del 3.4.2 original reconstruido desde upstream/. En ambos casos, tras actualizar se comprueba que la
-# tabla de reacciones se crea, que el esquema pasa a 3.4.3-20261007 y que los comentarios y ajustes previos quedan intactos.
+# tabla de reacciones se crea, que el esquema pasa a 3.4.18-20261027 (reacciones y denuncias) y que los comentarios y ajustes previos quedan intactos.
 set -euo pipefail
 export SITE_DIR="${SITE_DIR:-site2}" DB_NAME="${DB_NAME:-joomla_upg}" PORT="${PORT:-8081}" IDS_FILE="${IDS_FILE:-ids2.json}"
 source "$(dirname "$0")/config.sh"
@@ -19,7 +19,7 @@ else
 	ANTES_ZIP="$WORK/upstream-pkg/dist/pkg_engage-3.4.2.zip"
 fi
 echo "== 2. Instalacion del paquete de partida"
-# Empieza SIEMPRE de un sitio sin Engage (Joomla no baja el esquema de #__schemas: si una pasada anterior dejo 3.4.3-20261007 la actualizacion no tendria nada que ejecutar)
+# Empieza SIEMPRE de un sitio sin Engage (Joomla no baja el esquema de #__schemas: si una pasada anterior dejo 3.4.18-20261027 la actualizacion no tendria nada que ejecutar)
 WORK="$WORK" SITE_DIR="$SITE_DIR" DB_NAME="$DB_NAME" php "$AQUI/lib/desinstalar.php" > "$OUT/desinstalacion-previa.txt" 2>&1 || true
 mysql "$DB_NAME" -e "DROP TABLE IF EXISTS jos_engage_reactions" 2>/dev/null || true
 bash "$AQUI/02-instalar-engage.sh" "$ANTES_ZIP" > "$OUT/instalacion-antes.txt" 2>&1; head -3 "$OUT/instalacion-antes.txt"
@@ -56,11 +56,11 @@ echo "-- ficheros nuevos del fork:"; comm -13 <(awk '{print $2}' "$OUT/antes-fic
 echo "-- ficheros modificados: $(comm -13 <(sort "$OUT/antes-ficheros.txt") <(sort "$OUT/despues-ficheros.txt") | awk '{print $2}' | sort -u | wc -l) (incluye los nuevos)"
 echo "== 5b. Reacciones (0.7.0): tabla nueva, esquema y datos previos"
 N="$(mysql -N "$DB_NAME" -e "SHOW TABLES LIKE 'jos_engage_reactions'" | wc -l)"; echo "   tabla jos_engage_reactions creada: $N (1 = si)"
-SCH="$(mysql -N "$DB_NAME" -e "SELECT version_id FROM jos_schemas WHERE extension_id=(SELECT extension_id FROM jos_extensions WHERE element='com_engage' AND type='component')")"; echo "   esquema DESPUES: $SCH (debe ser 3.4.3-20261007)"
+SCH="$(mysql -N "$DB_NAME" -e "SELECT version_id FROM jos_schemas WHERE extension_id=(SELECT extension_id FROM jos_extensions WHERE element='com_engage' AND type='component')")"; echo "   esquema DESPUES: $SCH (debe ser 3.4.18-20261027)"
 echo "   columnas: $(mysql -N "$DB_NAME" -e "SELECT GROUP_CONCAT(column_name ORDER BY ordinal_position) FROM information_schema.columns WHERE table_schema='$DB_NAME' AND table_name='jos_engage_reactions'")"
 echo "   indices: $(mysql -N "$DB_NAME" -e "SELECT GROUP_CONCAT(DISTINCT index_name ORDER BY index_name) FROM information_schema.statistics WHERE table_schema='$DB_NAME' AND table_name='jos_engage_reactions'")"
 echo "   comentarios despues: $(mysql -N "$DB_NAME" -e 'SELECT COUNT(*) FROM jos_engage_comments') (identicos a los de antes: lo dice la comparacion de tablas de arriba)"
-[ "$N" = "1" ] && [ "$SCH" = "3.4.3-20261007" ] && echo "RESULTADO reacciones: PASA" || { echo "RESULTADO reacciones: FALLA"; exit 1; }
+[ "$N" = "1" ] && [ "$SCH" = "3.4.18-20261027" ] && [ "$(mysql -N "$DB_NAME" -e "SHOW TABLES LIKE 'jos_engage_reports'" | wc -l)" = "1" ] && [ "$(mysql -N "$DB_NAME" -e "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=DATABASE() AND table_name='jos_engage_reports' AND index_name='jos_engage_reports_unique' AND non_unique=0")" = "2" ] && echo "RESULTADO reacciones: PASA" || { echo "RESULTADO reacciones: FALLA"; exit 1; }
 ART="$(python3 -c "import json;d=json.load(open('$WORK/$IDS_FILE'));print('%s&catid=%s' % (d['art_publico'], d['cat_publica']))")"
 echo "== 5c. Tanda 2 (0.8.0): orden, favoritos, copiar enlace e insignias tras actualizar (valores por defecto y opciones apagadas)"
 PAG="$BASE_URL/index.php?option=com_content&view=article&id=$ART"

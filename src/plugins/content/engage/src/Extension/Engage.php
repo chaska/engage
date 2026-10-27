@@ -622,6 +622,9 @@ class Engage extends CMSPlugin implements SubscriberInterface
 				Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class),
 				\Akeeba\Component\Engage\Administrator\Helper\Privacy::months($cParams->get('retention_months', 12))
 			);
+
+			// 0.9.14: housekeeping of the reports and, if enabled, the GROUPED email to the moderators (same 8 hour clock)
+			\Akeeba\Component\Engage\Administrator\Helper\ReportDigest::run((int) $cParams->get('reports_notify', 0) === 1);
 		}
 		catch (\Throwable $e)
 		{

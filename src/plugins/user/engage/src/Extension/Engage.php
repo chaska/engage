@@ -148,6 +148,7 @@ class Engage extends CMSPlugin implements SubscriberInterface
 			self::setKey($this->getDatabase(), (int) $userId, self::KEY_PENDING, null);
 			self::setKey($this->getDatabase(), (int) $userId, self::KEY_VERIFIED, null);
 			self::setKey($this->getDatabase(), (int) $userId, \Akeeba\Component\Engage\Administrator\Helper\UserProfileKey::GRAVATAR_CONSENT, null);
+			(new \Akeeba\Component\Engage\Administrator\Helper\ReportStore($this->getDatabase()))->deleteForUser((int) $userId);
 		}
 		catch (Throwable $e)
 		{

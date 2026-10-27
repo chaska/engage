@@ -37,6 +37,7 @@ final class SettingsSchema
 	public const ADMIN_ONLY = [
 		'com_engage' => [
 			'email_base_url', 'email_base_learned', 'email_base_audit', 'email_confidential', 'iplookup', 'retention_months', 'privacy_url',
+			'reports_enabled', 'reports_per_hour', 'reports_per_day', 'reports_min_account', 'reports_open_max', 'reports_notify',
 			'customfield_avatar', 'filter_mode', 'htmlpurifier_config_joomla', 'htmlpurifier_configstring', 'htmlpurifier_include', 'captcha', 'captcha_for',
 		],
 	];

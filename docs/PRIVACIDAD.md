@@ -23,3 +23,6 @@ Opción `own_comments` (activada por defecto). Desde la 0.9.13 solo se atribuyen
 - al iniciar sesión se adopta solo si el correo **actual** de la cuenta es idéntico (sin distinguir mayúsculas) al verificado. Si el usuario cambió su correo, no se adopta nada con el nuevo;
 - cuentas creadas por un administrador, sitios sin activación por correo y **cuentas activadas antes de actualizar a esta versión no adoptan** por esta vía (lado seguro); no hace falta ninguna acción manual;
 - cada comentario se adopta una sola vez (después ya no es de invitado).
+
+## Denuncias de comentarios (0.9.14)
+Las denuncias (`#__engage_reports`) guardan quién denuncia (id de usuario), el comentario, el motivo, una nota opcional de 200 caracteres y la fecha. Solo las ve quien modera, en la cola de administración. Se borran al borrar la cuenta, al borrarse el comentario y, las resueltas, a los 180 días. Detalles y protecciones contra abuso en `docs/DENUNCIAS.md`.

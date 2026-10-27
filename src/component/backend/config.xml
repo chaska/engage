@@ -660,6 +660,80 @@
                 description="COM_ENGAGE_CONFIG_IPLOOKUP_DESC"/>
 
         <field
+                name="reports_enabled"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::reports_enabled"
+               validate="adminonly"
+                type="radio"
+                layout="joomla.form.field.radio.switcher"
+                default="1"
+                label="COM_ENGAGE_CONFIG_REPORTS_ENABLED_LABEL"
+                description="COM_ENGAGE_CONFIG_REPORTS_ENABLED_DESC">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+                name="reports_per_hour"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::reports_per_hour"
+               validate="adminonly"
+                type="integer"
+                first="1"
+                last="20"
+                step="1"
+                default="5"
+                label="COM_ENGAGE_CONFIG_REPORTS_PER_HOUR_LABEL"
+                description="COM_ENGAGE_CONFIG_REPORTS_PER_HOUR_DESC"/>
+
+        <field
+                name="reports_per_day"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::reports_per_day"
+               validate="adminonly"
+                type="integer"
+                first="1"
+                last="100"
+                step="1"
+                default="20"
+                label="COM_ENGAGE_CONFIG_REPORTS_PER_DAY_LABEL"
+                description="COM_ENGAGE_CONFIG_REPORTS_PER_DAY_DESC"/>
+
+        <field
+                name="reports_min_account"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::reports_min_account"
+               validate="adminonly"
+                type="integer"
+                first="0"
+                last="720"
+                step="1"
+                default="24"
+                label="COM_ENGAGE_CONFIG_REPORTS_MIN_ACCOUNT_LABEL"
+                description="COM_ENGAGE_CONFIG_REPORTS_MIN_ACCOUNT_DESC"/>
+
+        <field
+                name="reports_open_max"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::reports_open_max"
+               validate="adminonly"
+                type="integer"
+                first="50"
+                last="5000"
+                step="1"
+                default="500"
+                label="COM_ENGAGE_CONFIG_REPORTS_OPEN_MAX_LABEL"
+                description="COM_ENGAGE_CONFIG_REPORTS_OPEN_MAX_DESC"/>
+
+        <field
+                name="reports_notify"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::reports_notify"
+               validate="adminonly"
+                type="radio"
+                layout="joomla.form.field.radio.switcher"
+                default="0"
+                label="COM_ENGAGE_CONFIG_REPORTS_NOTIFY_LABEL"
+                description="COM_ENGAGE_CONFIG_REPORTS_NOTIFY_DESC">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
                 name="retention_months"
                filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::retention_months"
                validate="adminonly"

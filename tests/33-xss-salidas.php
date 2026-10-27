@@ -67,6 +67,7 @@ const LISTA_BLANCA = [
 		'$bsCommentStateClass' => 'una de tres clases fijas elegida por el estado',
 		'($comment->depth < $this->maxLevel) ? $comment->id : $parentIds[$this->maxLevel - 1]' => 'ids enteros de la tabla',
 		'$copyHtml' => 'resultado de copyButtonHtml() (HTML propio ya escapado)',
+		'$reportHtml' => 'resultado de reportHtml() (HTML propio: textos de idioma, id entero y direccion de retorno en base64, todo escapado; tests/61)',
 		'$this->badgesHtml($badges)' => 'ver SEGURAS_PREFIJO',
 		'$this->crawlRel()' => '0.9.4: literal fijo \' rel="nofollow"\' o vacio, elegido por la opcion',
 	],

@@ -16,6 +16,7 @@
 #   PA     lib/panel-acceso-navegador.js (0.9.11/0.9.12) semaforo del panel «Plugins de fotos y acceso»: verde, ambar con plugin y nivel, enlace de arreglo, email/akismet sin aviso
 #   AU     lib/auditoria-0912.php (0.9.12) DoS de BBCode, tope de longitud, baja de avisos (token de formulario no basta; enlace firmado y usuario con su correo), enlaces firmados de moderacion, re-suscripcion y limitador de comment.save
 #   PR     lib/privacidad-0913.php (0.9.13) retencion de IP y navegador (1200 comentarios por lotes), informacion y enlace de privacidad (valido y hostil), Gravatar decidido por el servidor (invitado / registrado / consentimiento / revocar) y adopcion de comentarios con correo verificado por activacion (registro y activacion reales con el SMTP de captura)
+#   DN     lib/denuncias-0914.php, lib/denuncias-datos.php + lib/denuncias-0914-navegador.js (0.9.14) denunciar comentarios: invitado/sin token/GET/cross-site, cuenta nueva, comentario propio o no visible, doble denuncia, limites por hora y dia, tope global, cola de administracion (ACL, token), aviso agrupado, borrado de cuenta; Chromium en escritorio claro y movil oscuro
 #   H6/H7  no tienen script propio: se comprueban con tests/41 (ficha del activo) y con 21-otros-componentes.sh (terceros con activos en #__assets); ejecute 21 aparte.
 # Ademas de este script hay que pasar: 05 (Gravatar con cache de pagina y Chromium), 03, 17, 19, 20, 21 y 04 (actualizacion).
 # Requisitos: 03-sembrar-y-probar.sh y el paquete actual instalado (02); MariaDB, SMTP de captura (00). Variables: PW_MODULE, CHROMIUM.
@@ -34,6 +35,7 @@ echo "== opciones sensibles (0.9.1): core.options sin core.admin"
 php "$AQUI/lib/opciones-sensibles.php" || rc=1
 php "$AQUI/lib/auditoria-0912.php" || rc=1
 php "$AQUI/lib/privacidad-0913.php" || rc=1
+php "$AQUI/lib/denuncias-0914.php" || rc=1
 PW="${PW_MODULE:-/opt/node-tools/node_modules/playwright}"
 if [ -d "$PW" ] && [ -x "${CHROMIUM:-/opt/pw-browsers/chromium}" ]; then
 	export PW_MODULE="$PW" CHROMIUM="${CHROMIUM:-/opt/pw-browsers/chromium}"

@@ -32,6 +32,7 @@ final class SettingsLayout
 			]],
 			['id' => 'moderation', 'icon' => 'check', 'tone' => 'green', 'items' => [
 				[$c, 'default_publish'], [$c, 'comments_enabled'], [$c, 'comments_close_after'], [$c, 'min_length'], [$c, 'max_length'], [$c, 'default_limit'],
+				[$c, 'reports_enabled'], [$c, 'reports_per_hour'], [$c, 'reports_per_day'], [$c, 'reports_min_account'], [$c, 'reports_open_max'], [$c, 'reports_notify'],
 			]],
 			['id' => 'reactions', 'icon' => 'heart', 'tone' => 'red', 'items' => [
 				[$c, 'reactions_enabled'], [$c, 'reactions_dislike'], [$c, 'reactions_favorites'], [$c, 'reactions_who'],

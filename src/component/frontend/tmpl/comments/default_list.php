@@ -315,8 +315,9 @@ $favView = $this->isFavoritesView();
 			<?php endif; ?>
 		</div>
 
+		<?php $reportHtml = $favView ? '' : $this->reportHtml($comment); ?>
 		<?php $showReactions = $this->reactions['enabled'] && ($comment->enabled == 1); $copyHtml = ($comment->enabled == 1) ? $this->copyButtonHtml((int) $comment->id) : ''; $showReply = $this->perms['create'] && !$favView; /* 0.7.0: reactions, same line as Reply. 0.8.0: copy link; no Reply in the favourites list (its level depends on the thread: use the link to the thread) */ ?>
-		<?php if ($showReply || $showReactions || $copyHtml !== '' || $favView): ?>
+		<?php if ($showReply || $showReactions || $copyHtml !== '' || $favView || $reportHtml !== ''): ?>
 			<div class="akengage-comment-reply<?= ($showReactions || $copyHtml !== '') ? ' akengage-comment-reply--react' : '' ?>">
 				<?php if ($showReply): ?>
 				<?php // You can reply to $this->maxLevel - 1 level comments only. Replies to deeper nested comments are to the $this->maxLevel - 1 level parent. ?>
@@ -336,6 +337,9 @@ $favView = $this->isFavoritesView();
 				<?php if ($showReactions): ?>
 				<?= $this->reactionsHtml((int) $comment->id) ?>
 				<?php endif; ?>
+<?php if ($reportHtml !== ''): ?>
+				<?= $reportHtml ?>
+<?php endif; ?>
 			</div>
 		<?php endif; ?>
 	</article>

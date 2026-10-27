@@ -102,6 +102,28 @@ echo I::sprite();
 					<?php endif; ?>
 				</a>
 			</li>
+			<?php
+			// 0.9.14: queue of comment reports (open ones counted with one bound query; a failure just hides the number)
+			$openReports = 0;
+
+			try
+			{
+				$openReports = (new \Akeeba\Component\Engage\Administrator\Helper\ReportStore(\Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class)))->countOpen();
+			}
+			catch (\Throwable $reportsError)
+			{
+			}
+			?>
+			<li>
+				<a class="eg-tile" href="<?= $url('index.php?option=com_engage&view=reports') ?>">
+					<span class="eg-icobox eg-icobox--orange"><?= I::icon('flag') ?></span>
+					<span class="eg-tile__label"><?= $e(Text::_('COM_ENGAGE_REPORTS_TILE')) ?></span>
+					<span class="eg-tile__hint"><?= $e(Text::sprintf('COM_ENGAGE_REPORTS_TILE_HINT', $openReports)) ?></span>
+					<?php if ($openReports > 0) : ?>
+						<span class="eg-badges"><span class="eg-badge eg-badge--warn"><span class="eg-vh"><?= $e(Text::_('COM_ENGAGE_REPORTS_STATUS_OPEN')) ?>: </span><?= $e($n($openReports)) ?></span></span>
+					<?php endif; ?>
+				</a>
+			</li>
 			<li>
 				<a class="eg-tile" href="<?= $url('index.php?option=com_engage&view=emailtemplates') ?>">
 					<span class="eg-icobox eg-icobox--violet"><?= I::icon('mail') ?></span>
