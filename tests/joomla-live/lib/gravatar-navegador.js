@@ -31,8 +31,8 @@ function setParams(p) {
     sql(`UPDATE jos_extensions SET enabled=1, params='${j.replace(/'/g, "\\'")}' WHERE type='plugin' AND folder='engage' AND element='gravatar'`);
 }
 
-async function nuevo(browser, {bloquearStorage = false} = {}) {
-    const ctx = await browser.newContext({locale: 'en-GB'});
+async function nuevo(browser, {bloquearStorage = false, invitado = false, movil = false} = {}) {
+    const ctx = await browser.newContext(movil ? {locale: 'en-GB', viewport: {width: 360, height: 740}, hasTouch: true} : {locale: 'en-GB'});
     const peticiones = [];
     await ctx.route(/gravatar\.com/, (route) => {
         peticiones.push({url: route.request().url(), referer: route.request().headers()['referer'] || null});
@@ -49,6 +49,15 @@ async function nuevo(browser, {bloquearStorage = false} = {}) {
     const page = await ctx.newPage();
     const errores = [];
     page.on('pageerror', (e) => errores.push(String(e) + ' @' + String(e.stack).split('\n').slice(1,3).join(';')));
+    // 0.9.13: el servidor decide: solo una cuenta con sesion recibe la referencia y el consentimiento se guarda en el servidor. Cada contexto empieza con la
+    // cuenta de pruebas (lusreg) con sesion y SIN consentimiento guardado. {invitado: true} = sin sesion.
+    if (!invitado) {
+        sql(`DELETE FROM jos_user_profiles WHERE profile_key='engagegravatar.consent' AND user_id IN (SELECT id FROM jos_users WHERE username='lusreg')`);
+        await page.goto(`${BASE}/index.php?option=com_users&view=login`);
+        await page.fill('#username', 'lusreg');
+        await page.fill('#password', fs.readFileSync(`${WORK}/userpass.txt`, 'utf8').trim());
+        await Promise.all([page.waitForNavigation(), page.click('button[type=submit].btn-primary, form#com-users-login__form button[type=submit]')]);
+    }
     return {ctx, page, peticiones, externas, errores};
 }
 async function cargar(page) {
@@ -67,24 +76,26 @@ const esGrav = (s) => /^https:\/\/www\.gravatar\.com\/avatar\/[0-9a-f]{64}\?/.te
     if (process.env.CACHE_PAGINA === '1') {
     // ============ ask con la cache de pagina de Joomla (plugin cache + engagecache) ============
         setParams({mode: 'ask', ...ANTIGUOS});
-        // Calienta la cache con una visita de invitado; la siguiente sale de ella.
-        const cal = await nuevo(browser); await cargar(cal.page); await cal.ctx.close();
+        // 0.9.13: el servidor decide. Un INVITADO (el unico cuyo HTML puede cachear Joomla) no recibe referencia ni aviso; una cuenta con sesion no sale de la cache.
+        const cal = await nuevo(browser, {invitado: true});
+        const respG = await cal.page.goto(PAGE, {waitUntil: 'networkidle'}); await cal.page.waitForTimeout(500);
+        const respG2 = await cal.page.goto(PAGE, {waitUntil: 'networkidle'}); const htmlG = await respG2.text();
+        r('C-01', 'cache de pagina activa: el HTML cacheado de un INVITADO no lleva data-engage-gravatar, ni aviso, ni URL de gravatar.com, y no hay peticiones a terceros', cal.peticiones.length === 0 && !/data-engage-gravatar|(https?:)?\/\/[^\s"'<>]*gravatar\.com/i.test(htmlG.replace(/\\\//g, '/')) && (await cal.page.locator('.akengage-gravatar-notice').count()) === 0, `peticiones=${cal.peticiones.length}`);
+        await cal.ctx.close();
         t = await nuevo(browser);
         const resp = await t.page.goto(PAGE, {waitUntil: 'networkidle'});
         await t.page.waitForTimeout(700);
-        const htmlC = await resp.text();
         const aviso2 = t.page.locator('.akengage-gravatar-notice');
-        r('C-01', 'cache de pagina activa: el HTML cacheado sigue sin ninguna URL de gravatar.com fuera de data-engage-gravatar y 0 peticiones antes del clic', t.peticiones.length === 0 && !/(https?:)?\/\/[^\s"'<>]*gravatar\.com/i.test(htmlC.replace(/data-engage-gravatar="[^"]*"/g, '').replace(/\\\//g, '/')), `peticiones=${t.peticiones.length}`);
-        r('C-02', 'cache de pagina: el aviso se pinta con los textos traducidos (Text::script/engagecache)', (await aviso2.count()) === 1 && (await aviso2.locator('button').textContent()) === 'Show Gravatar photos (this sends your IP to gravatar.com)');
-        await aviso2.locator('button').click(); await t.page.waitForTimeout(500);
+        r('C-02', 'cache de pagina: una cuenta con sesion NO recibe el HTML del invitado: ve el aviso con los textos traducidos y 0 peticiones antes del clic', t.peticiones.length === 0 && (await aviso2.count()) === 1 && (await aviso2.locator('button').textContent()) === 'Show Gravatar photos (this sends your IP to gravatar.com)', `peticiones=${t.peticiones.length}`);
+        await aviso2.locator('button').click(); await t.page.waitForTimeout(800);
         const trasAceptar = t.peticiones.length;
         t.peticiones.length = 0;
         await cargar(t.page);
-        r('C-03', 'cache de pagina: aceptar carga las fotos y la decision (cliente, localStorage) persiste en la pagina cacheada', trasAceptar >= 2 && t.peticiones.length >= 2 && (await srcs(t.page)).every(esGrav), `aceptar=${trasAceptar}, recarga=${t.peticiones.length}`);
+        r('C-03', 'cache de pagina: aceptar guarda el consentimiento en el servidor y carga las fotos; persiste al recargar', trasAceptar >= 2 && t.peticiones.length >= 2 && (await srcs(t.page)).every(esGrav), `aceptar=${trasAceptar}, recarga=${t.peticiones.length}`);
         await t.ctx.close();
-        // Otro visitante (contexto nuevo) recibe el mismo HTML cacheado y NO hereda el consentimiento del anterior
+        // Otra sesion de la misma cuenta (contexto nuevo, sin consentimiento guardado) no hereda nada
         t = await nuevo(browser); await cargar(t.page);
-        r('C-04', 'cache de pagina: un visitante distinto no hereda el consentimiento (la decision no depende del servidor)', t.peticiones.length === 0 && (await srcs(t.page)).every(esLocal));
+        r('C-04', 'cache de pagina: una sesion nueva sin consentimiento guardado no carga fotos', t.peticiones.length === 0 && (await srcs(t.page)).every(esLocal));
         await t.ctx.close();
         } else {
     // ============ ask (mode ausente: ajustes antiguos) ============
@@ -189,14 +200,13 @@ const esGrav = (s) => /^https:\/\/www\.gravatar\.com\/avatar\/[0-9a-f]{64}\?/.te
 
     // ============ ask en movil (accesibilidad basica: el aviso cabe y el boton es pulsable) ============
     setParams({mode: 'ask', ...ANTIGUOS});
-    const ctxM = await browser.newContext({viewport: {width: 360, height: 740}, hasTouch: true});
-    const pm = await ctxM.newPage();
-    const pet = [];
-    await ctxM.route(/gravatar\.com/, (route) => { pet.push(route.request().url()); route.fulfill({status: 200, contentType: 'image/png', body: PNG}); });
+    const tm = await nuevo(browser, {movil: true});
+    const ctxM = tm.ctx; const pm = tm.page; const pet = tm.peticiones.map((x) => x.url);
+    pet.length = 0; tm.peticiones.length = 0;
     await pm.goto(PAGE, {waitUntil: 'networkidle'});
     const caja = await pm.locator('.akengage-gravatar-notice button').boundingBox();
     const desborda = await pm.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
-    r('N-22', 'ask en 360px: el aviso no provoca desbordamiento horizontal y el boton es visible/pulsable', !!caja && caja.width > 0 && caja.x >= 0 && caja.x + caja.width <= 360 && !desborda && pet.length === 0, `boton=${JSON.stringify(caja && {x: Math.round(caja.x), w: Math.round(caja.width), h: Math.round(caja.height)})}`);
+    r('N-22', 'ask en 360px: el aviso no provoca desbordamiento horizontal y el boton es visible/pulsable', !!caja && caja.width > 0 && caja.x >= 0 && caja.x + caja.width <= 360 && !desborda && tm.peticiones.length === 0, `boton=${JSON.stringify(caja && {x: Math.round(caja.x), w: Math.round(caja.width), h: Math.round(caja.height)})}`);
     await ctxM.close();
 
     }

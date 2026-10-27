@@ -26,10 +26,10 @@ use Throwable;
 final class PanelData
 {
 	/** Version del fork segun el CHANGELOG (la prueba tests/28 comprueba que coincide con su primera entrada). */
-	public const FORK_VERSION = '0.9.12';
+	public const FORK_VERSION = '0.9.13';
 
 	/** Version of the package (pkg_engage.xml); tests/11 checks that it matches. */
-	public const PACKAGE_VERSION = '3.4.16';
+	public const PACKAGE_VERSION = '3.4.17';
 
 	public const REPO_URL      = 'https://github.com/chaska/engage';
 	public const CHANGELOG_URL = 'https://github.com/chaska/engage/blob/main/CHANGELOG.md';
@@ -451,6 +451,9 @@ final class PanelData
 		{
 			$facts['purifier_cache'] = null;
 		}
+
+		// 0.9.13: retention period of the IP address and the browser data
+		$facts['retention_months'] = Privacy::months(ComponentHelper::getParams('com_engage')->get('retention_months', Privacy::DEFAULT_MONTHS));
 
 		// 0.9.11: plugins of the `engage` group that are enabled but not Public: visitors without a session do not load them (the photos of a photo plugin would
 		// not show for them). Own plugins that do not serve visitors (email, akismet) are left out. One bound query.

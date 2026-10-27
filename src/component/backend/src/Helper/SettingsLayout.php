@@ -45,6 +45,7 @@ final class SettingsLayout
 				['plg_engage_email', 'managers_notify', '', 'email'], ['plg_engage_email', 'managers_notify_spam', '', 'email'],
 			]],
 			['id' => 'privacy', 'icon' => 'eye', 'tone' => 'blue', 'items' => [
+				[$c, 'retention_months'], [$c, 'privacy_url'],
 				['plg_engage_gravatar', 'mode', '', 'gravatar'], ['plg_engage_gravatar', 'show_notice', '', 'gravatar'], ['plg_engage_gravatar', 'consent_source', '', 'gravatar'],
 				['plg_engage_gravatar', 'jbcookies_group', '', 'gravatar'], ['plg_engage_gravatar', 'profile_link', '', 'gravatar'], ['plg_engage_gravatar', 'rating', '', 'gravatar'],
 				['plg_engage_gravatar', 'default_image', '', 'gravatar'], ['plg_engage_gravatar', 'force_default', '', 'gravatar'],

@@ -122,7 +122,7 @@ t_ok(preg_match('/function getDeferredURL.*?resolveAvatarData/s', $av) === 1, 'l
 $tpl = $lee("$root/frontend/tmpl/comments/default_list.php");
 t_ok(str_contains($tpl, '(int) $comment->id);') && str_contains($tpl, "addScriptOptions('akeeba.Engage.Gravatar.endpoint'"), 'la plantilla pasa el id del comentario y registra el endpoint');
 $ct = $lee("$root/frontend/src/Controller/AvatarController.php");
-t_ok(preg_match("/in_array\(strtolower\(\(string\) \\\$task\), \['token', 'resolve'\], true\).*?403/s", $ct) === 1, 'AvatarController: solo token y resolve');
+t_ok(preg_match("/in_array\(strtolower\(\(string\) \\\$task\), \['token', 'resolve', 'consent'\], true\).*?403/s", $ct) === 1, 'AvatarController: solo token, resolve y consent');
 t_ok(preg_match('/function resolve\(\): void.*?refuseCrossSite\(\).*?!== \'POST\'.*?405.*?Session::checkToken\(\'post\'\).*?403.*?canView\(.*?limiter/s', $ct) === 1, 'resolve: cabecera cross-site, solo POST, token CSRF, ACL (ReactionsController::canView) y limite de frecuencia');
 t_ok(str_contains($ct, "header('Cache-Control: no-store, private, max-age=0')") && str_contains($ct, "header('Vary: Cookie')"), 'respuestas sin cache');
 $js = $lee("$root/media/js/gravatar.js");

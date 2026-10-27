@@ -96,6 +96,7 @@ class Engage extends CMSPlugin implements SubscriberInterface
 			'onUserAfterDelete'  => 'onUserAfterDelete',
 			'onUserBeforeDelete' => 'onUserBeforeDelete',
 			'onUserLogin'        => 'onUserLogin',
+			'onUserAfterSave'    => 'onUserAfterSave',
 		];
 	}
 
@@ -141,6 +142,16 @@ class Engage extends CMSPlugin implements SubscriberInterface
 		// 0.7.0: the reactions made by the user (likes, dislikes, favorites) are deleted with the account when Joomla deleted it
 		// (never throws).
 		\Akeeba\Component\Engage\Administrator\Helper\ReactionStore::deleteForUser($this->getDatabase(), (int) $userId);
+
+		try
+		{
+			self::setKey($this->getDatabase(), (int) $userId, self::KEY_PENDING, null);
+			self::setKey($this->getDatabase(), (int) $userId, self::KEY_VERIFIED, null);
+			self::setKey($this->getDatabase(), (int) $userId, \Akeeba\Component\Engage\Administrator\Helper\UserProfileKey::GRAVATAR_CONSENT, null);
+		}
+		catch (Throwable $e)
+		{
+		}
 
 		// 0.7.1: make sure we've seen this user ID before (onUserBeforeDelete cached the user object). The condition was inverted
 		// since the original Akeeba Engage ("if the key EXISTS, return"), so the comments were never pseudonymised.
@@ -259,7 +270,140 @@ class Engage extends CMSPlugin implements SubscriberInterface
 			return;
 		}
 
+		// 0.9.13: guest comments are adopted ONLY if the address of the account is the one that its owner VERIFIED by clicking the activation link of the
+		// e-mail (recorded by onUserAfterSave). An account created by an administrator, activated before this version, without e-mail activation, or whose
+		// address was changed after verifying it, adopts nothing.
+		if (!self::sameVerified($this->getDatabase(), (int) $userObject->id, (string) $userObject->email))
+		{
+			return;
+		}
+
 		$this->ownComments($userObject);
+	}
+
+	/** Keys of #__user_profiles that this plugin owns (only the server writes them; the profile plugin of Joomla only touches `profile.%`). */
+	public const KEY_PENDING  = \Akeeba\Component\Engage\Administrator\Helper\UserProfileKey::ADOPT_PENDING;
+	public const KEY_VERIFIED = \Akeeba\Component\Engage\Administrator\Helper\UserProfileKey::ADOPT_VERIFIED;
+
+	/**
+	 * Is `$email` exactly (case-insensitively) the address that the user verified by activating the account?
+	 */
+	public static function sameVerified($db, int $userId, string $email): bool
+	{
+		$email = strtolower(trim($email));
+
+		if ($userId <= 0 || $email === '')
+		{
+			return false;
+		}
+
+		try
+		{
+			$verified = self::getKey($db, $userId, self::KEY_VERIFIED);
+
+			return $verified !== '' && hash_equals($verified, $email);
+		}
+		catch (Throwable $e)
+		{
+			return false;
+		}
+	}
+
+	private static function getKey($db, int $userId, string $key): string
+	{
+		return strtolower(\Akeeba\Component\Engage\Administrator\Helper\UserProfileKey::get($db, $userId, $key));
+	}
+
+	private static function setKey($db, int $userId, string $key, ?string $value): void
+	{
+		\Akeeba\Component\Engage\Administrator\Helper\UserProfileKey::set($db, $userId, $key, $value);
+	}
+
+	/**
+	 * Is the current request the click on the activation link of the e-mail (frontend, com_users, registration.activate with a token)?
+	 */
+	private function isActivationRequest(): bool
+	{
+		try
+		{
+			$app = $this->getApplication();
+
+			if (!$app->isClient('site'))
+			{
+				return false;
+			}
+
+			$in   = $app->getInput();
+			$task = strtolower((string) $in->getCmd('task', ''));
+
+			return $in->getCmd('option', '') === 'com_users' && in_array($task, ['registration.activate', 'activate'], true) && (string) $in->getAlnum('token', '') !== '';
+		}
+		catch (Throwable $e)
+		{
+			return false;
+		}
+	}
+
+	/**
+	 * Records the address that the OWNER verifies. (1) When an account is registered with an activation pending, the address the activation e-mail goes to is
+	 * kept as «pending». (2) When the activation link is clicked (activation cleared, account unblocked, by the frontend activation task) and the address is
+	 * still that one, it is stored as «verified». Anything else (admin-created accounts, backend edits, activation by other means) records nothing.
+	 *
+	 * @param   Event  $event  [data, isNew, success, msg]
+	 */
+	public function onUserAfterSave(Event $event): void
+	{
+		[$data, $isNew, $success] = array_values($event->getArguments());
+		$result = $event->getArgument('result', []);
+		$event->setArgument('result', array_merge($result, [true]));
+
+		if (!$this->enabled || !$success || !is_array($data))
+		{
+			return;
+		}
+
+		try
+		{
+			$db     = $this->getDatabase();
+			$id     = (int) ($data['id'] ?? 0);
+			$email  = strtolower(trim((string) ($data['email'] ?? '')));
+			$active = (string) ($data['activation'] ?? '');
+			$block  = (int) ($data['block'] ?? 0);
+
+			if ($id <= 0 || $email === '')
+			{
+				return;
+			}
+
+			if ($isNew)
+			{
+				// A self-registered account waiting for the e-mail activation: remember where the activation e-mail went
+				if ($active !== '' && $block === 1 && $this->getApplication()->isClient('site') && $this->getApplication()->getInput()->getCmd('option', '') === 'com_users')
+				{
+					self::setKey($db, $id, self::KEY_PENDING, $email);
+				}
+
+				return;
+			}
+
+			$pending = self::getKey($db, $id, self::KEY_PENDING);
+
+			if ($pending === '' || $active !== '' || $block !== 0 || !$this->isActivationRequest())
+			{
+				return;
+			}
+
+			if (hash_equals($pending, $email))
+			{
+				self::setKey($db, $id, self::KEY_VERIFIED, $email);
+			}
+
+			self::setKey($db, $id, self::KEY_PENDING, null);
+		}
+		catch (Throwable $e)
+		{
+			// Never break the save of a user; nothing is recorded (side of caution: no adoption)
+		}
 	}
 
 	/**

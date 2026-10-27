@@ -154,6 +154,7 @@ class Engage extends CMSPlugin implements SubscriberInterface
 	public function onAkeebaEngageGetAssetIDsByTitle(Event $event): void
 	{
 		$this->autoCleanSpam();
+		$this->autoRetention();
 
 		/**
 		 * @var ?string $filter The partial article name to match.
@@ -343,6 +344,8 @@ class Engage extends CMSPlugin implements SubscriberInterface
 		[$context, $row, $params, $page] = array_pad(array_values($event->getArguments()), 4, null);
 		$result  = $event->getArgument('result', []);
 		$context = is_string($context) ? $context : null;
+
+		$this->autoRetention();
 
 		/**
 		 * 0.8.2: the access level in the ROW is only trusted for articles (Joomla's own object). For any other component the
@@ -590,7 +593,38 @@ class Engage extends CMSPlugin implements SubscriberInterface
 		}
 		catch (Exception $e)
 		{
-			return;
+			// the retention below still runs
+		}
+	}
+
+	/**
+	 * 0.9.13: retention of the IP address and the browser data (1 to 12 months, default 12): at most once every 8 hours, emptied in batches, the comment
+	 * stays. It is reached from the public page of an article (a cheap check against the last run) and from the same event that triggers the spam cleaning.
+	 * Never throws.
+	 *
+	 * @return  void
+	 */
+	private function autoRetention(): void
+	{
+		try
+		{
+			$cParams = ComponentHelper::getParams('com_engage');
+
+			if (((int) $cParams->get('retention_lastRun', 0)) + (8 * 3600) > time())
+			{
+				return;
+			}
+
+			$cParams->set('retention_lastRun', time());
+			$this->getApplication()->bootComponent('com_engage')->getComponentParametersService()->save($cParams);
+
+			\Akeeba\Component\Engage\Administrator\Helper\Privacy::purge(
+				Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class),
+				\Akeeba\Component\Engage\Administrator\Helper\Privacy::months($cParams->get('retention_months', 12))
+			);
+		}
+		catch (\Throwable $e)
+		{
 		}
 	}
 

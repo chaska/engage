@@ -16,7 +16,7 @@ $db->set_charset('utf8mb4');
 // Permisos: invitados pueden comentar, registrados editar lo propio, editores moderar (lo normal en un sitio con comentarios)
 $db->query("UPDATE jos_assets SET rules='" . $db->real_escape_string(json_encode(['core.create' => ['1' => 1], 'core.edit.own' => ['2' => 1], 'core.edit.state' => ['4' => 1], 'core.delete' => ['6' => 1]])) . "' WHERE name='com_engage'");
 // Ajustes propios del administrador que NO deben perderse al actualizar
-$db->query("UPDATE jos_extensions SET params='" . $db->real_escape_string(json_encode(['default_limit' => '5', 'max_level' => '3', 'default_publish' => '1', 'comments_notify_users' => '1', 'min_length' => '3', 'max_length' => '5000'])) . "' WHERE element='com_engage' AND type='component'");
+$db->query("UPDATE jos_extensions SET params='" . $db->real_escape_string(json_encode(['default_limit' => '5', 'max_level' => '3', 'default_publish' => '1', 'comments_notify_users' => '1', 'min_length' => '3', 'max_length' => '5000', 'iplookup' => 'https://whatismyipaddress.com/ip/%s'])) . "' WHERE element='com_engage' AND type='component'");
 $db->query("UPDATE jos_extensions SET enabled=1 WHERE element='akismet' AND folder='engage'");   // el administrador activo Akismet (sin clave)
 $db->query("UPDATE jos_extensions SET enabled=0 WHERE element='gravatar' AND folder='engage'");  // y desactivo Gravatar (privacidad)
 
@@ -38,8 +38,8 @@ comentar($g, $A, $C, $AS, ['name' => 'Pedro', 'email' => 'pedro@example.test', '
 comentar($r, $A, $C, $AS, ['body' => 'Otra respuesta, nivel 2', 'parent_id' => (int) $db->query("SELECT MAX(id) FROM jos_engage_comments")->fetch_row()[0]]);
 comentar($g, $ids['art_otro'], $C, $ids['art_otro_asset'], ['name' => 'Lucía', 'email' => 'lucia@example.test', 'body' => 'Comentario en otro articulo']);
 // Estados que produce el panel / Akismet: sin publicar, spam, y una baja de notificaciones
-$db->query("INSERT INTO jos_engage_comments (asset_id,parent_id,body,name,email,ip,user_agent,enabled,created,created_by,modified,modified_by) VALUES ($AS,NULL,'Pendiente de moderacion','Anon','anon@example.test','203.0.113.5','UA-real',0,'2025-06-01 10:00:00',0,NULL,NULL)");
-$db->query("INSERT INTO jos_engage_comments (asset_id,parent_id,body,name,email,ip,user_agent,enabled,created,created_by,modified,modified_by) VALUES ($AS,NULL,'Esto es spam','Spammer','spam@example.test','198.51.100.9','UA-spam',-3,'2025-06-02 10:00:00',0,'2025-06-03 11:00:00',{$ids['user_editor1']})");
+$db->query("INSERT INTO jos_engage_comments (asset_id,parent_id,body,name,email,ip,user_agent,enabled,created,created_by,modified,modified_by) VALUES ($AS,NULL,'Pendiente de moderacion','Anon','anon@example.test','203.0.113.5','UA-real',0,'" . date('Y-m-d', strtotime('-40 days')) . " 10:00:00',0,NULL,NULL)");
+$db->query("INSERT INTO jos_engage_comments (asset_id,parent_id,body,name,email,ip,user_agent,enabled,created,created_by,modified,modified_by) VALUES ($AS,NULL,'Esto es spam','Spammer','spam@example.test','198.51.100.9','UA-spam',-3,'" . date('Y-m-d', strtotime('-39 days')) . " 10:00:00',0,'" . date('Y-m-d', strtotime('-38 days')) . " 11:00:00',{$ids['user_editor1']})");
 $db->query("INSERT INTO jos_engage_unsubscribe (asset_id,email) VALUES ($AS,'maria@example.test')");
 $n = (int) $db->query('SELECT COUNT(*) FROM jos_engage_comments')->fetch_row()[0];
 file_put_contents("$WORK/datos-reales.json", json_encode(['comentarios' => $n], JSON_PRETTY_PRINT));

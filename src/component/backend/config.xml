@@ -655,9 +655,30 @@
                filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::iplookup"
                validate="adminonly"
                 type="text"
-                default="https://whatismyipaddress.com/ip/%s"
+                default=""
                 label="COM_ENGAGE_CONFIG_IPLOOKUP_LABEL"
                 description="COM_ENGAGE_CONFIG_IPLOOKUP_DESC"/>
+
+        <field
+                name="retention_months"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::retention_months"
+               validate="adminonly"
+                type="integer"
+                first="1"
+                last="12"
+                step="1"
+                default="12"
+                label="COM_ENGAGE_CONFIG_RETENTION_MONTHS_LABEL"
+                description="COM_ENGAGE_CONFIG_RETENTION_MONTHS_DESC"/>
+
+        <field
+                name="privacy_url"
+               filter="Akeeba\Component\Engage\Administrator\Helper\AdminOnlyFilter::privacy_url"
+               validate="adminonly"
+                type="text"
+                default=""
+                label="COM_ENGAGE_CONFIG_PRIVACY_URL_LABEL"
+                description="COM_ENGAGE_CONFIG_PRIVACY_URL_DESC"/>
 
         <field
                 name="max_spam_age"

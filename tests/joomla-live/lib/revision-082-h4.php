@@ -14,8 +14,10 @@ $C   = siembra($uid);
 $secretCfg = preg_match("/public \\\$secret = '([^']*)';/", file_get_contents("$SITE/configuration.php"), $m) ? $m[1] : '';
 $plugPrev = one("SELECT IFNULL(params,'') FROM jos_extensions WHERE element='gravatar' AND folder='engage'");
 $setMode = function (string $mode) { q("UPDATE jos_extensions SET params='" . esc(json_encode(['mode' => $mode, 'rating' => 'g', 'default_image' => 'identicon'])) . "' WHERE element='gravatar' AND folder='engage'"); };
-register_shutdown_function(function () use ($plugPrev) { q("UPDATE jos_extensions SET params='" . esc((string) $plugPrev) . "' WHERE element='gravatar' AND folder='engage'"); q("DELETE FROM jos_engage_comments WHERE name LIKE 'R3N-%' OR body LIKE '%R3B-%'"); borraUsuarios(); });
+register_shutdown_function(function () use ($plugPrev, $uid) { foreach ($uid as $u0) { q("DELETE FROM jos_user_profiles WHERE user_id=$u0"); } q("UPDATE jos_extensions SET params='" . esc((string) $plugPrev) . "' WHERE element='gravatar' AND folder='engage'"); q("DELETE FROM jos_engage_comments WHERE name LIKE 'R3N-%' OR body LIKE '%R3B-%'"); borraUsuarios(); });
 $setMode('ask');
+// 0.9.13: el servidor decide: solo una cuenta con sesion Y consentimiento guardado recibe direcciones de Gravatar. Se guarda el consentimiento de las tres cuentas.
+foreach (['reg', 'reg2', 'mgr'] as $k) { q("DELETE FROM jos_user_profiles WHERE user_id={$uid[$k]} AND profile_key='engagegravatar.consent'"); q("INSERT INTO jos_user_profiles (user_id, profile_key, profile_value, ordering) VALUES ({$uid[$k]}, 'engagegravatar.consent', '1', 0)"); }
 @mkdir("$WORK/tmp");
 $g = new Cliente($BASE, "$WORK/tmp", 'r3g'); $reg = new Cliente($BASE, "$WORK/tmp", 'r3reg'); $reg2 = new Cliente($BASE, "$WORK/tmp", 'r3reg2'); $mgr = new Cliente($BASE, "$WORK/tmp", 'r3mgr');
 $reg->login('r3reg', $PASS); $reg2->login('r3reg2', $PASS); $mgr->login('r3mgr', $PASS);
@@ -38,12 +40,12 @@ r('H4-01', 'HTML del articulo (invitado, Registered, autor, Manager; modo ask): 
 $refs = [];
 foreach ($paginas as $n => $h) { preg_match_all('#<img[^>]*data-engage-gravatar="([^"]+)"#', $h, $mm); $refs[$n] = $mm[1]; }
 // El Manager ve ademas comentarios sin publicar: se compara la referencia de cada comentario que ve cada actor con la del invitado (la misma para todos)
-$ok = count($refs['invitado']) >= 2;
-foreach ($refs as $r0) { foreach ($r0 as $rf) { if (in_array(explode('.', $rf)[0], array_map(fn($x) => explode('.', $x)[0], $refs['invitado']), true)) { $ok = $ok && in_array($rf, $refs['invitado'], true); } } }
-r('H4-02', 'La referencia de cada avatar es IGUAL para todos los visitantes (el HTML sigue siendo cacheable por Joomla)', $ok, count($refs['invitado']) . ' avatares');
-$esp = true; foreach ($refs['invitado'] as $rf) { if (!preg_match('/^([1-9][0-9]*)\.48\.([0-9a-f]{32})$/', $rf, $m3) || !hash_equals($tokenSitio((int) $m3[1]), $m3[2])) { $esp = false; } }
+$ok = count($refs['registrado']) >= 2 && $refs['invitado'] === [];
+foreach ($refs as $n0 => $r0) { if ($n0 === 'invitado') { continue; } foreach ($r0 as $rf) { if (in_array(explode('.', $rf)[0], array_map(fn($x) => explode('.', $x)[0], $refs['registrado']), true)) { $ok = $ok && in_array($rf, $refs['registrado'], true); } } }
+r('H4-02', '0.9.13: el INVITADO no recibe ninguna referencia; la de cada avatar es IGUAL para todas las cuentas con sesion', $ok, count($refs['registrado']) . ' avatares');
+$esp = true; foreach ($refs['registrado'] as $rf) { if (!preg_match('/^([1-9][0-9]*)\.48\.([0-9a-f]{32})$/', $rf, $m3) || !hash_equals($tokenSitio((int) $m3[1]), $m3[2])) { $esp = false; } }
 r('H4-03', 'Cada referencia es <id>.48.<HMAC-SHA256 del id con el secreto del sitio, 32 hex> (se recalcula aparte y coincide)', $esp && $secretCfg !== '');
-$ids48 = array_map(fn($rf) => (int) explode('.', $rf)[0], $refs['invitado']);
+$ids48 = array_map(fn($rf) => (int) explode('.', $rf)[0], $refs['registrado']);
 r('H4-04', 'Solo salen referencias de los comentarios publicados que el visitante ve (no del spam, sin publicar ni papelera)', !array_intersect($ids48, [$C['spam'], $C['sinpublicar'], $C['papelera'], $C['restringido'], $C['artsinpublicar']]) && in_array($C['publicado'], $ids48, true), 'ids=' . implode(',', $ids48));
 
 // ------------------------------------------------------------------ 2) Endpoint
@@ -61,6 +63,7 @@ $ref = fn(int $id) => "$id.48." . $tokenSitio($id);
 $pedir = [$ref($C['publicado']), $ref($C['spam']), $ref($C['sinpublicar']), $ref($C['papelera']), $ref($C['restringido']), $ref($C['artsinpublicar']), $ref($C['delregistrado']), '999999.48.' . $tokenSitio(999999)];
 foreach ($actores as $n => $c) {
 	[$code, $j] = $resolve($c, $pedir);
+	if ($n === 'invitado') { r('H4-06-invitado', '0.9.13: avatar.resolve como INVITADO (con token CSRF valido): 403 login y ninguna URL, vea lo que vea', $code === 403 && ($j['error'] ?? '') === 'login' && !isset($j['urls']), "HTTP $code"); continue; }
 	$u = (array) ($j['urls'] ?? []);
 	$resumen = json_encode(array_map(fn($v) => $v === null ? null : preg_replace('~avatar/[0-9a-f]{10}[0-9a-f]+~', 'avatar/HASH', $v), $u), JSON_UNESCAPED_SLASHES) . ' C=' . json_encode($C);
 	$esperadoPub = 'https://www.gravatar.com/avatar/' . hash('sha256', 'r3mail-publicado@privado.invalid') . '?s=48&r=g&d=identicon';
@@ -77,8 +80,8 @@ foreach ($actores as $n => $c) {
 	r("H4-06-$n", "avatar.resolve como $n: URL solo de los visibles (publicado y del registrado); spam, sin publicar, papelera, articulo sin publicar, inexistente y (para el invitado) contenido restringido = null", $bien, "HTTP $code $resumen");
 }
 // identico para «no existe», «no visible» y «token falso»
-[, $a] = $resolve($g, ['999999.48.' . $tokenSitio(999999)]); [, $b] = $resolve($g, [$ref($C['spam'])]); [, $c3] = $resolve($g, [$C['publicado'] . '.48.' . str_repeat('0', 32)]);
-r('H4-07', 'Para el invitado, un id inexistente, un comentario sin ver y un token falso dan EXACTAMENTE la misma respuesta (una entrada null)', array_values((array) $a['urls']) === [null] && array_values((array) $b['urls']) === [null] && array_values((array) $c3['urls']) === [null]);
+[, $a] = $resolve($reg2, ['999999.48.' . $tokenSitio(999999)]); [, $b] = $resolve($reg2, [$ref($C['spam'])]); [, $c3] = $resolve($reg2, [$C['publicado'] . '.48.' . str_repeat('0', 32)]);
+r('H4-07', 'Para una cuenta con sesion y consentimiento, un id inexistente, un comentario sin ver y un token falso dan EXACTAMENTE la misma respuesta (una entrada null)', array_values((array) $a['urls']) === [null] && array_values((array) $b['urls']) === [null] && array_values((array) $c3['urls']) === [null]);
 // CSRF
 $cs = [];
 [$code] = $resolve($g, [$ref($C['publicado'])], 'f' . str_repeat('0', 31)); $cs[] = "token falso=$code";
@@ -92,7 +95,7 @@ r('H4-08', 'CSRF y metodo: token falso, sin token, token de OTRA sesion, GET, to
 // entradas hostiles
 $mal = [];
 foreach (['', 'x', '1.48', str_repeat('1.48.' . str_repeat('a', 32) . ',', 3), "1.48." . $tokenSitio(1) . "\n", '1.5000.' . $tokenSitio(1), "1.48.' OR 1=1--", '<script>', implode(',', array_map(fn($i) => "$i.48." . $tokenSitio($i), range(1, 101)))] as $x) {
-	[$code, $j, $raw] = $resolve($g, [$x]);
+	[$code, $j, $raw] = $resolve($reg2, [$x]);
 	if ($code !== 400 || ($j['ok'] ?? true) !== false || stripos($raw['body'], $x === '' ? 'zzzz' : substr($x, 0, 12)) !== false && strlen($x) > 8) { $mal[] = json_encode(substr($x, 0, 20)) . "=$code"; }
 }
 r('H4-09', 'Peticiones mal formadas (vacia, basura, sin token, tamano enorme, SQL, HTML, 101 referencias): 400 generico que no repite nada de lo recibido', !$mal, implode(' | ', array_slice($mal, 0, 4)));
@@ -101,9 +104,9 @@ $ot = []; foreach (['display', 'main', 'getModel', 'execute', 'foo', ''] as $t) 
 $x = $g->get("$OP&controller=avatar"); if ($x['code'] !== 403) { $ot[] = "controller=avatar {$x['code']}"; }
 r('H4-10', 'Cualquier otra tarea del controlador avatar (display, main, getModel...) = 403', !$ot, implode(' | ', $ot));
 // limite de frecuencia: un invitado, 260 peticiones seguidas
-$cl = new Cliente($BASE, "$WORK/tmp", 'r3rl'); $tkRl = $tk($cl); $n429 = 0; $n200 = 0;
+$cl = new Cliente($BASE, "$WORK/tmp", 'r3rl'); $cl->login('r3reg2', $PASS); $tkRl = $tk($cl); $n429 = 0; $n200 = 0;
 for ($i = 0; $i < 270; $i++) { $x = $cl->post("$OP&task=avatar.resolve", ['c' => $ref($C['publicado']), $tkRl => 1]); if ($x['code'] === 429) { $n429++; } elseif ($x['code'] === 200) { $n200++; } }
-r('H4-11', 'Limite de frecuencia: 270 peticiones seguidas de un invitado = unas 240 correctas y el resto 429', $n429 >= 10 && $n200 >= 200 && $n200 <= 245, "200=$n200 429=$n429");
+r('H4-11', 'Limite de frecuencia: 270 peticiones seguidas de una cuenta con consentimiento = unas 240 correctas y el resto 429', $n429 >= 10 && $n200 >= 200 && $n200 <= 245, "200=$n200 429=$n429");
 usleep(1500000);
 // ------------------------------------------------------------------ 3) Modos
 $setMode('always'); usleep(500000);

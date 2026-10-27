@@ -66,11 +66,19 @@ function pagina(cookie, opts = {}) {
     };
     // 0.8.3: servidor simulado (avatar.token y avatar.resolve). opts.resolveUrl cambia lo que devuelve; opts.failFetch simula un error de red.
     const fetchCalls = [];
+    let serverConsent = !!opts.serverConsent;
     win.Joomla = {getOptions: (k) => (k === 'akeeba.Engage.Gravatar.endpoint' ? (opts.endpoint !== undefined ? opts.endpoint : '/index.php/component/engage') : null)};
     win.fetch = (url, init) => {
         fetchCalls.push({url, init});
         if (opts.failFetch) { return SP.rej(new Error('red')); }
         if (String(url).indexOf('task=avatar.token') !== -1) { return SP.of({ok: true, json: () => SP.of({ok: true, token: 'c'.repeat(32)})}); }
+        // 0.9.13: el servidor decide: el consentimiento se guarda con avatar.consent y avatar.resolve lo exige (403 consent). opts.serverConsent: ya guardado.
+        if (String(url).indexOf('task=avatar.consent') !== -1) {
+            if (opts.failConsent) { return SP.of({ok: false, json: () => SP.of({ok: false, error: 'login'})}); }
+            serverConsent = init.body.get('grant') === '1';
+            return SP.of({ok: true, json: () => SP.of({ok: true, granted: serverConsent})});
+        }
+        if (!serverConsent) { return SP.of({ok: false, json: () => SP.of({ok: false, error: 'consent'})}); }
         const c = init && init.body ? init.body.get('c') : '';
         const urls = {};
         String(c).split(',').forEach((r) => { const q = r.split('.'); urls[q[0] + '.' + q[1]] = opts.resolveUrl || GURL; });
@@ -231,32 +239,36 @@ function seguir() {
     q = pagina(ck('allow', {}), {resolveUrl: 'https://www.gravatar.com.evil.example/avatar/' + HASH, imgs: [new FakeImg({'data-engage-gravatar-source': 'jbcookies', 'data-engage-gravatar-group': ''})]});
     t(q.imgs[0].getAttribute('src') === LOCAL, 'lista blanca: una URL manipulada que devolviera el servidor nunca se asigna a src (tambien con consentimiento)');
     q = pagina(ck('allow', {}), {imgs: [new FakeImg({'data-engage-gravatar-source': 'jbcookies', 'data-engage-gravatar-group': '', 'data-engage-gravatar': 'https://www.gravatar.com/avatar/' + HASH})]});
-    t(q.imgs[0].getAttribute('src') === LOCAL && q.fetchCalls.length === 0, 'una URL (no una referencia) en data-engage-gravatar se ignora: ni se asigna ni se pide nada');
+    t(q.imgs[0].getAttribute('src') === LOCAL && !q.fetchCalls.some((c) => /avatar\.resolve/.test(c.url)), 'una URL (no una referencia) en data-engage-gravatar se ignora: ni se asigna ni se pide nada');
     // 0.8.3: privacidad y peticiones
     q = pagina('', {attrs: {'data-engage-gravatar-notice': '0'}});
     t(q.fetchCalls.length === 0 && q.todasLocales(), '0.8.3: sin consentimiento NO se hace ninguna peticion (ni al servidor ni a Gravatar) y no hay URL de Gravatar en la pagina');
     q.api.grant();
-    t(q.fetchCalls.length === 2 && /task=avatar\.token$/.test(q.fetchCalls[0].url) && /task=avatar\.resolve$/.test(q.fetchCalls[1].url) && q.fetchCalls[1].init.method === 'POST', '0.8.3: tras el consentimiento: 1 peticion de token (GET) y 1 de resolucion (POST), las dos al propio sitio');
-    t(q.fetchCalls[1].init.body.get('c') === REF && q.fetchCalls[1].init.body.get('c' .repeat(0) + 'c'.repeat(32)) === '1' && q.fetchCalls[1].init.credentials === 'same-origin', '0.8.3: se envia la referencia (una vez, aunque haya dos imagenes iguales) y el token CSRF');
+    t(q.fetchCalls.length === 4 && /task=avatar\.token$/.test(q.fetchCalls[0].url) && /task=avatar\.consent$/.test(q.fetchCalls[1].url) && q.fetchCalls[1].init.method === 'POST' && q.fetchCalls[1].init.body.get('grant') === '1' && /task=avatar\.token$/.test(q.fetchCalls[2].url) && /task=avatar\.resolve$/.test(q.fetchCalls[3].url) && q.fetchCalls[3].init.method === 'POST', '0.9.13: tras aceptar: token + consentimiento (POST, se guarda en el servidor) y despues token + resolucion (POST), todo al propio sitio');
+    t(q.fetchCalls[3].init.body.get('c') === REF && q.fetchCalls[3].init.body.get('c'.repeat(32)) === '1' && q.fetchCalls[3].init.credentials === 'same-origin', '0.8.3: se envia la referencia (una vez, aunque haya dos imagenes iguales) y el token CSRF');
     t(q.todasGravatar(), '0.8.3: la foto se carga con la URL que da el servidor');
     q.api.revoke(); q.api.grant();
-    t(q.fetchCalls.length === 2 && q.todasGravatar(), '0.8.3: revocar y volver a conceder reutiliza lo ya resuelto (sin nuevas peticiones)');
+    t(q.todasGravatar() && q.fetchCalls.filter((c) => /avatar\.resolve/.test(c.url)).length === 1, '0.8.3: revocar y volver a conceder reutiliza lo ya resuelto (una sola resolucion)');
     for (const ep of ['https://evil.example/x', '//evil.example/x', '', 'javascript:alert(1)', '/a b']) {
         q = pagina('', {endpoint: ep, attrs: {'data-engage-gravatar-notice': '0'}}); q.api.grant();
         t(q.fetchCalls.length === 0 && q.todasLocales(), '0.8.3: endpoint no permitido ' + JSON.stringify(ep) + ': no se pide nada');
     }
     q = pagina('', {failFetch: true, attrs: {'data-engage-gravatar-notice': '0'}}); q.api.grant();
-    t(q.api.isGranted() && q.todasLocales(), '0.8.3: si la red falla se queda el avatar local (sin errores)');
+    t(!q.api.isGranted() && q.todasLocales(), '0.9.13: si la red falla no se concede (el servidor no guardo el consentimiento) y se queda el avatar local');
+    q = pagina('', {failConsent: true, attrs: {'data-engage-gravatar-notice': '0'}}); q.api.grant();
+    t(!q.api.isGranted() && q.todasLocales() && !('engage_gravatar_consent' in q.store), '0.9.13: si el servidor rechaza el consentimiento (sin sesion) no se concede ni se guarda nada en el navegador');
     q = pagina('', {imgs: [new FakeImg({'data-engage-gravatar': 'no-es-una-referencia', 'data-engage-gravatar-notice': '0'}), new FakeImg({'data-engage-gravatar': '7.48.' + 'B'.repeat(32), 'data-engage-gravatar-notice': '0'})]}); q.api.grant();
-    t(q.fetchCalls.length === 0 && q.todasLocales(), '0.8.3: referencias mal formadas (texto, mayusculas) no se envian');
+    t(!q.fetchCalls.some((c) => /avatar\.resolve/.test(c.url)) && q.todasLocales(), '0.8.3: referencias mal formadas (texto, mayusculas) no se envian');
     // mezcla de imagenes: una sin marcador => modo engage (localStorage), la cookie de JBCookies se ignora
     q = pagina(ck('allow', {}), {imgs: [new FakeImg({'data-engage-gravatar-source': 'jbcookies', 'data-engage-gravatar-notice': '0'}), new FakeImg({'data-engage-gravatar-notice': '0'})]});
     t(q.todasLocales() && !q.api.isGranted(), 'una imagen sin marcador jbcookies deja la pagina en modo engage: la cookie allow se ignora');
     // Regresion modo engage
     q = pagina(ck('allow', {}), {attrs: {'data-engage-gravatar-notice': '0'}});
     t(q.todasLocales() && !q.api.isGranted(), 'REGRESION modo engage: la cookie jbcookies=allow se ignora');
-    q = pagina('', {attrs: {'data-engage-gravatar-notice': '0'}, storage: {engage_gravatar_consent: '1'}});
-    t(q.api.isGranted() && q.todasGravatar(), 'REGRESION modo engage: engage_gravatar_consent=1 en localStorage sigue concediendo');
+    q = pagina('', {attrs: {'data-engage-gravatar-notice': '0'}, storage: {engage_gravatar_consent: '1'}, serverConsent: true});
+    t(q.api.isGranted() && q.todasGravatar(), 'REGRESION modo engage: engage_gravatar_consent=1 en localStorage concede si el servidor tiene el consentimiento');
+    let q0 = pagina('', {attrs: {'data-engage-gravatar-notice': '0'}, storage: {engage_gravatar_consent: '1'}});
+    t(!q0.api.isGranted() && q0.todasLocales() && !('engage_gravatar_consent' in q0.store), '0.9.13: el navegador recuerda un «si» que el servidor no tiene: vuelve a preguntar (no se muestran fotos)');
     q.emitDoc('jbcookies:update', {status: 'deny', preferences: {}});
     t(q.api.isGranted(), 'REGRESION modo engage: jbcookies:update se ignora');
     q.api.revoke();

@@ -35,10 +35,10 @@ const medir = (p) => p.evaluate(() => {
           const importadosSin = imp.every((x) => !x.img && !x.cont && !x.itemImage && x.nameLeft >= 0 && x.nameLeft <= 12);
           const alineados = imp[0].nameLeft === imp[1].nameLeft && imp[0].footH === imp[1].footH;
           let normalOk;
-          if (modo === 'ask') { normalOk = nor.img && nor.src.includes('avatar-generico') && nor.defer; }           // marcador del Gravatar: se mantiene
+          if (modo === 'ask') { normalOk = gen === '1' ? (nor.img && nor.src.includes('avatar-generico') && !nor.defer) : (!nor.img && !nor.itemImage); }   // 0.9.13: un INVITADO no recibe la referencia diferida (decide el servidor): es un avatar generico mas
           else if (modo === 'off') { normalOk = !nor.img && !nor.itemImage; }                                       // sin foto ni Gravatar: se oculta
           else { normalOk = nor.img && /gravatar\.com/.test(nor.src); }                                             // siempre: Gravatar no cambia
-          r(id, `«No mostrar» (${modo}, ${vp}): importados SIN <img>, sin contenedor ni microdato image y sin hueco (nombre a ${imp[0].nameLeft}px, misma alineacion y altura); el comentario con correo: ` + (modo === 'ask' ? 'mantiene el circulo (marcador de Gravatar)' : modo === 'off' ? 'tambien sin avatar' : 'Gravatar sin cambios'), importadosSin && alineados && normalOk && errs.length === 0, JSON.stringify([imp.map((x) => [x.img, x.nameLeft, x.footH]), [nor.img, nor.src.slice(-30), nor.defer]]));
+          r(id, `«No mostrar» (${modo}, ${vp}): importados SIN <img>, sin contenedor ni microdato image y sin hueco (nombre a ${imp[0].nameLeft}px, misma alineacion y altura); el comentario con correo: ` + (modo === 'ask' ? 'sin referencia diferida para el invitado: generico mas (No mostrar lo oculta)' : modo === 'off' ? 'tambien sin avatar' : 'Gravatar sin cambios'), importadosSin && alineados && normalOk && errs.length === 0, JSON.stringify([imp.map((x) => [x.img, x.nameLeft, x.footH]), [nor.img, nor.src.slice(-30), nor.defer]]));
         }
       }
     }

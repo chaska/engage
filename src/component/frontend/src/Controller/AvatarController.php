@@ -15,6 +15,7 @@ use Akeeba\Component\Engage\Administrator\Helper\ReactionRateLimiter;
 use Akeeba\Component\Engage\Administrator\Helper\Reactions;
 use Akeeba\Component\Engage\Administrator\Helper\ReactionStore;
 use Akeeba\Component\Engage\Administrator\Helper\UserFetcher;
+use Akeeba\Component\Engage\Administrator\Helper\UserProfileKey;
 use Joomla\CMS\Application\ExitException;
 use Joomla\CMS\Cache\CacheControllerFactoryInterface;
 use Joomla\CMS\Factory;
@@ -45,7 +46,7 @@ class AvatarController extends BaseController
 	/** Closed list of tasks: `display` (the default) and everything else of Joomla's controller answers 403. */
 	public function execute($task)
 	{
-		if (!in_array(strtolower((string) $task), ['token', 'resolve'], true))
+		if (!in_array(strtolower((string) $task), ['token', 'resolve', 'consent'], true))
 		{
 			throw new RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
 		}
@@ -97,6 +98,19 @@ class AvatarController extends BaseController
 
 			$user = UserFetcher::getUser();
 			$uid  = ($user === null || $user->guest) ? 0 : (int) $user->id;
+
+			// 0.9.13: the SERVER decides. Nobody without a session ever gets a Gravatar address (a robot or a guest cannot collect hashes of e-mail addresses), and a
+			// person with a session only after their consent, stored on the server against their account (avatar.consent).
+			if ($uid <= 0)
+			{
+				$this->respond(403, ['ok' => false, 'error' => 'login']);
+			}
+
+			if (!self::hasConsent($uid))
+			{
+				$this->respond(403, ['ok' => false, 'error' => 'consent']);
+			}
+
 			$ctx  = [
 				'store'        => new ReactionStore(Factory::getContainer()->get(DatabaseInterface::class)),
 				'secret'       => (string) Factory::getApplication()->get('secret', ''),
@@ -117,6 +131,72 @@ class AvatarController extends BaseController
 			}
 
 			$this->respond(500, ['ok' => false, 'error' => 'failed']);
+		}
+	}
+
+	/** The consent (POST + CSRF token, logged in people only): field `grant` = 1 stores it against the account, 0 removes it. */
+	public function consent(): void
+	{
+		try
+		{
+			$this->refuseCrossSite();
+
+			if (strtoupper((string) $this->input->getMethod()) !== 'POST')
+			{
+				$this->respond(405, ['ok' => false, 'error' => 'method']);
+			}
+
+			if (!Session::checkToken('post'))
+			{
+				$this->respond(403, ['ok' => false, 'error' => 'denied']);
+			}
+
+			$user = UserFetcher::getUser();
+			$uid  = ($user === null || $user->guest) ? 0 : (int) $user->id;
+
+			if ($uid <= 0)
+			{
+				$this->respond(403, ['ok' => false, 'error' => 'login']);
+			}
+
+			$allow = $this->limiter($uid);
+
+			if (!$allow())
+			{
+				$this->respond(429, ['ok' => false, 'error' => 'rate']);
+			}
+
+			$grant = (string) $this->input->post->get('grant', '', 'raw');
+
+			if ($grant !== '0' && $grant !== '1')
+			{
+				$this->respond(400, ['ok' => false, 'error' => 'invalid']);
+			}
+
+			UserProfileKey::set(Factory::getContainer()->get(DatabaseInterface::class), $uid, UserProfileKey::GRAVATAR_CONSENT, $grant === '1' ? '1' : null);
+			$this->respond(200, ['ok' => true, 'granted' => $grant === '1']);
+		}
+		catch (Throwable $e)
+		{
+			if ($e instanceof ExitException)
+			{
+				throw $e;
+			}
+
+			$this->respond(500, ['ok' => false, 'error' => 'failed']);
+		}
+	}
+
+	/** Has this account consented (server side)? Any error is «no». */
+	private static function hasConsent(int $uid): bool
+	{
+		try
+		{
+			return UserProfileKey::get(Factory::getContainer()->get(DatabaseInterface::class), $uid, UserProfileKey::GRAVATAR_CONSENT) === '1';
+		}
+		catch (Throwable $e)
+		{
+			return false;
 		}
 	}
 

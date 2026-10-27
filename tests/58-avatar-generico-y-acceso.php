@@ -29,7 +29,7 @@ t_ok($it && $it['level'] === 'warn' && !str_contains($it['args']['a'], '<') && s
 $many = []; for ($i = 1; $i <= 9; $i++) { $many[] = ['id' => $i, 'element' => "p$i", 'name' => "P$i", 'access' => 2, 'level' => 'Registered']; }
 t_ok(substr_count($item(['engage_plugin_access' => $many])['args']['a'], 'Registered') === 5, 'se listan como mucho 5');
 $pd = $lee("$c/backend/src/Helper/PanelData.php");
-t_ok(str_contains($pd, "':type'") && str_contains($pd, "'e.access') . ' <> 1'") && str_contains($pd, '->bind(\':grp\'') && str_contains($pd, 'setQuery($q, 0, 50)'), 'consulta acotada y con parametros ligados');
+t_ok(str_contains($pd, "':type'") && str_contains($pd, "'e.access') . ' NOT IN (1, 5)'") && str_contains($pd, '->bind(\':grp\'') && str_contains($pd, 'setQuery($q, 0, 50)'), 'consulta acotada y con parametros ligados');
 foreach (['es-ES', 'en-GB'] as $l) {
 	$ini = parse_ini_string($lee("$c/backend/language/$l/com_engage.ini"), false, INI_SCANNER_RAW);
 	t_ok(isset($ini['COM_ENGAGE_PANEL_H_AVATARACCESS_TITLE'], $ini['COM_ENGAGE_PANEL_H_AVATARACCESS_OK'], $ini['COM_ENGAGE_PANEL_H_AVATARACCESS_WARN']) && str_contains($ini['COM_ENGAGE_PANEL_H_AVATARACCESS_WARN'], '%1$s'), "$l: cadenas del semaforo");

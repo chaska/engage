@@ -8,6 +8,7 @@
 namespace Akeeba\Component\Engage\Administrator\Helper;
 
 use Exception;
+use Throwable;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Plugin\PluginHelper;
@@ -77,6 +78,14 @@ class Avatar
 	{
 		$data = self::resolveAvatarData($user_id, $size, $fallbackEmail, $context);
 
+		// 0.9.13: the Gravatar «ask» mode is decided by the SERVER: only a logged in person can ever get a Gravatar address (after consenting, see AvatarController),
+		// so a guest page carries no deferred reference at all (just the generic avatar, no notice). Nothing is cached per person: pages of people with a session are
+		// not shared through the page cache.
+		if ($data['deferred'] !== '' && !self::viewerHasSession())
+		{
+			$data['deferred'] = '';
+		}
+
 		// 0.9.10: a comment with no user and no e-mail (imported from another system) or with a provider that gave nothing: the generic local avatar of Engage, like
 		// every other card (no request to a third party, no consent notice)
 		if ($data['src'] === '')
@@ -106,6 +115,21 @@ class Avatar
 		}
 
 		return $data;
+	}
+
+	/** Is the person who looks at this page logged in? (fail-closed: any doubt is «no») */
+	private static function viewerHasSession(): bool
+	{
+		try
+		{
+			$user = Factory::getApplication()->getIdentity();
+
+			return $user !== null && !$user->guest && (int) $user->id > 0;
+		}
+		catch (Throwable $e)
+		{
+			return false;
+		}
 	}
 
 	/** The generic local avatar (`avatar-generico.svg`): a path of the site, or absolute on the trusted base for emails ('' without base). */

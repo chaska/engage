@@ -47,6 +47,7 @@ final class PanelHealth
 			self::moderation($f),
 			self::crawl($f),
 			self::avatarAccess($f),
+			self::retention($f),
 			self::gravatar($f),
 			self::htmlFilter($f),
 			self::purifierCache($f),
@@ -326,6 +327,15 @@ final class PanelHealth
 	 * 0.9.11: plugins of the `engage` group that are enabled but whose access level is not Public (1): visitors without a session do not load them, so the
 	 * photos of a photo plugin (MiFoto…) do not show for them. Amber with the plugin, its level and the fix; green when there are none. Unknown (no fact) = green.
 	 */
+	/** 0.9.13: the retention period of the IP address and the browser data (informative; always green: the value is validated 1 to 12). */
+	private static function retention(array $f): array
+	{
+		$m = (int) ($f['retention_months'] ?? 12);
+		$m = ($m >= 1 && $m <= 12) ? $m : 12;
+
+		return self::item('retention', self::OK, ['state' => 'ok', 'm' => $m]);
+	}
+
 	private static function avatarAccess(array $f): array
 	{
 		$bad = [];

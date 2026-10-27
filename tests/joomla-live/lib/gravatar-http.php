@@ -89,13 +89,13 @@ foreach (['G-01 mode ausente (ajustes antiguos)' => $antiguos, 'G-02 mode=ask' =
 		$data = preg_match_all('#<img[^>]*data-engage-gravatar="[1-9][0-9]*\.48\.[0-9a-f]{32}"#', $h);
 		$correo = $quien === 'inv' ? 'ana.invitada@example.test' : 'luis.registrado@example.test';
 		$rastro = stripos($h, $hash) !== false || stripos($h, md5($correo)) !== false || stripos($h, $correo) !== false || fueraDeData($h) !== 0 || preg_match('#gravatar\.com/avatar/#i', $h) === 1;
-		r("$id-$quien", "$nombre ($quien): ningun src/srcset/href/link/picture con gravatar.com; el atributo data-engage-gravatar lleva solo una referencia opaca y NO hay rastro del hash (sha256/md5) ni del correo en el HTML", cargables($h) === [] && !$rastro && $data >= 1 && $data === preg_match_all('#<img[^>]*data-engage-gravatar=#', $h), 'cargables=' . json_encode(cargables($h)) . ", rastro=" . ($rastro ? 'SI' : 'no') . ", data=$data");
-		r("$id-$quien-b", "$nombre ($quien): el avatar servido es el SVG local, sin perfil de Gravatar y el JS de consentimiento esta registrado", (bool) preg_match('#<img src="[^"]*/media/com_engage/images/avatar-generico\.svg"#', $h) && strpos($h, 'gravatar.com/' . $hash . '"') === false && strpos($h, 'com_engage/js/gravatar') !== false && strpos($h, 'COM_ENGAGE_GRAVATAR_BTN_ACCEPT') !== false);
+		r("$id-$quien", "$nombre ($quien): ningun src/srcset/href/link/picture con gravatar.com; 0.9.13: el INVITADO no recibe ninguna referencia y la cuenta con sesion solo una referencia opaca; NO hay rastro del hash (sha256/md5) ni del correo en el HTML", cargables($h) === [] && !$rastro && (($quien === 'inv') ? ($data === 0 && strpos($h, 'data-engage-gravatar') === false) : ($data >= 1 && $data === preg_match_all('#<img[^>]*data-engage-gravatar=#', $h))), 'cargables=' . json_encode(cargables($h)) . ", rastro=" . ($rastro ? 'SI' : 'no') . ", data=$data");
+		r("$id-$quien-b", "$nombre ($quien): el avatar servido es el SVG local, sin perfil de Gravatar y el JS de consentimiento esta registrado", (bool) preg_match('#<img src="[^"]*/media/com_engage/images/avatar-generico\.svg"#', $h) && strpos($h, 'gravatar.com/' . $hash . '"') === false && ($quien === 'inv' || (strpos($h, 'com_engage/js/gravatar') !== false && strpos($h, 'COM_ENGAGE_GRAVATAR_BTN_ACCEPT') !== false)));
 	}
 }
 // show_notice
 $p = $ver('sin aviso', ['mode' => 'ask', 'show_notice' => '0'] + $antiguos);
-r('G-05', 'show_notice=0: la imagen lleva data-engage-gravatar-notice="0" (aviso propio oculto, API activa)', strpos($p['inv'], 'data-engage-gravatar-notice="0"') !== false && cargables($p['inv']) === []);
+r('G-05', 'show_notice=0: la imagen lleva data-engage-gravatar-notice="0" (aviso propio oculto, API activa)', strpos($p['reg'], 'data-engage-gravatar-notice="0"') !== false && cargables($p['reg']) === [] && strpos($p['inv'], 'data-engage-gravatar') === false);
 
 // ---- off ----
 $p = $ver('off', ['mode' => 'off'] + $antiguos);
@@ -112,7 +112,7 @@ foreach (['inv' => $hashInv, 'reg' => $hashReg] as $quien => $hash) {
 pluginEnabled(0);
 $g = new Cliente($BASE, $tmp, 'gdis');
 $h = $g->get(urlArt($A, $CP))['body'];
-r('G-08', 'Plugin Gravatar desactivado: no hay avatar, ni mencion de gravatar, ni JS extra (comportamiento sin el plugin intacto)', stripos($h, 'gravatar') === false && strpos($h, 'akengage-commenter-avatar') === false && strpos($h, 'akengage-comment-item') !== false);
+r('G-08', 'Plugin Gravatar desactivado: solo el avatar generico local (0.9.10), ni mencion de gravatar, ni JS extra (comportamiento sin el plugin intacto)', stripos($h, 'gravatar') === false && strpos($h, 'avatar-generico.svg') !== false && strpos($h, 'akengage-comment-item') !== false);
 pluginEnabled(1);
 pluginParams(['mode' => 'ask'] + $antiguos);
 // ---- el JS se sirve y es el esperado ----

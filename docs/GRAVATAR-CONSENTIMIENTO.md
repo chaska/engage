@@ -149,3 +149,15 @@ Si activa la caché de página de Joomla y cambia el modo del plugin, **vacíe l
 `tests/22-gravatar-consentimiento.php` (unitarias), `tests/joomla-live/05-gravatar.sh` (Joomla real por HTTP y navegador Chromium con peticiones de red interceptadas). Resultados: `docs/RESULTADOS-PRUEBAS-JOOMLA-REAL.md`, sección 7.
 
 0.6.19 (JBCookies): `tests/24-gravatar-jbcookies.php` + `tests/24-gravatar-jbcookies.js` (parte PHP del plugin y `gravatar.js` real en un contexto `vm` con una tabla de la regla de concesión con entradas hostiles) y `tests/joomla-live/07-jbcookies.sh` (instala JBCookies desde un ZIP indicado en `JBCOOKIES_ZIP`, sin copiarlo al repositorio, y pulsa sus botones reales en Chromium). Resultados: sección 10 de `docs/RESULTADOS-PRUEBAS-JOOMLA-REAL.md`.
+
+## El servidor decide (0.9.13)
+
+Hasta la 0.9.12 el consentimiento vivía solo en el navegador (`localStorage` o la cookie de JBCookies) y el servidor entregaba la dirección de Gravatar a **cualquiera con un token CSRF** (también un robot o un invitado), con el hash del correo de quien comentó. Desde la 0.9.13, en el modo `ask`:
+
+- **Sin sesión no hay Gravatar.** La página de un invitado ya no lleva la referencia diferida (`data-engage-gravatar`) ni el aviso: solo el avatar genérico (o la foto de un plugin). `avatar.resolve` responde 403 `login` a quien no tiene sesión.
+- **El consentimiento se guarda en el servidor, ligado a la cuenta** (tabla `#__user_profiles` de Joomla, clave `engagegravatar.consent`; sin SQL nuevo). Solo lo escribe `avatar.consent`: petición POST con token CSRF, solo con sesión, valor cerrado `grant=1` (concede) o `grant=0` (revoca), con el mismo límite de frecuencia. Al pulsar «Mostrar fotos de Gravatar», `gravatar.js` primero guarda el consentimiento y solo entonces pide las fotos; «Dejar de mostrar» lo borra. Con JBCookies, la decisión del módulo sigue mandando y se refleja en el servidor la primera vez que concede.
+- `avatar.resolve` exige sesión **y** consentimiento guardado (403 `consent` si no lo hay: el navegador vuelve a preguntar aunque recordase un «sí» de otro momento). Mantiene el límite de 240 peticiones por minuto, las comprobaciones de visibilidad del comentario y la lista blanca de URL.
+- La referencia diferida sigue siendo un HMAC del id y el tamaño: no contiene ni permite derivar nada del correo.
+- El modo `always` sigue siendo público por diseño (la URL con el hash va en el HTML). El borrado de la cuenta elimina la clave de consentimiento.
+
+**Límite que queda, dicho con honestidad:** una persona que se registre en el sitio y consienta puede obtener, por comentario visible, la dirección de Gravatar (que lleva el hash del correo) de los autores, con el límite de frecuencia. Cierra el acceso de robots e invitados, no el de cuentas registradas que consienten; si el registro es abierto, valore el modo `off`.

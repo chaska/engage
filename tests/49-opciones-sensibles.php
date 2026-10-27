@@ -30,7 +30,7 @@ TrustedBase::$requestHint = ['force' => 0, 'host' => ''];
 foreach (SettingsSchema::ADMIN_ONLY['com_engage'] as $k) {
 	if (in_array($k, SettingsSchema::NEVER_FORM, true)) { continue; }
 	$def = $schema['com_engage'][$k];
-	$val = ['email_base_url' => 'https://new.example.com', 'email_confidential' => '0', 'iplookup' => 'https://x.example/%s', 'htmlpurifier_configstring' => 'p,b', 'captcha' => 'recaptcha'][$k] ?? (string) array_key_last($def['options']);
+	$val = ['email_base_url' => 'https://new.example.com', 'email_confidential' => '0', 'iplookup' => 'https://x.example/%s', 'retention_months' => '6', 'privacy_url' => 'https://example.com/privacidad', 'htmlpurifier_configstring' => 'p,b', 'captcha' => 'recaptcha'][$k] ?? (string) array_key_last($def['options']);
 	[$svc, $st] = $mk(false);
 	$c1 = $code(fn() => $svc->apply('com_engage', $k, $val));
 	t_ok($c1 === 403 && $st->saves === 0, "$k: con core.options y SIN core.admin = 403 y no cambia nada (obtenido $c1)");

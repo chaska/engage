@@ -14,6 +14,7 @@ defined('_JEXEC') or die();
  */
 
 use Akeeba\Component\Engage\Administrator\Helper\CommentTools;
+use Akeeba\Component\Engage\Administrator\Helper\Privacy;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -84,6 +85,18 @@ HTMLHelper::_('behavior.formvalidator');
 				</button>
 			</div>
 		</div>
+
+		<?php // 0.9.13: short information about the data (it is information, not a condition: it does not depend on any checkbox). Same for every visitor: page-cache safe, no external resources
+		$privMonths = Privacy::months($cParams->get('retention_months', Privacy::DEFAULT_MONTHS));
+		$privUrl    = Privacy::policyUrl($cParams->get('privacy_url', ''));
+		?>
+		<aside class="akengage-privacy-info small text-muted mt-3" id="akengage-privacy-info" role="note" aria-labelledby="akengage-privacy-info-title">
+			<strong id="akengage-privacy-info-title"><?= Text::_('COM_ENGAGE_PRIVACY_NOTICE_TITLE') ?></strong><br>
+			<?= htmlspecialchars(Text::sprintf('COM_ENGAGE_PRIVACY_NOTICE_TEXT', Text::plural('COM_ENGAGE_PRIVACY_NOTICE_MONTHS', $privMonths)), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>
+			<?php if ($privUrl !== ''): ?>
+				<a href="<?= htmlspecialchars($privUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" rel="noopener noreferrer nofollow" target="_blank"><?= Text::_('COM_ENGAGE_PRIVACY_NOTICE_LINK') ?><span class="visually-hidden"> (<?= htmlspecialchars(Text::_('JBROWSERTARGET_NEW'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>)</span></a>
+			<?php endif; ?>
+		</aside>
 
 		<?= $this->loadPosition('engage-after-reply'); ?>
 	</div>

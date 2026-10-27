@@ -36,7 +36,7 @@ final class SettingsSchema
 	 */
 	public const ADMIN_ONLY = [
 		'com_engage' => [
-			'email_base_url', 'email_base_learned', 'email_base_audit', 'email_confidential', 'iplookup',
+			'email_base_url', 'email_base_learned', 'email_base_audit', 'email_confidential', 'iplookup', 'retention_months', 'privacy_url',
 			'customfield_avatar', 'filter_mode', 'htmlpurifier_config_joomla', 'htmlpurifier_configstring', 'htmlpurifier_include', 'captcha', 'captcha_for',
 		],
 	];
@@ -61,6 +61,8 @@ final class SettingsSchema
 	 */
 	private const EXTRA = [
 		'iplookup'                  => ['regex' => '#^(|https?://[^\s"\'<>%]+(%s[^\s"\'<>%]*)?)$#', 'maxlen' => 500],
+		// 0.9.13: link to the privacy policy: empty, a path of this site with ONE «/», or an https address (the output checks it again, Privacy::policyUrl)
+		'privacy_url'               => ['regex' => '#^(|/(?!/)[^\s"\'<>`\\\\]*|https://[A-Za-z0-9.-]+(:[0-9]{1,5})?([/?\#][^\s"\'<>`\\\\]*)?)$#', 'maxlen' => 500],
 		'jbcookies_group'           => ['regex' => '/^[A-Za-z0-9_\- ]{0,64}$/', 'maxlen' => 64],
 		'key'                       => ['regex' => '/^[A-Za-z0-9]{0,64}$/', 'maxlen' => 64],
 		'htmlpurifier_configstring' => ['regex' => '/^[A-Za-z0-9,\[\]|*.#:_\-\s]{0,4000}$/', 'maxlen' => 4000],
