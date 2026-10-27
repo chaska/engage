@@ -86,7 +86,7 @@ $ok = [
 $ev = fn(array $over = [], array $plug = []) => H::evaluate(array_replace_recursive($ok, $over, $plug ? ['plugins' => $plug] : []));
 $lv = fn(array $r, string $id) => array_values(array_filter($r['items'], fn($i) => $i['id'] === $id))[0];
 $r0 = $ev();
-t_ok($r0['level'] === 'ok' && $r0['counts'] === ['ok' => 12, 'warn' => 0, 'bad' => 0], 'configuracion sana: 12 puntos verdes, nivel global ok');
+t_ok($r0['level'] === 'ok' && $r0['counts'] === ['ok' => 13, 'warn' => 0, 'bad' => 0], 'configuracion sana: 13 puntos verdes, nivel global ok');
 t_ok(count(array_filter($r0['items'], fn($i) => $i['fix'] !== null)) === 0, 'sin avisos no hay botones de arreglo');
 $r = $ev([], ['content/engage' => ['enabled' => false]]);
 t_ok($lv($r, 'plugin_content')['level'] === 'bad' && $lv($r, 'plugin_content')['fix'] === ['kind' => 'plugin', 'id' => 10] && $r['level'] === 'bad', 'plugin de contenido desactivado: ROJO con enlace al plugin (id 10) y nivel global rojo');
@@ -153,7 +153,7 @@ foreach ([[[], 'warn', 'none'], [[['location' => 'https://cdn.akeeba.com/updates
 	t_ok($i['level'] === $niv && $i['args']['state'] === $est && ($niv === 'ok' ? $i['fix'] === null : $i['fix'] === ['kind' => 'updatesites']), "sitio de actualizacion $est: $niv");
 }
 $r = H::evaluate([]);
-t_ok(count($r['items']) === 12 && in_array($r['level'], ['bad'], true), 'sin ningun dato (todo desconocido) no falla: 12 puntos y nivel rojo, sin excepciones');
+t_ok(count($r['items']) === 13 && in_array($r['level'], ['bad'], true), 'sin ningun dato (todo desconocido) no falla: 13 puntos y nivel rojo, sin excepciones');
 t_ok(H::whitelistAllows('p,b,A[href]', 'a') && !H::whitelistAllows('p,span', 'img') && H::whitelistAllows('img', 'img'), 'whitelistAllows: nombres con y sin atributos, mayusculas');
 
 echo "D) Serie y geometria del grafico\n";

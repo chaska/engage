@@ -356,6 +356,18 @@
         </field>
 
         <field
+                name="generic_avatar"
+                type="radio"
+                layout="joomla.form.field.radio.switcher"
+                label="COM_ENGAGE_CONFIG_GENERIC_AVATAR_LABEL"
+                description="COM_ENGAGE_CONFIG_GENERIC_AVATAR_DESC"
+                default="1"
+        >
+            <option value="0">COM_ENGAGE_CONFIG_GENERIC_AVATAR_HIDE</option>
+            <option value="1">COM_ENGAGE_CONFIG_GENERIC_AVATAR_SHOW</option>
+        </field>
+
+        <field
                 name="customfield_avatar"
                 type="userfieldavatar"
                 addfieldprefix="Akeeba\Component\Engage\Administrator\Field"

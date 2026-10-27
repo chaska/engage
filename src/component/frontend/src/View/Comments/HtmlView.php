@@ -151,7 +151,7 @@ class HtmlView extends BaseHtmlView
 	 * @var   array
 	 * @since 0.8.0
 	 */
-	public $tools = ['sort_selector' => false, 'default_sort' => 'auto', 'copy_link' => false, 'show_badges' => false, 'crawl_reduce' => false];
+	public $tools = ['sort_selector' => false, 'default_sort' => 'auto', 'copy_link' => false, 'show_badges' => false, 'crawl_reduce' => false, 'generic_avatar' => true];
 
 	/**
 	 * What CommentTools::resolve() decided for this request (sort mode, favourites filter, buttons). Set by the controller; when the

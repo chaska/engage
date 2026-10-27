@@ -57,9 +57,9 @@ t_ok(L::frontendColumn('reaction_score') === 'c.created', 'ni en la del listado 
 
 echo "B) CommentTools::options y resolve()\n";
 $def = T::options([]);
-t_ok($def === ['sort_selector' => true, 'default_sort' => 'auto', 'copy_link' => true, 'show_badges' => true, 'crawl_reduce' => true], 'valores por defecto: selector, enlace e insignias activos; orden inicial automatico');
+t_ok($def === ['sort_selector' => true, 'default_sort' => 'auto', 'copy_link' => true, 'show_badges' => true, 'crawl_reduce' => true, 'generic_avatar' => true], 'valores por defecto: selector, enlace e insignias activos; orden inicial automatico');
 $o = T::options(['sort_selector' => '0', 'copy_link' => 0, 'show_badges' => '0', 'default_sort' => 'top']);
-t_ok($o === ['sort_selector' => false, 'default_sort' => 'top', 'copy_link' => false, 'show_badges' => false, 'crawl_reduce' => true], 'se puede apagar todo');
+t_ok($o === ['sort_selector' => false, 'default_sort' => 'top', 'copy_link' => false, 'show_badges' => false, 'crawl_reduce' => true, 'generic_avatar' => true], 'se puede apagar todo');
 $o = T::options(['sort_selector' => 'yes', 'copy_link' => [1], 'show_badges' => '2', 'default_sort' => ['top']]);
 t_ok($o === $def, 'valores ajenos (yes, array, 2) vuelven al valor por defecto');
 $o = T::options(fn($k, $d) => $k === 'default_sort' ? "top\n" : $d);

@@ -13,12 +13,12 @@
 		<element>pkg_engage</element>
 		<type>package</type>
 		<client>site</client>
-		<version>3.4.14</version>
+		<version>3.4.15</version>
 		<infourl title="Engage (fork comunitario)">https://github.com/chaska/engage</infourl>
 		<downloads>
-			<downloadurl type="full" format="zip">https://github.com/chaska/engage/releases/download/v3.4.14/pkg_engage-3.4.14.zip</downloadurl>
+			<downloadurl type="full" format="zip">https://github.com/chaska/engage/releases/download/v3.4.15/pkg_engage-3.4.15.zip</downloadurl>
 		</downloads>
-		<sha256>25c160ed156c3c420f2b5a444ee65f957343c4ddd16dd45e4958bcc39d23124c</sha256>
+		<sha256>c5148abe5b9b65b840267772eaa2b1585f1a5c6c0b10c813f15832ec84b186f9</sha256>
 		<tags>
 			<tag>stable</tag>
 		</tags>

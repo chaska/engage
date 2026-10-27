@@ -27,7 +27,7 @@ final class CommentTools
 	 *
 	 * @param   callable|array  $get  array clave => valor, o funcion (clave, defecto) => valor
 	 *
-	 * @return array{sort_selector:bool,default_sort:string,copy_link:bool,show_badges:bool,crawl_reduce:bool}
+	 * @return array{sort_selector:bool,default_sort:string,copy_link:bool,show_badges:bool,crawl_reduce:bool,generic_avatar:bool}
 	 */
 	public static function options($get): array
 	{
@@ -47,6 +47,7 @@ final class CommentTools
 			'copy_link'     => $bool($read('copy_link', 1), true),
 			'show_badges'   => $bool($read('show_badges', 1), true),
 			'crawl_reduce'  => $bool($read('crawl_reduce', 1), true),
+			'generic_avatar' => $bool($read('generic_avatar', 1), true),
 		];
 	}
 

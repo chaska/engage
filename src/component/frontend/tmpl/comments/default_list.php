@@ -73,6 +73,11 @@ $avatar        = $avatarData['src'];
 // 0.8.3: OPAQUE reference (`<comment id>.<size>.<token>`) that gravatar.js trades for the Gravatar URL after the visitor consents (plugin mode "ask"); empty
 // otherwise. The page never carries the Gravatar URL (it holds the hash of the commenter's e-mail address).
 $avatarDeferred = $avatarData['deferred'];
+// 0.9.11: option «Generic avatar on comments without a photo» = No: the generic circle is not printed (unless it is the placeholder of a Gravatar that will load after the consent)
+if (empty($this->tools['generic_avatar']) && $avatarDeferred === '' && \Akeeba\Component\Engage\Administrator\Helper\AvatarField::isGeneric((string) $avatar))
+{
+	$avatar = '';
+}
 $avatarAttrs    = ($avatarDeferred === '') ? '' : (' data-engage-gravatar="' . htmlspecialchars($avatarDeferred, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"'
 	. ($avatarData['notice'] ? '' : ' data-engage-gravatar-notice="0"')
 	// 0.6.19: the decision comes from the JBCookies module. Data attributes (escaped) so that the page cache keeps them.

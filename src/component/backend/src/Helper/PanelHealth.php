@@ -46,6 +46,7 @@ final class PanelHealth
 			self::antispam($f),
 			self::moderation($f),
 			self::crawl($f),
+			self::avatarAccess($f),
 			self::gravatar($f),
 			self::htmlFilter($f),
 			self::purifierCache($f),
@@ -316,6 +317,40 @@ final class PanelHealth
 		return $many
 			? self::item('crawl', self::WARN, ['state' => 'off_many', 'a' => $n, 'b' => $u['total']], $fix)
 			: self::item('crawl', self::OK, ['state' => 'off_few', 'a' => $n, 'b' => $u['total']], $fix);
+	}
+
+	/** Plugins of the engage group that serve visitors (avatars, profiles): the own ones that do not are listed here and never reported. */
+	public const OWN_NON_VISITOR = ['email', 'akismet'];
+
+	/**
+	 * 0.9.11: plugins of the `engage` group that are enabled but whose access level is not Public (1): visitors without a session do not load them, so the
+	 * photos of a photo plugin (MiFoto…) do not show for them. Amber with the plugin, its level and the fix; green when there are none. Unknown (no fact) = green.
+	 */
+	private static function avatarAccess(array $f): array
+	{
+		$bad = [];
+
+		foreach ((array) ($f['engage_plugin_access'] ?? []) as $r)
+		{
+			if (!is_array($r) || (int) ($r['access'] ?? 1) === 1 || in_array((string) ($r['element'] ?? ''), self::OWN_NON_VISITOR, true))
+			{
+				continue;
+			}
+
+			$bad[] = $r;
+		}
+
+		if ($bad === [])
+		{
+			return self::item('avataraccess', self::OK, ['state' => 'ok']);
+		}
+
+		$clean = static fn(string $s): string => trim((string) preg_replace('/[^\p{L}\p{N} _.\-\/()]/u', '', $s));
+		$list  = implode(', ', array_map(static fn(array $r): string => $clean((string) ($r['name'] ?? $r['element'] ?? '')) . ' (' . ($clean((string) ($r['level'] ?? '')) ?: ('#' . (int) ($r['access'] ?? 0))) . ')', array_slice($bad, 0, 5)));
+		$first = $bad[0];
+		$fix   = (!empty($f['can_edit_plugins']) && (int) ($first['id'] ?? 0) > 0) ? ['kind' => 'plugin', 'id' => (int) $first['id']] : null;
+
+		return self::item('avataraccess', self::WARN, ['state' => 'warn', 'a' => $list], $fix);
 	}
 
 	private static function gravatar(array $f): array

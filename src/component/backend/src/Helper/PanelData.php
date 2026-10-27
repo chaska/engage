@@ -20,12 +20,13 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\User\User;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
+use Joomla\CMS\Language\Text;
 use Throwable;
 
 final class PanelData
 {
 	/** Version del fork segun el CHANGELOG (la prueba tests/28 comprueba que coincide con su primera entrada). */
-	public const FORK_VERSION = '0.9.10';
+	public const FORK_VERSION = '0.9.11';
 
 	public const REPO_URL      = 'https://github.com/chaska/engage';
 	public const CHANGELOG_URL = 'https://github.com/chaska/engage/blob/main/CHANGELOG.md';
@@ -446,6 +447,37 @@ final class PanelData
 		catch (Throwable $e)
 		{
 			$facts['purifier_cache'] = null;
+		}
+
+		// 0.9.11: plugins of the `engage` group that are enabled but not Public: visitors without a session do not load them (the photos of a photo plugin would
+		// not show for them). Own plugins that do not serve visitors (email, akismet) are left out. One bound query.
+		try
+		{
+			$grp  = 'engage';
+			$type = 'plugin';
+			$q    = self::query($db);
+			$q->select([$db->quoteName('e.extension_id', 'id'), $db->quoteName('e.element'), $db->quoteName('e.name'), $db->quoteName('e.access'), $db->quoteName('v.title', 'level')])
+				->from($db->quoteName('#__extensions', 'e'))
+				->join('LEFT', $db->quoteName('#__viewlevels', 'v'), $db->quoteName('v.id') . ' = ' . $db->quoteName('e.access'))
+				->where($db->quoteName('e.type') . ' = :type')
+				->where($db->quoteName('e.folder') . ' = :grp')
+				->where($db->quoteName('e.enabled') . ' = 1')
+				->where($db->quoteName('e.access') . ' <> 1')
+				->bind(':type', $type, ParameterType::STRING)
+				->bind(':grp', $grp, ParameterType::STRING);
+			$rows = [];
+
+			foreach ($db->setQuery($q, 0, 50)->loadAssocList() ?: [] as $r)
+			{
+				$name = (string) ($r['name'] ?? '');
+				$tr   = $name !== '' ? Text::_($name) : '';
+				$rows[] = ['id' => (int) $r['id'], 'element' => (string) $r['element'], 'name' => ($tr !== '' && $tr !== $name) ? $tr : (string) $r['element'], 'access' => (int) $r['access'], 'level' => (string) ($r['level'] ?? '')];
+			}
+
+			$facts['engage_plugin_access'] = $rows;
+		}
+		catch (Throwable $e)
+		{
 		}
 
 		// 0.9.4: el elemento con mas comentarios publicados (para el semaforo del rastreo de robots): una consulta, solo lectura
