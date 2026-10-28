@@ -71,6 +71,9 @@ const LISTA_BLANCA = [
 		'$this->badgesHtml($badges)' => 'ver SEGURAS_PREFIJO',
 		'$this->crawlRel()' => '0.9.4: literal fijo \' rel="nofollow"\' o vacio, elegido por la opcion',
 	],
+	'component/backend/tmpl/permissions/default.php' => [
+		'$svg($kind)' => 'icono SVG fijo de la matriz de permisos (cadena literal elegida por un nombre de una lista cerrada; tests/63)',
+	],
 	'component/frontend/tmpl/comments/default.php' => [
 		'$this->paginationLinksHtml()' => '0.9.4: HTML de la paginacion de Joomla (escapado por Joomla) con rel="nofollow" anadido por CommentTools::addNofollow',
 		'$headerHtml' => 'cabecera de recuento: Text::plural con el titulo del contenido escapado (tests/13)',

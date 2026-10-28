@@ -300,3 +300,54 @@
 .eg-admin .eg-formcard .hasTooltip { color: var(--eg-admin-text-2); }
 
 .eg-admin .eg-table--tpl tbody td { vertical-align: middle; }
+
+/* ------------------------------------------------------------------ 0.9.16: matriz de permisos (grupos x acciones) */
+.eg-admin .eg-perm-wrap { overflow-x: auto; max-width: 100%; border: 1px solid var(--eg-admin-border); border-radius: var(--eg-admin-r-m); background: var(--eg-admin-surface); box-shadow: var(--eg-admin-shadow-1); }
+.eg-admin .eg-perm-wrap:focus-visible { outline: 3px solid var(--eg-admin-focus); outline-offset: 2px; }
+.eg-admin .eg-perm { width: 100%; min-width: 760px; border-collapse: collapse; }
+.eg-admin .eg-perm th, .eg-admin .eg-perm td { padding: 10px 12px; border-bottom: 1px solid var(--eg-admin-border); vertical-align: middle; text-align: center; }
+.eg-admin .eg-perm thead th { background: var(--eg-admin-surface-2); color: var(--eg-admin-text); font-size: .85rem; vertical-align: bottom; }
+.eg-admin .eg-perm tbody tr:last-child th, .eg-admin .eg-perm tbody tr:last-child td { border-bottom: 0; }
+.eg-admin .eg-perm .eg-perm__group { text-align: left; font-weight: 700; min-width: 190px; position: sticky; left: 0; background: var(--eg-admin-surface); z-index: 1; }
+.eg-admin .eg-perm thead .eg-perm__group { background: var(--eg-admin-surface-2); }
+.eg-admin .eg-perm__name { display: block; font-weight: 700; }
+.eg-admin .eg-perm__desc { display: block; margin-top: 2px; font-weight: 400; font-size: .75rem; color: var(--eg-admin-text-2); }
+.eg-admin .eg-perm-depth-1 { padding-left: 28px; }
+.eg-admin .eg-perm-depth-2 { padding-left: 44px; }
+.eg-admin .eg-perm-depth-3 { padding-left: 60px; }
+.eg-admin .eg-perm-depth-4 { padding-left: 76px; }
+.eg-admin .eg-perm-depth-5 { padding-left: 92px; }
+.eg-admin .eg-perm-depth-6, .eg-admin .eg-perm-depth-7, .eg-admin .eg-perm-depth-8 { padding-left: 108px; }
+.eg-admin .eg-perm th.eg-perm-depth-1::before, .eg-admin .eg-perm th.eg-perm-depth-2::before, .eg-admin .eg-perm th.eg-perm-depth-3::before,
+.eg-admin .eg-perm th.eg-perm-depth-4::before, .eg-admin .eg-perm th.eg-perm-depth-5::before, .eg-admin .eg-perm th.eg-perm-depth-6::before,
+.eg-admin .eg-perm th.eg-perm-depth-7::before, .eg-admin .eg-perm th.eg-perm-depth-8::before { content: "\2514\00a0"; color: var(--eg-admin-text-2); font-weight: 400; }
+.eg-admin .eg-perm-cell {
+	display: inline-grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 1px solid transparent; border-radius: 10px;
+	background: transparent; color: var(--eg-admin-text-2); cursor: pointer;
+}
+.eg-admin .eg-perm-cell:hover { border-color: var(--eg-admin-border); background: var(--eg-admin-surface-2); }
+.eg-admin .eg-perm-cell:focus-visible { outline: 3px solid var(--eg-admin-focus); outline-offset: 2px; }
+.eg-admin .eg-perm-cell[aria-disabled="true"] { cursor: default; }
+.eg-admin .eg-perm-cell[aria-disabled="true"]:hover { border-color: transparent; background: transparent; }
+.eg-admin .eg-perm-cell[data-pending] { border-color: var(--eg-admin-accent); background: var(--eg-admin-accent-soft); }
+.eg-admin .eg-pico { display: none; }
+.eg-admin .eg-perm-cell[data-state="allow"] .eg-pico--allow, .eg-admin .eg-perm-cell[data-state="inherit"] .eg-pico--inherit, .eg-admin .eg-perm-cell[data-state="unset"] .eg-pico--unset,
+.eg-admin .eg-perm-cell[data-state="always"] .eg-pico--always, .eg-admin .eg-perm-cell[data-state="deny"] .eg-pico--deny { display: block; }
+.eg-admin .eg-pico--allow { color: var(--eg-admin-ok-text); }
+.eg-admin .eg-pico--inherit { color: var(--eg-admin-accent-text); }
+.eg-admin .eg-pico--unset { color: var(--eg-admin-text-2); }
+.eg-admin .eg-pico--always { color: var(--eg-admin-ok-text); opacity: .55; }
+.eg-admin .eg-pico--deny { color: var(--eg-admin-bad-text); }
+.eg-admin .eg-pico__check { stroke: var(--eg-admin-surface); }
+.eg-admin .eg-perm-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin: 14px 0; }
+.eg-admin .eg-perm-status { color: var(--eg-admin-text-2); font-size: .9rem; }
+.eg-admin .eg-perm-legend-title { margin: 18px 0 8px; font-size: 1rem; font-weight: 700; }
+.eg-admin .eg-perm-legend { display: grid; gap: 8px; margin: 0 0 12px; padding: 0; list-style: none; }
+.eg-admin .eg-perm-legend__item { display: flex; align-items: flex-start; gap: 10px; }
+.eg-admin .eg-perm-legend__ico { flex: none; display: inline-grid; place-items: center; width: 28px; height: 28px; }
+.eg-admin .eg-perm-legend__ico .eg-pico { display: block; }
+.eg-admin .eg-perm-dialog { max-width: min(92vw, 34rem); padding: 18px 20px; border: 1px solid var(--eg-admin-border); border-radius: var(--eg-admin-r-m); background: var(--eg-admin-surface); color: var(--eg-admin-text); box-shadow: var(--eg-admin-shadow-2); }
+.eg-admin .eg-perm-dialog::backdrop { background: var(--eg-admin-backdrop); }
+.eg-admin .eg-perm-dialog__title { margin: 0 0 8px; font-size: 1.1rem; }
+.eg-admin .eg-perm-dialog__list { margin: 8px 0 14px; padding-left: 20px; }
+.eg-admin .eg-perm-dialog__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }

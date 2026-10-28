@@ -170,3 +170,37 @@ La opción **Incluir enlaces en los correos** (Opciones > Notificaciones; clave 
 - Plantillas por defecto **y personalizadas**: las etiquetas `{PUBLISH_URL}`, `{UNPUBLISH_URL}`, `{DELETE_URL}`, `{POSSIBLESPAM_URL}`, `{SPAM_URL}`, `{UNSPAM_URL}`, `{UNSUBSCRIBE_URL}`, `{CONTENT_LINK}`, `{COMMENT_LINK}` y `{SITEURL}` quedan vacías y Engage **quita después de sustituirlas** los botones (`<a class="engageemail-button…">`) y los enlaces cuyo `href` queda vacío (los enlaces de texto, como el título del contenido, se quedan como texto) y, en la parte de texto plano, las líneas «URL del comentario:» o «darse de baja:» sin valor. Así no queda ningún `href=""` ni `href="#"`. (En Joomla 5.2.0–5.2.1 con la solución alternativa de plantillas activa esa limpieza no se aplica; el resto sí.)
 - Con **Sí** el correo es exactamente el de antes.
 - Guardar la opción exige los mismos permisos que el resto de opciones del panel moderno (`core.admin` o `core.options` de `com_engage`) y un token; cualquier valor distinto de 0/1 se rechaza (422) y, si llegara a la base de datos, cuenta como Sí.
+
+## Matriz de permisos (0.9.16)
+
+Opciones modernas > **Permisos** > **Matriz de permisos** (también `index.php?option=com_engage&view=permissions`). Solo la ven y la usan los superadministradores de Engage (`core.admin`); a cualquier otra persona le responde 403.
+
+Es una vista sencilla de los **permisos nativos de Joomla** sobre el activo `com_engage` (los mismos de *Opciones > Permisos* de Joomla). Filas: los grupos de usuarios, sangrados según el árbol (Público > Invitado; Manager > Administrador; Registrado > Autor > Editor > Publicador; Super usuarios). Columnas:
+
+| Columna | Permiso de Joomla | Para qué |
+|---|---|---|
+| Comentar | `core.create` | Escribir comentarios nuevos |
+| Editar los suyos | `core.edit.own` | Cambiar los propios |
+| Editar cualquiera | `core.edit` | Cambiar los de otras personas |
+| Moderar | `core.edit.state` | Publicar, despublicar, marcar como spam |
+| Borrar | `core.delete` | Eliminar comentarios |
+| Entrar al panel | `core.manage` | Abrir Engage en la administración |
+
+`core.admin` («Administrador») y `core.options` («Opciones») **no aparecen ni se pueden cambiar aquí**: solo desde los permisos avanzados de Joomla (hay un botón). **Ver comentarios no es una columna:** lo decide el nivel de acceso del contenido al que pertenecen.
+
+### Qué significa cada marca (cada una con su icono, no solo color)
+- **Círculo relleno: permitido** explícitamente a este grupo.
+- **Círculo con contorno: heredado** de un grupo de más arriba o de la configuración global de Joomla. Al pulsarlo pasa a permitido explícito.
+- **Guion: sin asignar.** El grupo no puede.
+- **Círculo con marca, atenuado: siempre** (Super usuarios; Joomla lo permite siempre; no se cambia).
+- **X roja: denegado** a propósito, en este grupo o en uno de más arriba (en Joomla un Deny gana), o un Allow que un Deny anula. Solo se cambia en los permisos avanzados.
+
+Cada celda la calcula Joomla (`Access::checkGroup`), no una regla propia: lo que ve es lo que Joomla decide.
+
+### Cómo se cambia
+Pulse una celda (o Intro / Espacio) para alternar entre *permitido* y *sin asignar*; las celdas con cambio pendiente se marcan. Nada se escribe hasta pulsar **Guardar permisos** (o descarte con **Descartar cambios**). Esta pantalla **nunca escribe una denegación** ni toca a los Super usuarios.
+
+Al guardar, el servidor no se fía del navegador: comprueba token, sesión y `core.admin`; acepta solo grupos que existan y las seis acciones; conserva `core.admin`, `core.options` y los Deny existentes; escribe con el mecanismo nativo de Joomla (reglas del activo `com_engage`) y vuelve a mostrar lo que Joomla decide. **Concesión amplia:** dar *Editar cualquiera*, *Moderar*, *Borrar* o *Entrar al panel* a Público, Invitado, Registrado (o al grupo de nuevos usuarios) pide confirmación, y el servidor la exige. El cambio queda en el registro de acciones de Joomla (con el plugin de acciones de Engage activado), con los grupos y acciones afectados, sin datos personales.
+
+En móvil la tabla se desplaza en horizontal dentro de su recuadro (la columna de grupos queda fija); se puede recorrer con el teclado.
+

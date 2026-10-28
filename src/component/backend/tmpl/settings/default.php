@@ -154,7 +154,12 @@ echo I::sprite();
 
 					<?php if (($sec['link'] ?? '') === 'permissions') : ?>
 						<p class="eg-sec__text"><?= $e(Text::_('COM_ENGAGE_SET_PERM_TEXT')) ?></p>
-						<p><a class="eg-btn eg-btn--primary" href="<?= $url($this->permissionsUrl) ?>"><?= I::icon('lock') ?><?= $e(Text::_('COM_ENGAGE_SET_PERM_BTN')) ?></a></p>
+						<p>
+							<?php if (($permUser = \Joomla\CMS\Factory::getApplication()->getIdentity()) && $permUser->authorise('core.admin', 'com_engage')) : ?>
+								<a class="eg-btn eg-btn--primary" href="<?= $url('index.php?option=com_engage&view=permissions') ?>"><?= I::icon('lock') ?><?= $e(Text::_('COM_ENGAGE_SET_PERM_MATRIX_BTN')) ?></a>
+							<?php endif; ?>
+							<a class="eg-btn" href="<?= $url($this->permissionsUrl) ?>"><?= $e(Text::_('COM_ENGAGE_SET_PERM_BTN')) ?></a>
+						</p>
 					<?php endif; ?>
 
 					<?php foreach ($sec['groups'] as $g) : ?>
