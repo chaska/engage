@@ -173,7 +173,7 @@ La opción **Incluir enlaces en los correos** (Opciones > Notificaciones; clave 
 
 ## Matriz de permisos (0.9.16) y acceso directo (0.9.17)
 
-**Permisos** abre directamente la matriz (`index.php?option=com_engage&view=permissions`), sin pantallas intermedias, desde: el botón «Permisos» de la barra de herramientas del panel, de Comentarios, de Plantillas de correo y de Ajustes, el mosaico «Permisos» del panel y la entrada «Permisos» del menú de Ajustes (0.9.17; antes el botón «Opciones» llevaba a la pantalla nativa de Joomla). Quien tiene `core.options` pero no `core.admin` conserva el botón «Opciones» y el enlace clásico de Ajustes. Solo la ven y la usan los superadministradores de Engage (`core.admin`); a cualquier otra persona le responde 403.
+**Permisos** abre directamente la matriz (`index.php?option=com_engage&view=permissions`), sin pantallas intermedias, desde un único acceso por pantalla: el botón «Permisos» de la barra de herramientas de Comentarios y de Plantillas de correo, el mosaico «Permisos» del panel y la entrada «Permisos» del menú de Ajustes (0.9.17; antes el botón «Opciones» llevaba a la pantalla nativa de Joomla). Quien tiene `core.options` pero no `core.admin` conserva el botón «Opciones» y el enlace clásico de Ajustes. Solo la ven y la usan los superadministradores de Engage (`core.admin`); a cualquier otra persona le responde 403.
 
 Es una vista sencilla de los **permisos nativos de Joomla** sobre el activo `com_engage` (los mismos de *Opciones > Permisos* de Joomla). Filas: los grupos de usuarios, sangrados según el árbol (Público > Invitado; Manager > Administrador; Registrado > Autor > Editor > Publicador; Super usuarios). Columnas:
 

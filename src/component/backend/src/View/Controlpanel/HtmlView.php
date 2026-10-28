@@ -102,16 +102,10 @@ class HtmlView extends BaseHtmlView
 			'icon-engage'
 		);
 
-		if ($this->can['admin'])
+		// 0.9.17: con core.admin el acceso a «Permisos» es el mosaico del panel (uno solo); quien solo tiene core.options conserva «Opciones»
+		if ($this->can['admin'] && !PermissionsNav::canOpen())
 		{
-			if (PermissionsNav::canOpen())
-			{
-				ToolbarHelper::link(PermissionsNav::matrixUrl(), 'COM_ENGAGE_PERMS_BTN', 'lock');
-			}
-			else
-			{
-				ToolbarHelper::preferences('com_engage');
-			}
+			ToolbarHelper::preferences('com_engage');
 		}
 
 		parent::display($tpl);

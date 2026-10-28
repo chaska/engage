@@ -187,11 +187,6 @@ class HtmlView extends BaseHtmlView
 		Toolbar::getInstance('toolbar')->link('COM_ENGAGE_SET_CLASSIC', Route::_($this->classicUrl, false))->icon('fa fa-cog');
 		ToolbarHelper::back('JTOOLBAR_BACK', Route::_('index.php?option=com_engage&view=controlpanel', false));
 
-		if (PermissionsNav::canOpen())
-		{
-			ToolbarHelper::link(PermissionsNav::matrixUrl(), 'COM_ENGAGE_PERMS_BTN', 'lock');
-		}
-
 		parent::display($tpl);
 	}
 }
