@@ -351,3 +351,5 @@
 .eg-admin .eg-perm-dialog__title { margin: 0 0 8px; font-size: 1.1rem; }
 .eg-admin .eg-perm-dialog__list { margin: 8px 0 14px; padding-left: 20px; }
 .eg-admin .eg-perm-dialog__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+.eg-admin .eg-perm-advlink { color: var(--eg-admin-accent-text); font-weight: 600; text-decoration: underline; margin-left: 4px; }
+.eg-admin .eg-perm-advlink:focus-visible { outline: 2px solid var(--eg-admin-focus); outline-offset: 2px; }

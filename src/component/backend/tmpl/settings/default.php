@@ -116,6 +116,13 @@ echo I::sprite();
 	<div class="eg-set" data-eg-set>
 		<div class="eg-set__nav" role="tablist" aria-orientation="vertical" aria-label="<?= $e(Text::_('COM_ENGAGE_SET_NAV')) ?>">
 			<?php foreach ($this->sections as $sec) : $on = $sec['id'] === $this->active; ?>
+				<?php if ($this->permDirect && ($sec['link'] ?? '') === 'permissions') : ?>
+					<a class="eg-navitem" href="<?= $url(\Akeeba\Component\Engage\Administrator\Helper\PermissionsNav::MATRIX) ?>">
+						<span class="eg-icobox eg-icobox--sm eg-icobox--<?= $e($sec['tone']) ?>"><?= I::icon($sec['icon']) ?></span>
+						<span class="eg-navitem__t"><?= $e(Text::_('COM_ENGAGE_SET_SEC_' . strtoupper($sec['id']))) ?></span>
+					</a>
+					<?php continue; ?>
+				<?php endif; ?>
 				<button type="button" class="eg-navitem" role="tab" id="eg-tab-<?= $e($sec['id']) ?>" aria-controls="eg-panel-<?= $e($sec['id']) ?>"
 						aria-selected="<?= $e($on ? 'true' : 'false') ?>" tabindex="<?= $e($on ? '0' : '-1') ?>" data-eg-tab="<?= $e($sec['id']) ?>">
 					<span class="eg-icobox eg-icobox--sm eg-icobox--<?= $e($sec['tone']) ?>"><?= I::icon($sec['icon']) ?></span>
@@ -126,6 +133,7 @@ echo I::sprite();
 
 		<div class="eg-set__body">
 			<?php foreach ($this->sections as $sec) : $sid = strtoupper($sec['id']); ?>
+				<?php if ($this->permDirect && ($sec['link'] ?? '') === 'permissions') { continue; } ?>
 				<section class="eg-card eg-panel" role="tabpanel" id="eg-panel-<?= $e($sec['id']) ?>" aria-labelledby="eg-tab-<?= $e($sec['id']) ?>"
 						 tabindex="0"<?= $e($sec['id'] === $this->active ? '' : ' hidden') ?>>
 					<div class="eg-card__head">
@@ -155,9 +163,6 @@ echo I::sprite();
 					<?php if (($sec['link'] ?? '') === 'permissions') : ?>
 						<p class="eg-sec__text"><?= $e(Text::_('COM_ENGAGE_SET_PERM_TEXT')) ?></p>
 						<p>
-							<?php if (($permUser = \Joomla\CMS\Factory::getApplication()->getIdentity()) && $permUser->authorise('core.admin', 'com_engage')) : ?>
-								<a class="eg-btn eg-btn--primary" href="<?= $url('index.php?option=com_engage&view=permissions') ?>"><?= I::icon('lock') ?><?= $e(Text::_('COM_ENGAGE_SET_PERM_MATRIX_BTN')) ?></a>
-							<?php endif; ?>
 							<a class="eg-btn" href="<?= $url($this->permissionsUrl) ?>"><?= $e(Text::_('COM_ENGAGE_SET_PERM_BTN')) ?></a>
 						</p>
 					<?php endif; ?>

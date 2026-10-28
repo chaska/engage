@@ -18,6 +18,7 @@
 #   PR     lib/privacidad-0913.php (0.9.13) retencion de IP y navegador (1200 comentarios por lotes), informacion y enlace de privacidad (valido y hostil), Gravatar decidido por el servidor (invitado / registrado / consentimiento / revocar) y adopcion de comentarios con correo verificado por activacion (registro y activacion reales con el SMTP de captura)
 #   DN     lib/denuncias-0914.php, lib/denuncias-datos.php + lib/denuncias-0914-navegador.js (0.9.14) denunciar comentarios: invitado/sin token/GET/cross-site, cuenta nueva, comentario propio o no visible, doble denuncia, limites por hora y dia, tope global, cola de administracion (ACL, token), aviso agrupado, borrado de cuenta; Chromium en escritorio claro y movil oscuro
 #   PM     lib/permisos-0916.php, lib/permisos-datos.php + lib/permisos-0916-navegador.js (0.9.16) matriz de permisos: contraste celda a celda con Access::checkGroup, 403 (invitado, Registrado, Manager), CSRF/GET/cargas hostiles, concesion amplia 409, Deny y core.admin intactos, registro de acciones; Chromium escritorio claro y movil oscuro (teclado, confirmacion, desplazamiento)
+#   PD     lib/permisos-0917.php + lib/permisos-0917-navegador.js (0.9.17) «Permisos» abre directamente la matriz desde panel, comentarios, plantillas y ajustes (HTTP 200 sin redirecciones; Chromium con clic real, teclado, claro/movil), enlace «Permisos avanzados (Joomla)» a la pantalla nativa y aviso de vuelta, 403 sin core.admin
 #   H6/H7  no tienen script propio: se comprueban con tests/41 (ficha del activo) y con 21-otros-componentes.sh (terceros con activos en #__assets); ejecute 21 aparte.
 # Ademas de este script hay que pasar: 05 (Gravatar con cache de pagina y Chromium), 03, 17, 19, 20, 21 y 04 (actualizacion).
 # Requisitos: 03-sembrar-y-probar.sh y el paquete actual instalado (02); MariaDB, SMTP de captura (00). Variables: PW_MODULE, CHROMIUM.
@@ -38,6 +39,7 @@ php "$AQUI/lib/auditoria-0912.php" || rc=1
 php "$AQUI/lib/privacidad-0913.php" || rc=1
 php "$AQUI/lib/denuncias-0914.php" || rc=1
 php "$AQUI/lib/permisos-0916.php" || rc=1
+php "$AQUI/lib/permisos-0917.php" || rc=1
 PW="${PW_MODULE:-}"
 if [ -d "$PW" ] && [ -x "${CHROMIUM:-}" ]; then
 	export PW_MODULE="$PW" CHROMIUM="${CHROMIUM:-}"
@@ -60,6 +62,7 @@ if [ -d "$PW" ] && [ -x "${CHROMIUM:-}" ]; then
 	node "$AQUI/lib/correos-navegador.js" || rc=1
 	echo "== Navegador (Chromium): matriz de permisos (0.9.16)"
 	php "$AQUI/lib/permisos-datos.php" crear >/dev/null && node "$AQUI/lib/permisos-0916-navegador.js" || rc=1
+	node "$AQUI/lib/permisos-0917-navegador.js" || rc=1
 	php "$AQUI/lib/permisos-datos.php" borrar >/dev/null
 else
 	echo "NO PROBADO: falta Playwright o Chromium (PW_MODULE / CHROMIUM); no se ejecuto la parte del navegador"; rc=2

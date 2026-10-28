@@ -20,6 +20,7 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Toolbar\Toolbar;
+use Akeeba\Component\Engage\Administrator\Helper\PermissionsNav;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\Database\DatabaseInterface;
 use RuntimeException;
@@ -42,6 +43,9 @@ class HtmlView extends BaseHtmlView
 	protected $classicUrl = '';
 	/** @var string */
 	protected $permissionsUrl = '';
+
+	/** @var bool */
+	protected $permDirect = false;
 	/** @var array */
 	protected $captcha = [];
 
@@ -145,6 +149,12 @@ class HtmlView extends BaseHtmlView
 		$panel                = 'index.php?option=com_engage&view=settings';
 		$this->classicUrl     = 'index.php?option=com_config&view=component&component=com_engage&return=' . base64_encode($panel);
 		$this->permissionsUrl = $this->classicUrl . '#permissions';
+		$this->permDirect     = PermissionsNav::canOpen();   // 0.9.17: con core.admin, «Permisos» abre directamente la matriz
+
+		if ($this->permDirect && $want === 'permissions')
+		{
+			$app->redirect(PermissionsNav::matrixUrl());
+		}
 
 		$doc = $app->getDocument();
 		$doc->getWebAssetManager()
@@ -176,6 +186,11 @@ class HtmlView extends BaseHtmlView
 		ToolbarHelper::title(sprintf('%s: <span class="fw-bold">%s</span>', Text::_('COM_ENGAGE'), Text::_('COM_ENGAGE_SET_TITLE')), 'icon-engage');
 		Toolbar::getInstance('toolbar')->link('COM_ENGAGE_SET_CLASSIC', Route::_($this->classicUrl, false))->icon('fa fa-cog');
 		ToolbarHelper::back('JTOOLBAR_BACK', Route::_('index.php?option=com_engage&view=controlpanel', false));
+
+		if (PermissionsNav::canOpen())
+		{
+			ToolbarHelper::link(PermissionsNav::matrixUrl(), 'COM_ENGAGE_PERMS_BTN', 'lock');
+		}
 
 		parent::display($tpl);
 	}

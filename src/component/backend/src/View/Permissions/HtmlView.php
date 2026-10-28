@@ -10,6 +10,7 @@ namespace Akeeba\Component\Engage\Administrator\View\Permissions;
 defined('_JEXEC') or die;
 
 use Akeeba\Component\Engage\Administrator\Helper\PermissionsMatrix;
+use Akeeba\Component\Engage\Administrator\Helper\PermissionsNav;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
@@ -51,7 +52,7 @@ class HtmlView extends BaseHtmlView
 		$this->broad   = PermissionsMatrix::broadGroups($this->groups);
 		$this->saveUrl = Route::_('index.php?option=com_engage&task=permissions.save', false);
 		$this->token   = Session::getFormToken();
-		$this->advancedUrl = Route::_('index.php?option=com_config&view=component&component=com_engage&return=' . base64_encode('index.php?option=com_engage&view=permissions'), false) . '#permissions';
+		$this->advancedUrl = PermissionsNav::advancedUrl();
 
 		parent::display($tpl);
 	}

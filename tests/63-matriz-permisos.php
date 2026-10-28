@@ -104,7 +104,7 @@ $cs = $lee("$c/media/css/admin-lists.css");
 t_ok(str_contains($cs, '.eg-perm-wrap { overflow-x: auto') && str_contains($cs, 'var(--eg-admin-ok-text)') && str_contains($cs, ':focus-visible'), 'CSS: desplazamiento horizontal en movil, variables del panel (claro/oscuro) y foco visible');
 foreach (['es-ES', 'en-GB'] as $l) {
 	$ini = parse_ini_string($lee("$c/backend/language/$l/com_engage.ini"), false, INI_SCANNER_RAW); $f = [];
-	foreach (['TITLE_PERMISSIONS', 'SET_PERM_MATRIX_BTN', 'PERMS_HEAD', 'PERMS_ADVANCED', 'PERMS_INTRO', 'PERMS_VIEW_NOTE', 'PERMS_REGION', 'PERMS_COL_GROUP', 'PERMS_ARIA_TPL', 'PERMS_LEGEND', 'PERMS_HOWTO', 'PERMS_SAVE', 'PERMS_DISCARD', 'PERMS_MSG_PENDING', 'PERMS_MSG_SAVED', 'PERMS_MSG_NOCHANGE', 'PERMS_MSG_FAILED', 'PERMS_CONFIRM_TITLE', 'PERMS_CONFIRM_TEXT', 'PERMS_CONFIRM_YES'] as $k) { if (empty($ini["COM_ENGAGE_$k"])) { $f[] = $k; } }
+	foreach (['TITLE_PERMISSIONS', 'PERMS_BTN', 'PERMS_CONFIG_NOTE', 'PERMS_HEAD', 'PERMS_ADVANCED', 'PERMS_INTRO', 'PERMS_VIEW_NOTE', 'PERMS_REGION', 'PERMS_COL_GROUP', 'PERMS_ARIA_TPL', 'PERMS_LEGEND', 'PERMS_HOWTO', 'PERMS_SAVE', 'PERMS_DISCARD', 'PERMS_MSG_PENDING', 'PERMS_MSG_SAVED', 'PERMS_MSG_NOCHANGE', 'PERMS_MSG_FAILED', 'PERMS_CONFIRM_TITLE', 'PERMS_CONFIRM_TEXT', 'PERMS_CONFIRM_YES'] as $k) { if (empty($ini["COM_ENGAGE_$k"])) { $f[] = $k; } }
 	foreach (PM::ACTIONS as $a => $k) { foreach (['', '_DESC'] as $z) { if (empty($ini["COM_ENGAGE_PERMS_ACT_$k$z"])) { $f[] = "ACT_$k$z"; } } }
 	foreach (['ALLOW', 'INHERIT', 'UNSET', 'DENY', 'ALWAYS'] as $k) { foreach (['STATE', 'LEGEND'] as $z) { if (empty($ini["COM_ENGAGE_PERMS_{$z}_$k"])) { $f[] = "{$z}_$k"; } } }
 	$al = parse_ini_string($lee($root . "/src/plugins/actionlog/engage/language/$l/plg_actionlog_engage.ini"), false, INI_SCANNER_RAW);
@@ -113,5 +113,23 @@ foreach (['es-ES', 'en-GB'] as $l) {
 }
 $es = parse_ini_string($lee("$c/backend/language/es-ES/com_engage.ini"), false, INI_SCANNER_RAW);
 t_ok(str_contains($es['COM_ENGAGE_PERMS_HOWTO'], 'Pulse') && str_contains($es['COM_ENGAGE_PERMS_CONFIRM_TEXT'], 'Va a dar') && !preg_match('/\b(pulsa|tu|ve a)\b/i', $es['COM_ENGAGE_PERMS_HOWTO']), 'es-ES: trato de usted');
-t_ok(str_contains($lee("$c/backend/tmpl/settings/default.php"), 'view=permissions'), 'la seccion «Permisos» de las opciones modernas enlaza a la matriz');
+echo "N) 0.9.17: «Permisos» abre directamente la matriz; la nativa de Joomla sigue accesible\n";
+$nav = $lee("$c/backend/src/Helper/PermissionsNav.php");
+t_ok(str_contains($nav, "'index.php?option=com_engage&view=permissions'") && str_contains($nav, "authorise('core.admin', 'com_engage')") && str_contains($nav, 'com_config&view=component&component=com_engage&return=') && !preg_match('/getInput|\\$_(GET|POST|REQUEST|SERVER)|Uri::|getHost|base\\(/', $nav), 'PermissionsNav: direcciones con parametros fijos, nada de la peticion ni del Host');
+t_ok(str_contains($nav, "'#permissions'"), 'el enlace avanzado apunta a la pestana de permisos (y degrada a las opciones si cambia)');
+foreach (['Controlpanel', 'Comments', 'Emailtemplates', 'Settings'] as $v) {
+	$s = $lee("$c/backend/src/View/$v/HtmlView.php");
+	t_ok(str_contains($s, 'PermissionsNav::canOpen()') && str_contains($s, 'COM_ENGAGE_PERMS_BTN') && str_contains($s, 'PermissionsNav::matrixUrl()'), "barra de herramientas de $v: boton «Permisos» directo a la matriz (solo core.admin)");
+}
+foreach (['Controlpanel', 'Comments'] as $v) { t_ok(str_contains($lee("$c/backend/src/View/$v/HtmlView.php"), "preferences('com_engage')"), "$v: quien solo tiene core.options conserva el boton «Opciones»"); }
+$st = $lee("$c/backend/tmpl/settings/default.php"); $sv = $lee("$c/backend/src/View/Settings/HtmlView.php");
+t_ok(str_contains($st, 'PermissionsNav::MATRIX') && str_contains($st, 'permDirect') && !str_contains($st, 'COM_ENGAGE_SET_PERM_MATRIX_BTN') && substr_count($st, 'COM_ENGAGE_SET_PERM_BTN') === 1, 'Ajustes: la entrada «Permisos» es un enlace directo a la matriz y no hay boton duplicado (el clasico queda solo para quien no es core.admin)');
+t_ok(str_contains($sv, "\$want === 'permissions'") && str_contains($sv, 'redirect(PermissionsNav::matrixUrl())'), 'el antiguo &section=permissions redirige a la matriz con core.admin');
+t_ok(str_contains($lee("$c/backend/tmpl/controlpanel/default.php"), 'PermissionsNav::MATRIX'), 'el mosaico «Permisos» del panel abre la matriz');
+$tp2 = $lee("$c/backend/tmpl/permissions/default.php");
+t_ok(substr_count($tp2, 'advancedUrl') >= 2 && str_contains($tp2, 'eg-perm-advlink'), 'la matriz enlaza a los permisos avanzados de Joomla en la cabecera y en la leyenda de «Denegado»');
+t_ok(str_contains($lee("$c/backend/src/View/Permissions/HtmlView.php"), 'PermissionsNav::advancedUrl()'), 'la vista usa el helper para el enlace avanzado');
+$cfg = $lee("$c/backend/config.xml");
+t_ok(preg_match('#name="permissions".*?COM_ENGAGE_PERMS_CONFIG_NOTE.*?type="rules"#s', $cfg) === 1, 'la pestana de permisos de Joomla lleva el aviso con el enlace de vuelta a la matriz y conserva el campo rules (sin logica de guardado nueva)');
+foreach (['es-ES', 'en-GB'] as $l) { $ini = parse_ini_string($lee("$c/backend/language/$l/com_engage.ini"), false, INI_SCANNER_RAW); t_ok(str_contains($ini['COM_ENGAGE_PERMS_CONFIG_NOTE'], 'view=permissions') && str_contains($ini['COM_ENGAGE_PERMS_ADVANCED'], 'Joomla'), "$l: aviso de la pantalla nativa y rotulo «Permisos avanzados (Joomla)»"); }
 t_fin();

@@ -40,7 +40,7 @@ Teclado completo y foco visible en todos los controles, `role="radiogroup"` en e
 ## Permisos
 
 - Ver el panel: `core.manage` del componente (Joomla lo exige antes de llegar a nuestro código).
-- Accesos a Opciones y Permisos y botón «Opciones» de la barra: `core.admin` o `core.options`.
+- Acceso a Opciones y botón «Opciones» de la barra: `core.admin` o `core.options`. «Permisos» (matriz, 0.9.17): solo `core.admin`.
 - Publicar y marcar como spam: `core.edit.state`. Eliminar: `core.delete`. Los comprueban las tareas existentes.
 - Los botones para abrir un plugin solo se ofrecen si usted puede gestionar y editar plugins.
 
@@ -74,7 +74,7 @@ La pantalla **Opciones** (menú de Engage > Opciones, o la tarjeta «Opciones» 
 | **Privacidad y Gravatar** | Modo de Gravatar (preguntar, apagado, siempre), aviso, origen del consentimiento (aviso de Engage o JBCookies) y grupo de JBCookies, enlace al perfil, calificación e imagen por defecto |
 | **Seguridad del HTML** | Modo de filtrado, uso del filtrado de Joomla, lista de etiquetas permitidas de HTML Purifier, modo de inclusión |
 | **Avanzado** | Solución de plantillas de correo, URL de búsqueda de IP, antigüedad del spam, CSS personalizado y otros |
-| **Permisos** | Enlace a la pantalla de permisos de Joomla |
+| **Permisos** | Con `core.admin`, abre directamente la matriz de permisos (desde ella, el enlace a los permisos avanzados de Joomla); con solo `core.options`, el enlace a la pantalla de Joomla |
 
 Cada ajuste usa el control que le corresponde por su definición en `config.xml` (o en el manifiesto del plugin): **interruptor** (`role="switch"`) para sí/no, **control segmentado** (`role="radiogroup"`, con flechas) para listas cortas y enteros de pocos valores, **selector** para listas largas, **campo numérico** o **de texto** con validación, y **área de texto** para la lista de etiquetas. Las dependencias (`showon`) de `config.xml` se respetan: lo que no aplica se oculta. Etiquetas y ayudas son las cadenas que ya existían (la ayuda se acorta a una frase y el resto queda en «Más información»). En móvil las categorías pasan a una tira horizontal de pestañas.
 
@@ -171,9 +171,9 @@ La opción **Incluir enlaces en los correos** (Opciones > Notificaciones; clave 
 - Con **Sí** el correo es exactamente el de antes.
 - Guardar la opción exige los mismos permisos que el resto de opciones del panel moderno (`core.admin` o `core.options` de `com_engage`) y un token; cualquier valor distinto de 0/1 se rechaza (422) y, si llegara a la base de datos, cuenta como Sí.
 
-## Matriz de permisos (0.9.16)
+## Matriz de permisos (0.9.16) y acceso directo (0.9.17)
 
-Opciones modernas > **Permisos** > **Matriz de permisos** (también `index.php?option=com_engage&view=permissions`). Solo la ven y la usan los superadministradores de Engage (`core.admin`); a cualquier otra persona le responde 403.
+**Permisos** abre directamente la matriz (`index.php?option=com_engage&view=permissions`), sin pantallas intermedias, desde: el botón «Permisos» de la barra de herramientas del panel, de Comentarios, de Plantillas de correo y de Ajustes, el mosaico «Permisos» del panel y la entrada «Permisos» del menú de Ajustes (0.9.17; antes el botón «Opciones» llevaba a la pantalla nativa de Joomla). Quien tiene `core.options` pero no `core.admin` conserva el botón «Opciones» y el enlace clásico de Ajustes. Solo la ven y la usan los superadministradores de Engage (`core.admin`); a cualquier otra persona le responde 403.
 
 Es una vista sencilla de los **permisos nativos de Joomla** sobre el activo `com_engage` (los mismos de *Opciones > Permisos* de Joomla). Filas: los grupos de usuarios, sangrados según el árbol (Público > Invitado; Manager > Administrador; Registrado > Autor > Editor > Publicador; Super usuarios). Columnas:
 
@@ -203,4 +203,6 @@ Pulse una celda (o Intro / Espacio) para alternar entre *permitido* y *sin asign
 Al guardar, el servidor no se fía del navegador: comprueba token, sesión y `core.admin`; acepta solo grupos que existan y las seis acciones; conserva `core.admin`, `core.options` y los Deny existentes; escribe con el mecanismo nativo de Joomla (reglas del activo `com_engage`) y vuelve a mostrar lo que Joomla decide. **Concesión amplia:** dar *Editar cualquiera*, *Moderar*, *Borrar* o *Entrar al panel* a Público, Invitado, Registrado (o al grupo de nuevos usuarios) pide confirmación, y el servidor la exige. El cambio queda en el registro de acciones de Joomla (con el plugin de acciones de Engage activado), con los grupos y acciones afectados, sin datos personales.
 
 En móvil la tabla se desplaza en horizontal dentro de su recuadro (la columna de grupos queda fija); se puede recorrer con el teclado.
+
+**Permisos avanzados (Joomla).** En la cabecera de la matriz y junto a «Denegado a propósito» en la leyenda hay un enlace «Permisos avanzados (Joomla)» a la pantalla nativa de Joomla (`com_config`, `component=com_engage`, pestaña de permisos); la dirección se construye con parámetros fijos (nada de la petición ni del Host) y vuelve a la matriz. Si Joomla cambiara la pestaña, el fragmento se ignora y se abre la pantalla de opciones del componente. La pantalla nativa sigue funcionando, y en su pestaña de permisos hay un aviso con el enlace de vuelta a la matriz.
 

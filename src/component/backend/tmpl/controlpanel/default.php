@@ -33,7 +33,7 @@ $n      = static fn($v): string => number_format((int) $v, 0, $es ? ',' : '.', $
 $panelUrl      = 'index.php?option=com_engage&view=controlpanel';
 $commentsUrl   = 'index.php?option=com_engage&view=comments';
 $settingsUrl   = 'index.php?option=com_engage&view=settings';
-$permsUrl      = $settingsUrl . '&section=permissions';
+$permsUrl      = \Akeeba\Component\Engage\Administrator\Helper\PermissionsNav::canOpen() ? \Akeeba\Component\Engage\Administrator\Helper\PermissionsNav::MATRIX : $settingsUrl . '&section=permissions';   // 0.9.17: con core.admin, directo a la matriz
 $healthText    = ['ok' => Text::_('COM_ENGAGE_PANEL_LEVEL_OK'), 'warn' => Text::_('COM_ENGAGE_PANEL_LEVEL_WARN'), 'bad' => Text::_('COM_ENGAGE_PANEL_LEVEL_BAD')];
 $stateInfo     = [
 	1  => ['ok', 'COM_ENGAGE_PANEL_STATE_PUBLISHED'],

@@ -8,11 +8,11 @@ Engage es un sistema de comentarios para los artículos de Joomla. Este reposito
 
 ## Estado
 
-- **Versión del fork:** 0.9.16. **Versión del paquete:** 3.4.20 (la 3.4.14 ya está publicada; la 3.4.15 a la 3.4.19 no están publicadas; la 3.4.4 a la 3.4.13 fueron números de entrega que nunca se publicaron y quedan saltados; mayor que la 3.4.2 original, la 3.4.2.1 y la 3.4.3 ya publicadas, para que Joomla la trate como una actualización en el mismo sitio).
+- **Versión del fork:** 0.9.17. **Versión del paquete:** 3.4.21 (la 3.4.14 ya está publicada; la 3.4.15 a la 3.4.20 no están publicadas; la 3.4.4 a la 3.4.13 fueron números de entrega que nunca se publicaron y quedan saltados; mayor que la 3.4.2 original, la 3.4.2.1 y la 3.4.3 ya publicadas, para que Joomla la trate como una actualización en el mismo sitio).
 - **Requisitos:** Joomla 5.0 o superior (incluido Joomla 6), PHP 8.1 o superior, MySQL 8.0.13 / MariaDB 10.4. No admite PostgreSQL (el esquema es solo MySQL/MariaDB).
 - **Probado en:** Joomla 6.1.4 con PHP 8.3 y MariaDB 10.11, instalando el paquete limpio y **actualizando encima de una 3.4.2 original y del paquete 3.4.2.1 ya publicado, con datos de ejemplo** (comentarios, ajustes y permisos idénticos antes y después; la tabla de reacciones se crea sola). Resultados en [`docs/RESULTADOS-PRUEBAS-JOOMLA-REAL.md`](docs/RESULTADOS-PRUEBAS-JOOMLA-REAL.md).
 - **No probado:** Joomla 5.x, PHP 8.1/8.4/8.5, MySQL, otros navegadores distintos de Chromium y otros temas de administración distintos de Atum.
-- **Releases en GitHub:** las **v3.4.2.1, v3.4.3 y v3.4.14 están publicadas** (inmutables). La **v3.4.20** (denunciar comentarios y lo anterior: privacidad, correcciones de las auditorías; véase el CHANGELOG) todavía **no está publicada**: el servidor de actualizaciones de esta rama (`updates/pkgengage.xml`) ya apunta a ella, pero su descarga solo existirá cuando se publique (ver [`docs/PUBLICAR-RELEASE.md`](docs/PUBLICAR-RELEASE.md)); `main` no debe actualizarse antes. Hasta entonces se instala subiendo el ZIP a mano.
+- **Releases en GitHub:** las **v3.4.2.1, v3.4.3 y v3.4.14 están publicadas** (inmutables). La **v3.4.21** (denunciar comentarios y lo anterior: privacidad, correcciones de las auditorías; véase el CHANGELOG) todavía **no está publicada**: el servidor de actualizaciones de esta rama (`updates/pkgengage.xml`) ya apunta a ella, pero su descarga solo existirá cuando se publique (ver [`docs/PUBLICAR-RELEASE.md`](docs/PUBLICAR-RELEASE.md)); `main` no debe actualizarse antes. Hasta entonces se instala subiendo el ZIP a mano.
 
 ## Novedades respecto a Engage 3.4.2
 
@@ -38,7 +38,7 @@ El detalle de cada cambio, con sus archivos e impacto, está en [`CHANGELOG.md`]
 ## Instalación
 
 1. **Haga copia de seguridad** del sitio y de la base de datos.
-2. En Joomla: *Sistema → Instalar → Extensiones → Subir archivo* y suba `pkg_engage-3.4.20.zip`. Se instala **encima** de una instalación existente de Engage, sin desinstalarla antes.
+2. En Joomla: *Sistema → Instalar → Extensiones → Subir archivo* y suba `pkg_engage-3.4.21.zip`. Se instala **encima** de una instalación existente de Engage, sin desinstalarla antes.
 3. Pulse **Akeeba Engage** en el menú de administración (abre el panel de control).
 4. Revise el **semáforo de estado** del panel y las **Opciones** (tema visual, Gravatar, antispam, moderación).
 
@@ -96,7 +96,7 @@ La versión se lee de `src/package/pkg_engage.xml`. Los ZIP son reproducibles (o
 
 ## Limitaciones conocidas
 
-- La release v3.4.20 en GitHub no está publicada todavía (ver «Estado»).
+- La release v3.4.21 en GitHub no está publicada todavía (ver «Estado»).
 - Las reacciones necesitan JavaScript (sin él los botones no se muestran) y vienen activadas por defecto; se desactivan en Opciones > Reacciones.
 - El botón «Copiar enlace» y el conmutador «Solo mis favoritos» también necesitan JavaScript (el selector de orden no). Con la caché conservadora de Joomla hace falta el plugin «System - Engage cache» activado para que el orden y la paginación entren en la clave de la caché.
 - Gravatar, el aviso de cookies de JBCookies y otros servicios de terceros no se distribuyen con el fork. JBCookies tiene una inconsistencia de licencia (README «Non-Commercial» frente a GPL v3 en su archivo de licencia) documentada en [`docs/GRAVATAR-CONSENTIMIENTO.md`](docs/GRAVATAR-CONSENTIMIENTO.md).

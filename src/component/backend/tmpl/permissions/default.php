@@ -105,7 +105,7 @@ $sens      = PM::SENSITIVE;
 	<h3 class="eg-perm-legend-title"><?= $e(Text::_('COM_ENGAGE_PERMS_LEGEND')) ?></h3>
 	<ul class="eg-perm-legend">
 		<?php foreach (['allow', 'inherit', 'unset', 'always', 'deny'] as $kind) : ?>
-			<li class="eg-perm-legend__item eg-perm-legend__item--<?= $e($kind) ?>"><span class="eg-perm-legend__ico"><?= $svg($kind) ?></span> <span><strong><?= $e(Text::_('COM_ENGAGE_PERMS_STATE_' . $stateKeys[$kind])) ?>.</strong> <?= $e(Text::_('COM_ENGAGE_PERMS_LEGEND_' . $stateKeys[$kind])) ?></span></li>
+			<li class="eg-perm-legend__item eg-perm-legend__item--<?= $e($kind) ?>"><span class="eg-perm-legend__ico"><?= $svg($kind) ?></span> <span><strong><?= $e(Text::_('COM_ENGAGE_PERMS_STATE_' . $stateKeys[$kind])) ?>.</strong> <?= $e(Text::_('COM_ENGAGE_PERMS_LEGEND_' . $stateKeys[$kind])) ?><?php if ($kind === 'deny') : ?> <a class="eg-perm-advlink" href="<?= $e($this->advancedUrl) ?>"><?= $e(Text::_('COM_ENGAGE_PERMS_ADVANCED')) ?></a><?php endif; ?></span></li>
 		<?php endforeach; ?>
 	</ul>
 	<p class="eg-intro"><?= $e(Text::_('COM_ENGAGE_PERMS_HOWTO')) ?></p>

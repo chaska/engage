@@ -15,6 +15,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Router\Route;
+use Akeeba\Component\Engage\Administrator\Helper\PermissionsNav;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
@@ -28,6 +29,11 @@ class HtmlView extends BaseHtmlView
 	{
 		ToolbarHelper::title(sprintf(Text::_('COM_ENGAGE_TITLE_EMAILTEMPLATES')), 'icon-engage');
 		ToolbarHelper::back('JTOOLBAR_BACK', Route::_('index.php?option=com_engage&view=comments', false));
+
+		if (PermissionsNav::canOpen())
+		{
+			ToolbarHelper::link(PermissionsNav::matrixUrl(), 'COM_ENGAGE_PERMS_BTN', 'lock');
+		}
 
 		Factory::getApplication()->getDocument()->getWebAssetManager()->useStyle('com_engage.lists')->useScript('com_engage.panel.theme');
 

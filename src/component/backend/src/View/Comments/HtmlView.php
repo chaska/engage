@@ -10,6 +10,7 @@ namespace Akeeba\Component\Engage\Administrator\View\Comments;
 defined('_JEXEC') or die;
 
 use Akeeba\Component\Engage\Administrator\Helper\HtmlFilter;
+use Akeeba\Component\Engage\Administrator\Helper\PermissionsNav;
 use Akeeba\Component\Engage\Administrator\Helper\UserFetcher;
 use Akeeba\Component\Engage\Administrator\Mixin\ViewLoadAnyTemplateTrait;
 use Akeeba\Component\Engage\Administrator\Model\CommentsModel;
@@ -282,7 +283,11 @@ class HtmlView extends BaseHtmlView
 		$toolbar->link('COM_ENGAGE_TITLE_EMAILTEMPLATES', 'index.php?option=com_engage&view=emailtemplates')
 			->icon('fa fa-envelope');
 
-		if ($user->authorise('core.admin', 'com_engage') || $user->authorise('core.options', 'com_engage'))
+		if (PermissionsNav::canOpen())
+		{
+			$toolbar->link('COM_ENGAGE_PERMS_BTN', PermissionsNav::matrixUrl())->icon('fa fa-lock');
+		}
+		elseif ($user->authorise('core.admin', 'com_engage') || $user->authorise('core.options', 'com_engage'))
 		{
 			$toolbar->preferences('com_engage');
 		}

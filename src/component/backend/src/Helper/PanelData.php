@@ -26,10 +26,10 @@ use Throwable;
 final class PanelData
 {
 	/** Version del fork segun el CHANGELOG (la prueba tests/28 comprueba que coincide con su primera entrada). */
-	public const FORK_VERSION = '0.9.16';
+	public const FORK_VERSION = '0.9.17';
 
 	/** Version of the package (pkg_engage.xml); tests/11 checks that it matches. */
-	public const PACKAGE_VERSION = '3.4.20';
+	public const PACKAGE_VERSION = '3.4.21';
 
 	public const REPO_URL      = 'https://github.com/chaska/engage';
 	public const CHANGELOG_URL = 'https://github.com/chaska/engage/blob/main/CHANGELOG.md';

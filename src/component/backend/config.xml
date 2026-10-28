@@ -798,6 +798,12 @@
     >
 
         <field
+                type="note"
+                class="alert alert-info"
+                description="COM_ENGAGE_PERMS_CONFIG_NOTE"
+        />
+
+        <field
                 name="rules"
                 type="rules"
                 label="JCONFIG_PERMISSIONS_LABEL"
