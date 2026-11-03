@@ -13,6 +13,11 @@
 </p>
 
 <p align="center">
+  <a href="../../releases/latest"><img alt="Descargar la última versión (ZIP para instalar en Joomla)" src="https://img.shields.io/badge/%E2%AC%87%20Descargar-ZIP%20para%20instalar-2ea44f?style=for-the-badge"></a><br>
+  <sub>En la página que se abre, baje a «Assets» y descargue <code>pkg_engage-….zip</code>. No use el botón verde «Code».</sub>
+</p>
+
+<p align="center">
   <img src="docs/capturas/principal.jpg" width="860" alt="Panel de control de Engage: accesos rápidos a Comentarios, Denuncias, Plantillas de email, Opciones y Permisos; números de actividad, gráfico de los últimos 30 días y semáforo de estado.">
 </p>
 
