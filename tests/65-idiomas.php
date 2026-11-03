@@ -131,7 +131,7 @@ $rd = $leer('README.md');
 t_ok(str_contains($rd, '(docs/TRADUCIR.md)') && str_contains($rd, '(CONTRIBUTING.md)') && str_contains($rd, 'Colaborar: traducciones'), 'README: seccion «Colaborar: traducciones» con enlaces a TRADUCIR.md y CONTRIBUTING.md');
 $mal = []; foreach (['docs/TRADUCIR.md', 'CONTRIBUTING.md'] as $f) { preg_match_all('#\]\(([^)\s]+)\)#', $leer($f), $l); foreach ($l[1] as $u) { if (preg_match('#^(https://|\#)#', $u)) { continue; } $p = preg_replace('#[?\#].*$#', '', $u); if (!file_exists(dirname("$root/$f") . "/$p")) { $mal[] = "$f: $u"; } } }
 t_ok(!$mal, 'los enlaces relativos de TRADUCIR.md y CONTRIBUTING.md existen' . ($mal ? ' (' . implode(', ', $mal) . ')' : ''));
-$priv = ''; foreach (['docs/TRADUCIR.md', 'CONTRIBUTING.md', '.github/pull_request_template.md', '.github/ISSUE_TEMPLATE/traduccion.yml', 'build/idiomas.php', 'NOTICE.md'] as $f) { $c = $leer($f); if (preg_match('/hue' . 'va|hv6_|\b[A-Za-z]:\\\\|\/home\/|\/Users\/|(?:\d{1,3}\.){3}\d{1,3}/i', $c)) { $priv .= " $f"; } }
+$priv = ''; foreach (['docs/TRADUCIR.md', 'CONTRIBUTING.md', '.github/pull_request_template.md', '.github/ISSUE_TEMPLATE/traduccion.yml', 'build/idiomas.php', 'NOTICE.md'] as $f) { $c = $leer($f); if (preg_match('/hue' . 'va|hv' . '6_|\b[A-Za-z]:\\\\|\/home\/|\/Users\/|(?:\d{1,3}\.){3}\d{1,3}/i', $c)) { $priv .= " $f"; } }
 t_ok($priv === '', 'sin datos personales (sitio real, rutas del equipo, IP) en las guias, plantillas y herramienta' . $priv);
 t_ok(str_contains($leer('build/build.php'), "require_once __DIR__ . '/idiomas.php'") && str_contains($leer('build/build.php'), 'idiomasComprobar'), 'build.php comprueba los idiomas antes de empaquetar');
 t_fin();
