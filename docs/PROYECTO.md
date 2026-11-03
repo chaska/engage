@@ -10,11 +10,11 @@ Engage es un sistema de comentarios para los artículos de Joomla. Este reposito
 
 ## Estado
 
-- **Versión del fork:** 0.9.17. **Versión del paquete:** 3.4.21 (publicada; la 3.4.15 a la 3.4.20 no se publicaron; la 3.4.4 a la 3.4.13 fueron números de entrega que nunca se publicaron y quedan saltados; mayor que la 3.4.2 original, la 3.4.2.1 y la 3.4.3 ya publicadas, para que Joomla la trate como una actualización en el mismo sitio).
+- **Versión del fork:** 0.9.18. **Versión del paquete:** 3.4.22 (preparada, sin publicar; la última publicada es la 3.4.21; la 3.4.15 a la 3.4.20 no se publicaron; la 3.4.4 a la 3.4.13 fueron números de entrega que nunca se publicaron y quedan saltados; mayor que la 3.4.2 original, la 3.4.2.1 y la 3.4.3 ya publicadas, para que Joomla la trate como una actualización en el mismo sitio).
 - **Requisitos:** Joomla 5.0 o superior (incluido Joomla 6), PHP 8.1 o superior, MySQL 8.0.13 / MariaDB 10.4. No admite PostgreSQL (el esquema es solo MySQL/MariaDB).
 - **Probado en:** Joomla 6.1.4 con PHP 8.3 y MariaDB 10.11, instalando el paquete limpio y **actualizando encima de una 3.4.2 original y del paquete 3.4.2.1 ya publicado, con datos de ejemplo** (comentarios, ajustes y permisos idénticos antes y después; la tabla de reacciones se crea sola). Resultados en [`docs/RESULTADOS-PRUEBAS-JOOMLA-REAL.md`](RESULTADOS-PRUEBAS-JOOMLA-REAL.md).
 - **No probado:** Joomla 5.x, PHP 8.1/8.4/8.5, MySQL, otros navegadores distintos de Chromium y otros temas de administración distintos de Atum.
-- **Releases en GitHub:** las **v3.4.2.1, v3.4.3, v3.4.14 y v3.4.21 están publicadas** (inmutables); la 3.4.15 a la 3.4.20 no se publicaron (la 3.4.21 las incluye). El servidor de actualizaciones (`updates/pkgengage.xml`) apunta a la v3.4.21. Cómo publicar: [`PUBLICAR-RELEASE.md`](PUBLICAR-RELEASE.md).
+- **Releases en GitHub:** las **v3.4.2.1, v3.4.3, v3.4.14 y v3.4.21 están publicadas** (inmutables); la 3.4.15 a la 3.4.20 no se publicaron (la 3.4.21 las incluye). El servidor de actualizaciones (`updates/pkgengage.xml`) apunta a la v3.4.22, que se publicará después de la v3.4.21 ya publicada. Cómo publicar: [`PUBLICAR-RELEASE.md`](PUBLICAR-RELEASE.md).
 
 ## Novedades respecto a Engage 3.4.2
 

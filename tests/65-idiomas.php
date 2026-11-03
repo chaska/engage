@@ -11,6 +11,17 @@ $leer = fn(string $r) => (string) file_get_contents("$root/$r");
 echo "A) es-ES y en-GB pasan la herramienta\n";
 $r = idiomasComprobar("$root/src", 'todos');
 t_ok(!$r['errores'], 'comprobar todos: sin errores' . ($r['errores'] ? ' (' . implode(' | ', array_slice($r['errores'], 0, 3)) . ')' : ''));
+t_ok(!$r['avisos'], 'es-ES y en-GB del propio proyecto salen SIN avisos (ni claves repetidas ni comillas sueltas)' . ($r['avisos'] ? ' (' . implode(' | ', array_slice($r['avisos'], 0, 3)) . ')' : ''));
+$cli0 = []; exec('php ' . escapeshellarg("$root/build/idiomas.php") . ' comprobar todos 2>&1', $cli0, $rc0);
+t_ok($rc0 === 0 && !preg_grep('/^(AVISO|ERROR)/', $cli0), 'php build/idiomas.php comprobar todos: 0 avisos y 0 fallos (codigo 0)');
+$qq = sys_get_temp_dir() . '/eg-qq-' . bin2hex(random_bytes(3)) . '.ini';
+file_put_contents($qq, 'A="x <a href="%s" rel="n">y</a>"' . "\n"); $lq = idiomasLeerIni($qq);
+t_ok(count($lq['errores']) >= 1 && str_contains(implode(' ', $lq['errores']), 'comilla sin escapar'), 'las comillas sin escapar dentro de un texto (el caso que habia en el modulo) se rechazan');
+file_put_contents($qq, 'A="x <a href=\\"%s\\" rel=\\"n\\">y</a>"' . "\n"); $lq = idiomasLeerIni($qq);
+t_ok(!$lq['errores'] && $lq['claves']['A'] === 'x <a href=\\"%s\\" rel=\\"n\\">y</a>', 'con las comillas escapadas el .ini es valido');
+$lj = parse_ini_string('A="x <a href=\\"%s\\">y</a>"', false, INI_SCANNER_RAW); t_ok(str_replace('\\"', '"', $lj['A']) === 'x <a href="%s">y</a>', 'Joomla (LanguageHelper::parseIniFile) lee el texto escapado como el HTML con comillas normales');
+file_put_contents($qq, "YES=\"x\"\n"); t_ok(idiomasLeerIni($qq)['errores'] !== [], 'una clave que es palabra reservada del .ini se rechaza'); @unlink($qq);
+foreach (['en-GB', 'es-ES'] as $lg) { $n = 0; foreach (preg_grep('/^COM_ENGAGE_TITLE_EMAILTEMPLATES=/', file("$root/src/component/backend/language/$lg/com_engage.ini")) as $_) { $n++; } t_ok($n === 1, "$lg: COM_ENGAGE_TITLE_EMAILTEMPLATES aparece una sola vez"); }
 t_ok(isset($r['resumen']['es-ES']) && $r['resumen']['es-ES']['textos'] > 900, 'es-ES: mas de 900 textos comparados (' . ($r['resumen']['es-ES']['textos'] ?? 0) . ')');
 t_ok(array_keys($r['resumen']) === ['es-ES'], 'idiomas detectados: solo es-ES (ademas de en-GB); no se ha anadido ningun idioma real');
 $ex = idiomasExtensiones("$root/src");

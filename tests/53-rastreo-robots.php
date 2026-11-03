@@ -61,7 +61,7 @@ t_ok(str_contains($v, "setHeader('X-Robots-Tag', \$robots, true)") && str_contai
 t_ok(str_contains($v, 'robotsValue($variant, $favorites, $reduce') && str_contains($v, 'CommentTools::isVariant(array_keys((array) Factory::getApplication()->getInput()->get->getArray()))') && !preg_match('/\$_(GET|SERVER|POST|REQUEST)/', $v), 'la variante se decide por los NOMBRES de la consulta (entrada GET de Joomla), sin superglobales');
 foreach (['en-GB', 'es-ES'] as $lg) {
 	$ini = $lee("$root/modules/site/engage_latest/language/$lg/mod_engage_latest.ini");
-	t_ok(preg_match('/COMMENTED_ON=.*<a href="%s" rel="nofollow">/', $ini) === 1, "$lg: el enlace con la fecha del modulo «Ultimos comentarios» lleva nofollow");
+	t_ok(preg_match('/COMMENTED_ON=.*<a href=\\\\?"%s\\\\?" rel=\\\\?"nofollow\\\\?">/', $ini) === 1, "$lg: el enlace con la fecha del modulo «Ultimos comentarios» lleva nofollow");
 }
 $mt = $lee("$root/modules/site/engage_latest/tmpl/default.php");
 t_ok(str_contains($mt, "setVar('akengage_cid'") && str_contains($mt, 'MOD_ENGAGE_LATEST_LBL_COMMENTED_ON'), 'el modulo sigue emitiendo el enlace con akengage_cid a traves de la cadena con nofollow');

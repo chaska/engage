@@ -56,9 +56,21 @@ function idiomasLeerIni(string $ruta): array
 		if (trim($l) === '' || $l[0] === ';' || preg_match('/^\[[A-Za-z0-9_ -]+\]\s*$/', $l)) { continue; }
 		if (!preg_match('/^([A-Za-z0-9_.-]+)="(.*)"\s*$/', $l, $m)) { $errores[] = "linea $n: formato invalido (use CLAVE=\"texto\" en una sola linea)"; continue; }
 		if (preg_match('/\\\\$/', $m[2]) && !preg_match('/\\\\\\\\$/', $m[2])) { $errores[] = "linea $n: el texto termina en una barra invertida suelta"; }
+		if (in_array(strtoupper($m[1]), ['YES', 'NO', 'NULL', 'FALSE', 'ON', 'OFF', 'NONE', 'TRUE'], true)) { $errores[] = "linea $n: la clave {$m[1]} es una palabra reservada del .ini"; }
+		if (preg_match('/(?<!\\\\)"/', $m[2])) { $errores[] = "linea $n: comilla sin escapar dentro del texto (escribala como \\\" o use « » “ ”)"; }
 		if (isset($claves[$m[1]]) && $claves[$m[1]] !== $m[2]) { $errores[] = "linea $n: clave repetida con otro texto: {$m[1]}"; }
 		elseif (isset($claves[$m[1]])) { $avisos[] = "linea $n: clave repetida (mismo texto): {$m[1]}"; }
 		$claves[$m[1]] = $m[2];
+	}
+	// Lo que Joomla lee DE VERDAD (LanguageHelper::parseIniFile: parse_ini_file en modo RAW y despues \" -> "): debe ser exactamente lo que se ha entendido aqui.
+	set_error_handler(static function ($n, $m) { throw new Exception($m); }, E_WARNING | E_NOTICE | E_DEPRECATED);
+	try { $j = parse_ini_string(preg_replace('/^\xEF\xBB\xBF/', '', $b), false, INI_SCANNER_RAW); }
+	catch (Throwable $e) { $j = null; $errores[] = 'PHP no lo lee como .ini: ' . $e->getMessage(); }
+	finally { restore_error_handler(); }
+	if (is_array($j)) {
+		$j = str_replace('\\"', '"', $j);
+		foreach ($claves as $k => $v) { if (!array_key_exists($k, $j) || $j[$k] !== str_replace('\\"', '"', $v)) { $errores[] = "Joomla leeria distinto el texto de $k"; } }
+		foreach (array_diff_key($j, $claves) as $k => $_) { $errores[] = "Joomla leeria una clave que aqui no se ve: $k"; }
 	}
 	return ['claves' => $claves, 'errores' => $errores, 'avisos' => $avisos];
 }
