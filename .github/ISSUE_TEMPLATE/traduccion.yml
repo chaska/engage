@@ -1,0 +1,65 @@
+name: Traducción
+description: Enviar o proponer un idioma nuevo para Engage
+title: "Traducción: "
+labels: ["traducción"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias. Antes de enviar, lea la [guía de traducción](https://github.com/chaska/engage/blob/main/docs/TRADUCIR.md).
+        **No escriba datos personales** (correo, nombre real, nombre de su web): no hacen falta.
+  - type: input
+    id: idioma
+    attributes:
+      label: Idioma
+      description: Nombre del idioma, por ejemplo «Francés».
+    validations:
+      required: true
+  - type: input
+    id: codigo
+    attributes:
+      label: Código de idioma
+      description: El de Joomla, por ejemplo fr-FR o pt-BR.
+      placeholder: fr-FR
+    validations:
+      required: true
+  - type: dropdown
+    id: completa
+    attributes:
+      label: ¿Traduce todo?
+      options:
+        - Sí, todas las extensiones y todos los archivos
+        - No, solo una parte (se aceptará cuando esté completa)
+    validations:
+      required: true
+  - type: textarea
+    id: herramienta
+    attributes:
+      label: Resultado de la herramienta
+      description: Pegue la salida de `php build/idiomas.php comprobar xx-XX` (o escriba que no ha podido ejecutarla).
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: archivos
+    attributes:
+      label: Archivos
+      description: Arrastre aquí un ZIP con las carpetas del idioma (o enlace a su rama).
+    validations:
+      required: false
+  - type: input
+    id: credito
+    attributes:
+      label: Crédito (opcional)
+      description: Alias o usuario de GitHub que quiere que aparezca en NOTICE.md. Déjelo vacío si no quiere aparecer.
+    validations:
+      required: false
+  - type: checkboxes
+    id: aceptacion
+    attributes:
+      label: Confirmaciones
+      options:
+        - label: Acepto que mi traducción se publique con la licencia GNU GPL v3 o posterior.
+          required: true
+        - label: No he incluido datos personales en los archivos ni en este formulario.
+          required: true

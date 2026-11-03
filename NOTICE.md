@@ -40,3 +40,11 @@ Este fork **no es un producto de Akeeba Ltd, no está respaldado por ella y no t
 ## Código de Joomla en las pruebas
 
 - `tests/joomla-real/` contiene copias sin modificar de unas pocas clases de Joomla CMS (GPL v2 o posterior, © Open Source Matters, Inc.) usadas solo por las pruebas; no se incluyen en ningún ZIP. Procedencia y commits en `tests/joomla-real/LEEME.md`.
+
+## Traducciones
+
+Las traducciones de la comunidad se aceptan con la guía [`docs/TRADUCIR.md`](docs/TRADUCIR.md) y se publican con la misma licencia (GPL v3 o posterior). Quien traduce puede figurar aquí con un alias o su usuario de GitHub, si lo desea; nunca se piden datos personales.
+
+| Idioma | Crédito (opcional) |
+|---|---|
+| en-GB, es-ES | Fork de ChasKa |

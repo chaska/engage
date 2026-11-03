@@ -42,6 +42,14 @@ if ($version === '') {
 	fallo('pkg_engage.xml no declara <version>');
 }
 
+// 0.9.17: los idiomas (en-GB y todos los que haya en las carpetas language/) se comprueban ANTES de empaquetar: un idioma roto o malicioso no llega al ZIP.
+require_once __DIR__ . '/idiomas.php';
+$idi = idiomasComprobar($srcDir, 'todos');
+if ($idi['errores']) {
+	foreach (array_slice($idi['errores'], 0, 15) as $e) { fwrite(STDERR, "IDIOMAS: $e\n"); }
+	fallo(count($idi['errores']) . ' problema(s) en los archivos de idioma (php build/idiomas.php comprobar todos). No se genera el paquete.');
+}
+
 // Fecha fija (creationDate del paquete) para que los ZIP sean reproducibles.
 $mtime = strtotime((string) $xml->creationDate . ' 00:00:00 UTC') ?: 0;
 

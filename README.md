@@ -623,6 +623,10 @@ Estado del proyecto, novedades respecto a Akeeba Engage 3.4.2 y estructura del r
 
 **Licencia:** GNU General Public License versión 3 o posterior. Texto completo en [`LICENSE`](LICENSE).
 
+### Colaborar: traducciones
+
+Engage viene en español e inglés y puede traducirse a más idiomas. No hace falta saber programar. Guía paso a paso: [`docs/TRADUCIR.md`](docs/TRADUCIR.md). Cómo colaborar (traducciones, errores y cómo avisar de un fallo de seguridad sin publicarlo): [`CONTRIBUTING.md`](CONTRIBUTING.md). La herramienta `php build/idiomas.php comprobar xx-XX` comprueba una traducción antes de enviarla.
+
 *English:* Unofficial community fork of Akeeba Engage, comments for Joomla articles (Joomla 5 and 6). GPL-3.0-or-later. Developed by ChasKa. Not affiliated with Akeeba Ltd.
 
 <details>
