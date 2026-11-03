@@ -10,6 +10,8 @@ Thumbs.db
 /docs/**/*.jpeg
 /docs/**/*.gif
 /docs/**/*.webp
+# 0.9.17: las UNICAS imagenes del repositorio son las capturas del README, en JPG sin metadatos (tests/64-readme-capturas.php lo comprueba)
+!/docs/capturas/*.jpg
 /docs/img/
 /capturas/
 /tests/**/capturas*/

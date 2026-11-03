@@ -89,3 +89,17 @@ Variables (todas con valor por defecto, ver `config.sh`): `WORK`, `JOOMLA_VERSIO
 - Reinicia `php -S` (lo hace `02-instalar-engage.sh`) después de instalar o actualizar: es un solo proceso con opcache y caché de rutas y, si arrancó antes de instalar Engage, devuelve `Class ... not found`.
 - `pruebas.php` borra los comentarios del sitio de pruebas, cambia permisos y parámetros de `com_engage` y los de `com_mails`: no lo apuntes a nada que no sea desechable.
 - Es un sitio HTTP en `127.0.0.1` como root: no sustituye a probar en un alojamiento real.
+
+## Capturas del README (0.9.17)
+
+Las capturas de `docs/capturas/*.jpg` se hacen aqui, con datos INVENTADOS (sitio «Sitio de pruebas», personas ficticias, correos `example.test`, sin IP ni navegador guardados) y SOLO del contenido de la pagina:
+
+```
+php lib/capturas-readme-datos.php crear      # tras 02 y lib/seed.php (03): datos ficticios y modulo «Ultimos comentarios»
+# el sitio se anuncia con live_site = http://sitio-de-pruebas.example.test:8080 (Chromium lo atiende en local: ninguna captura muestra la direccion real)
+WORK=... PW_MODULE=... CHROMIUM=... OUT_IMG=/ruta/fuera/del/repo COMMENT_ID=<id> node lib/capturas-readme.js   # PNG en OUT_IMG
+/usr/bin/python3 -I lib/capturas-readme-jpg.py OUT_IMG docs/capturas   # JPG calidad 85 sin metadatos
+php lib/capturas-readme-datos.php borrar
+```
+
+`tests/64-readme-capturas.php` comprueba que la unica imagen del repositorio sea `docs/capturas/*.jpg` (sin EXIF/XMP/ICC), que el README cite todas, que sus enlaces existan y que no falte ninguna opcion de `config.xml`, de los formularios, del modulo ni de los plugins.
