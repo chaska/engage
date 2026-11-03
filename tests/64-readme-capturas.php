@@ -183,7 +183,7 @@ foreach ($txts as $n => $t) {
 	foreach ($em[0] as $e) { if (!preg_match('/@(example\.(com|org|net|test)|[a-z0-9.-]+\.test|[a-z0-9.-]+\.invalid|users\.noreply\.github\.com)$/i', $e)) { $mal[] = "$n correo $e"; } }
 	if (preg_match('/\b(?:\d{1,3}\.){3}\d{1,3}\b/', str_replace('3.4.2.1', 'v', $t), $ip)) { $mal[] = "$n IP {$ip[0]}"; }
 	if (preg_match('/\b[A-Za-z]:\\\\|\/home\/|\/Users\/|\/root\//', $t)) { $mal[] = "$n ruta del PC"; }
-	if (preg_match('/hue' . 'va|hv6_|ciudad real/i', $t)) { $mal[] = "$n nombre real"; }
+	if (preg_match('/hue' . 'va|hv' . '6_|ciudad real/i', $t)) { $mal[] = "$n nombre real"; }
 }
 t_ok(!$mal, 'ni correos reales, ni IP, ni rutas del PC, ni nombres de sitios reales en README.md ni docs/PROYECTO.md' . ($mal ? ' (' . implode('; ', $mal) . ')' : ''));
 t_ok(!preg_grep('/[^A-Za-z0-9._-]/', array_map('basename', $caps)), 'los nombres de las capturas son neutros (solo letras, numeros, punto, guion)');
